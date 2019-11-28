@@ -1,4 +1,0 @@
-﻿  Source.cpp
-c:\users\orangalang\source\repos\snek 1.1\snek\source.cpp(94): warning C4244: 'initializing': conversion from 'time_t' to 'int', possible loss of data
-c:\users\orangalang\source\repos\snek 1.1\snek\source.cpp(107): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-  SNEK.vcxproj -> C:\Users\Orangalang\source\repos\SNEK 1.1\Debug\SNEK.exe
