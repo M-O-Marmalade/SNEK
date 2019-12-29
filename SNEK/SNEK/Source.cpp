@@ -929,6 +929,16 @@ int main() {
 			if (snekHead[0] == currentFruit[0] && snekHead[1] == currentFruit[1]) {
 				snekLength++;
 				snakeFruitInstance->start();
+				
+				if (snekLength == 11) {
+					snakeFruitInstance->setParameterByName("Delay Wet", 1.0f);
+					snakeFruitInstance->setParameterByName("Pitch Shifter Send", 1.0f);
+				}
+				else {
+					snakeFruitInstance->setParameterByName("Delay Wet", 0.0f);
+					snakeFruitInstance->setParameterByName("Pitch Shifter Send", 0.0f);
+				}
+				
 
 				if (snekLength > highScore) {		//set new high score
 					highScore++;
