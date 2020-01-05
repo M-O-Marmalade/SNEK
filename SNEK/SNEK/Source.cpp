@@ -136,6 +136,12 @@ int main() {
 	FMOD::Studio::EventInstance* snakeFruitInstance = NULL;
 	snakeFruitDescription->createInstance(&snakeFruitInstance);
 
+	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;
+	system->getEvent("event:/SnakeFruit11", &snakeFruitDescription11);
+
+	FMOD::Studio::EventInstance* snakeFruitInstance11 = NULL;
+	snakeFruitDescription11->createInstance(&snakeFruitInstance11);
+
 	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;
 	system->getEvent("event:/SnakeMove", &snakeMoveDescription);
 
@@ -187,23 +193,25 @@ int main() {
 
 	//GetConsoleFontSize(hConsole, fontSize);
 
-	/*SMALL_RECT screenWindowCoordinates;
-	screenWindowCoordinates.Top = 15;
-	screenWindowCoordinates.Left = 0;
-	screenWindowCoordinates.Bottom = 0;
-	screenWindowCoordinates.Right = 79;
-	SetConsoleWindowInfo(hConsole, true, &screenWindowCoordinates);
-	*/
+	/*
+	SMALL_RECT *screenWindowCoordinates = new SMALL_RECT;
+	screenWindowCoordinates->Top = 15;
+	screenWindowCoordinates->Left = 0;
+	screenWindowCoordinates->Bottom = 0;
+	screenWindowCoordinates->Right = 79;
+	SetConsoleWindowInfo(hConsole, true, screenWindowCoordinates);
+	
 
-	//CHAR_INFO wAttributes;
-	//wAttributes.Attributes = FOREGROUND_GREEN;
+	CHAR_INFO wAttributes;
+	wAttributes.Attributes = FOREGROUND_GREEN;
+	*/
 
 	//SetConsoleTextAttribute(hConsole, wAttributes);
 	for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 		screen[u] = screenString[u];
 	}
 
-	int secondsBro = time(0);
+	//int secondsBro = time(0);
 	int charToOverwrite = 992;
 	bool animation = true;
 	int u = 0;
@@ -275,7 +283,7 @@ int main() {
 	aNewChipInstance->start();
 	snakeFruitInstance->start();
 
-	system->update(); //begin FMOD sound generation/song playback
+	system->update(); //begin start screen playback
 
 	while (startScreen) {
 
@@ -300,7 +308,7 @@ int main() {
 			
 			snakeFruitInstance->start();
 
-			system->update(); //begin FMOD sound generation/song playback
+			system->update(); //play snakefruitinstance sound for flashing "press start" button
 		}
 
 		if (startToggle && frameCount == 111) {
@@ -334,7 +342,7 @@ int main() {
 			aNewChipInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 			startButtonInstance->start();
 
-			system->update();
+			system->update();	//play startbutton sound for pressing 'Z' at start screen
 
 			
 
@@ -928,18 +936,17 @@ int main() {
 
 			if (snekHead[0] == currentFruit[0] && snekHead[1] == currentFruit[1]) {
 				snekLength++;
-				snakeFruitInstance->start();
+				
 				
 				if (snekLength == 11) {
-					snakeFruitInstance->setParameterByName("Delay Wet", 1.0f);
-					snakeFruitInstance->setParameterByName("Pitch Shifter Send", 1.0f);
+					snakeFruitInstance11->start();
+					//snakeFruitInstance11->setParameterByName("Delay Wet", 1.0f);
+					//snakeFruitInstance11->setParameterByName("Pitch Shifter Send", 1.0f);
 				}
 				else {
-					snakeFruitInstance->setParameterByName("Delay Wet", 0.0f);
-					snakeFruitInstance->setParameterByName("Pitch Shifter Send", 0.0f);
+					snakeFruitInstance->start();
 				}
 				
-
 				if (snekLength > highScore) {		//set new high score
 					highScore++;
 
