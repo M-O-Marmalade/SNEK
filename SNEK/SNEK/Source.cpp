@@ -172,6 +172,12 @@ int main() {
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
 	
+	//FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
+	//system->getEvent("event:/ProximitySound", &proximitySoundDescription);
+
+	//FMOD::Studio::EventInstance* proximitySoundInstance = NULL;
+	//proximitySoundDescription->createInstance(&proximitySoundInstance);
+
 
 	
 	//REST OF GAME PROGRAMMING
@@ -565,6 +571,19 @@ int main() {
 
 		}
 
+		int snekMoveTimelinePosition = 0;	//FMOD snakemovesound timeline position
+
+		int snekMoveTimelinePositionMax = 200;
+
+		bool isScoreUnder11 = true;
+
+		float snakeMoveReverbLevel = 0.0f;
+
+		float proximityToFruit;
+		//proximitySoundInstance->start();
+
+		bool wasZKeyHeld = false;
+
 		while (gameLose == false) {		//GAME LOOP/////////////////////////////////////////////////////////////////////////
 
 			
@@ -936,20 +955,63 @@ int main() {
 
 			if (snekHead[0] == currentFruit[0] && snekHead[1] == currentFruit[1]) {
 				snekLength++;
+				//snekMoveTimelinePosition += 200;
 				
 				
 				if (snekLength == 11) {
-					snakeFruitInstance11->start();
+					snakeFruitInstance11->start();	//FMOD
 					//snakeFruitInstance11->setParameterByName("Delay Wet", 1.0f);
 					//snakeFruitInstance11->setParameterByName("Pitch Shifter Send", 1.0f);
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.125f;
+					isScoreUnder11 = false;
 				}
 				else {
-					snakeFruitInstance->start();
+					snakeFruitInstance->start();	//FMOD	
 				}
 				
-				if (snekLength > highScore) {		//set new high score
-					highScore++;
+				switch (snekLength) {
+					case 20:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.250f;
+						break;
 
+					case 30:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.375f;
+						break;
+
+					case 40:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.5f;
+						break;
+
+					case 50:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.625f;
+						break;
+
+					case 60:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.750f;
+						break;
+
+					case 70:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.875f;
+						break;
+
+					case 80:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 1.0f;
+						break;
+				}
+
+				
+
+				if (snekLength > highScore) {		//set new high score
+					
+					highScore++;
 				}
 
 				for (int e = 0; e == 0;) {
@@ -960,18 +1022,47 @@ int main() {
 						e = 1;
 					}
 				}
+								
 			}
 
 			else if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
-				snakeLungeInstance->start();
-
+				snakeLungeInstance->start();	//FMOD				
+				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
+				if (!wasZKeyHeld) {
+					snekMoveTimelinePosition += 200;
+					wasZKeyHeld = true;
+				}
 			}
 
 			else {
-				
-				snakeMoveInstance->start();
+						
+				wasZKeyHeld = false;
+
+				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
+
+				//FMOD::Studio:: snakeMoveInstancePlaybackState;
+				//snakeMoveInstance->getPlaybackState(snakeMoveInstancePlaybackState);
+
+				if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED){
+					snakeMoveInstance->start();	//FMOD
+					
+				}
+
+				snekMoveTimelinePosition += 200;
+
+				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+					snekMoveTimelinePosition = 0;
+
+				}
 			}
 
+			//ADJUST PROXIMITY SOUND/////////////////////
+
+			proximityToFruit = 1.0f - ((abs(snekHead[0] - currentFruit[0]) + abs(snekHead[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+			
+			snakeMoveInstance->setPitch(proximityToFruit);
+			//proximitySoundInstance->setParameterByName("Proximity Highpass", proximityToFruit);
 
 
 			//PLACE PLAYER INTO DISPLAY ARRAY////////////
