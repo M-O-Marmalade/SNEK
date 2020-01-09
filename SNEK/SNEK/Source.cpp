@@ -6,6 +6,7 @@
 //		/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
+
 #include <Windows.h>
 #include <iostream>
 #include <string>
@@ -17,156 +18,125 @@
 
 using namespace std;
 
-//80w x 25h
 
-		//VARIABLES//
+//LOGIC VARIABLES (for managing game logic)
+char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, }
+int snekHead[2];				//the snek's head position on the play grid [x,y]
+int snekBody[625][2];			//the snek's body segments on the play grid [segment][x,y]
+int currentFruit[2]{ rand() % 25, rand() % 25 };	//location of the current fruit on the game grid [x,y]
+bool gameLose;					//current Game Lose state
+bool playAgain;					//decides whether or not to play again after losing
+int snekLength;					//current length of the snek (used to calculate current Score as well)
+int highScore = 0;				//current High Score
+int styleCounter = 0;			//current Style Score
+int styleHighScore = 0;			//current Style High Score
 
-char display[25][25]{'z'};		//the game display (text-pixels)
+//INPUT VARIABLES (for managing user input)
+bool arrowKeys[4];				//stores input from arrow keys
+bool zKey;						//stores input from Z key
+char direction1 = 's';			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
+char direction = 's';			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
+bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
+bool holdE = false;				//"		"
+bool holdS = false;				//"		"
+bool holdN = false;				//"		"
 
-int snekHead[2];				//the snek's head
+//LOGIC/SCORE VARIABLES (for managing the game state)
 
-int snekBody[625][2];
 
-int snekLength = 0;				//current length of the snek
-
-int snekLengthZ = 1;			//z-key speed/length multiplier
-
-int snekLengthDraw = 0;			//int used to draw the glory of the snekLength to the screen
-	
-char direction = 'w';			//direction of player movement
-
-char direction1 = 'w';			//direction temporary slot for tick-resolution input
-
-bool collision = false;			//tells if a collision has occured
-
-bool bKey[4];					//stores user input
-
-bool zKey;
-
-bool holdW = false;				//checks if a directional key (arrow key) was held down during previous tick
-bool holdE = false;
-bool holdS = false;
-bool holdN = false;
-
-int currentFruit[2]{ rand() % 25, rand() % 25 };			//location of the current fruit
-
-bool gameLose;					//tells if the game has been lost
-
+//DISPLAY VARIABLES (for displaying the game)
+int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
-
 int currentTick = 0;			//keeps track of how many ticks have passed
+int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
+int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
+string screenString;			//character array to be displayed to the screen
 
-char playAgain;					//decides whether or not to play again after losing
-
-int highScore = 0;
-
-int styleCounter = 0;
-
-int styleHighScore = 0;
-
-int frameRate = 10;
-
-int currentTrap = 0;
-
-int trapLocations[200][2];
-
-int r = 4;					//used for counting the number of traps whose locations have been set
-
-int actualTrapCount = 0;
-
-bool alternator1 = true;
+//UNUSED
+//int currentTrap = 0;			//current number of traps on the game grid
+//int trapLocations[200][2];	//locations of the traps on the game grid
+//int r = 4;					//used for counting the number of traps whose locations have been set
+//int actualTrapCount;
+//bool alternator1 = true;
 
 
 
-// 8 is snek head
-// 7 is snek body
-// o is food
-// X is trap
-// z is empty space
 
-// (11.5 is halfway)
-
-int nScreenWidth = 80;
-int nScreenHeight = 25;
-string screenString;
-
-void SleepinnnThang() {
+void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
 	this_thread::sleep_for(33ms);
 }
 
 
 int main() {
 
-	//FMOD PROGRAMMING
+	//AUDIO SYSTEM SETUP (FMOD Studio)//
 
-	FMOD_RESULT result;
-	FMOD::Studio::System* system = NULL;
-
-	result = FMOD::Studio::System::create(&system); // Create the Studio System object.
-
-	result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);
+	FMOD_RESULT result;																	//create an FMOD Result
+	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
+	result = FMOD::Studio::System::create(&system);										//create the Studio System object using the pointer
+	result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
 
 
-	FMOD::Studio::Bank* masterBank = NULL;
-	system->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
+	FMOD::Studio::Bank* masterBank = NULL;																//pointer for the Master Bank
+	system->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);				//load Master Bank into pointer
 
-	FMOD::Studio::Bank* stringsBank = NULL;
-	system->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
+	FMOD::Studio::Bank* stringsBank = NULL;																//pointer for the Strings Bank
+	system->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);		//load Strings Bank into pointer
+																							
+	FMOD::Studio::Bank* musicandFX = NULL;																//pointer for the MusicandFX Bank
+	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);	//load MusicandFX Bank into pointer
 
+	//LOADING AUDIO EVENTS//
 
-
-	FMOD::Studio::Bank* musicandFX = NULL;
-	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
-
-	FMOD::Studio::EventDescription* splashJingleDescription = NULL;
+	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle
 	system->getEvent("event:/SplashJingle", &splashJingleDescription);
 
 	FMOD::Studio::EventInstance* splashJingleInstance = NULL;
 	splashJingleDescription->createInstance(&splashJingleInstance);
 
-	FMOD::Studio::EventDescription* aNewChipDescription = NULL;
+	FMOD::Studio::EventDescription* aNewChipDescription = NULL;				//ANewChip
 	system->getEvent("event:/ANewChip", &aNewChipDescription);
 
 	FMOD::Studio::EventInstance* aNewChipInstance = NULL;
 	aNewChipDescription->createInstance(&aNewChipInstance);
 
-	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;
+	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;			//SnakeFruit
 	system->getEvent("event:/SnakeFruit", &snakeFruitDescription);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance = NULL;
 	snakeFruitDescription->createInstance(&snakeFruitInstance);
 
-	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;
+	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;			//SnakeFruit11
 	system->getEvent("event:/SnakeFruit11", &snakeFruitDescription11);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance11 = NULL;
 	snakeFruitDescription11->createInstance(&snakeFruitInstance11);
 
-	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;
+	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;			//SnakeMove
 	system->getEvent("event:/SnakeMove", &snakeMoveDescription);
 
 	FMOD::Studio::EventInstance* snakeMoveInstance = NULL;
 	snakeMoveDescription->createInstance(&snakeMoveInstance);
 
-	FMOD::Studio::EventDescription* startButtonDescription = NULL;
+	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton
 	system->getEvent("event:/StartButton", &startButtonDescription);
 
 	FMOD::Studio::EventInstance* startButtonInstance = NULL;
 	startButtonDescription->createInstance(&startButtonInstance);
 	
-	FMOD::Studio::EventDescription* fancyBossDescription = NULL;
+	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss
 	system->getEvent("event:/FancyBoss", &fancyBossDescription);
 
 	FMOD::Studio::EventInstance* fancyBossInstance = NULL;
 	fancyBossDescription->createInstance(&fancyBossInstance);
 
-	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;
+	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;			//SnakeLunge
 	system->getEvent("event:/SnakeLunge", &snakeLungeDescription);
 
 	FMOD::Studio::EventInstance* snakeLungeInstance = NULL;
 	snakeLungeDescription->createInstance(&snakeLungeInstance);
 	
-	FMOD::Studio::EventDescription* deathDescription = NULL;
+	FMOD::Studio::EventDescription* deathDescription = NULL;				//Death
 	system->getEvent("event:/Death", &deathDescription);
 
 	FMOD::Studio::EventInstance* deathInstance = NULL;
@@ -178,25 +148,25 @@ int main() {
 	//FMOD::Studio::EventInstance* proximitySoundInstance = NULL;
 	//proximitySoundDescription->createInstance(&proximitySoundInstance);
 
+		
+	//GAME PROGRAMMING//
 
-	
-	//REST OF GAME PROGRAMMING
-
+	//set size of screen char array/string//
 	screenString.resize(nScreenWidth * nScreenHeight);
 
-	//create screen buffer
+	//create screen buffer//
 	char *screen = new char[nScreenWidth * nScreenHeight];
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 	   	
-	CONSOLE_CURSOR_INFO     cursorInfo;
-	DWORD fontSize = 0;
-
+	//set the cursor visibility//
+	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
-	cursorInfo.bVisible = false; // set the cursor visibility
+	cursorInfo.bVisible = false;					
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
 
+	//DWORD fontSize = 0;
 	//GetConsoleFontSize(hConsole, fontSize);
 
 	/*
@@ -210,21 +180,20 @@ int main() {
 
 	CHAR_INFO wAttributes;
 	wAttributes.Attributes = FOREGROUND_GREEN;
+	SetConsoleTextAttribute(hConsole, wAttributes);
 	*/
-
-	//SetConsoleTextAttribute(hConsole, wAttributes);
+		
 	for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 		screen[u] = screenString[u];
 	}
-
-	//int secondsBro = time(0);
+		
 	int charToOverwrite = 992;
 	bool animation = true;
 	int u = 0;
 	
 	splashJingleInstance->start();
+	system->update();	//update FMOD system (playback commands/parameter changes)
 
-	system->update(); //begin FMOD sound generation/song playback
 
 	while (animation) {
 
@@ -239,10 +208,11 @@ int main() {
 			animation = false;
 			this_thread::sleep_for(222ms);
 		}
-	}
+	}	
 	
-	
-	/*while (time(0) < secondsBro + 1) {
+	/*
+	int secondsBro = time(0);
+	while (time(0) < secondsBro + 1) {
 		
 		screenString.replace((12 * 80) + 32, 14, "Citrus Studios");
 		
@@ -540,19 +510,13 @@ int main() {
 
 		snekLength = 0;			//reset snek length
 
-		snekLengthZ = 1;
-
-		snekLengthDraw = 0;
-
 		frameRate = 10;		//reset the framerate
 
 		styleCounter = 0;	//reset the STYLE counter
 
-		currentTrap = 0;
-
-		r = 0;
-
-		actualTrapCount = 0;
+		//currentTrap = 0;
+		//r = 0;
+		//actualTrapCount = 0;
 
 		for (int x = 0; x < 25; x++) {			//reset the game display
 			
@@ -694,7 +658,7 @@ int main() {
 				//READ PLAYER INPUT//
 
 				for (int k = 0; k < 4; k++) {
-					bKey[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
+					arrowKeys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
 
 				}
 
@@ -718,22 +682,22 @@ int main() {
 
 				//CHECK + SET DIRECTION//
 
-				if (bKey[0] && holdW == false && direction != 'e') {
+				if (arrowKeys[0] && holdW == false && direction != 'e') {
 					direction1 = 'w';
 
 				}
 
-				else if (bKey[1] && holdN == false && direction != 's') {
+				else if (arrowKeys[1] && holdN == false && direction != 's') {
 					direction1 = 'n';
 
 				}
 
-				else if (bKey[2] && holdE == false && direction != 'w') {
+				else if (arrowKeys[2] && holdE == false && direction != 'w') {
 					direction1 = 'e';
 
 				}
 
-				else if (bKey[3] && holdS == false && direction != 'n') {
+				else if (arrowKeys[3] && holdS == false && direction != 'n') {
 					direction1 = 's';
 
 				}
@@ -760,7 +724,7 @@ int main() {
 
 			//PASS MOVEMENT ON TO BODY SEGMENTS//
 
-			for (int r = snekLength * snekLengthZ; r > 0; r--) {
+			for (int r = snekLength; r > 0; r--) {
 
 				if (r > 1) {
 					snekBody[r][0] = snekBody[r - 1][0];	//move all segments except the head and the following segment
@@ -815,7 +779,7 @@ int main() {
 
 			//PLACE SNEK BODY INTO DISPLAY ARRAY//
 
-			for (int r = snekLength * snekLengthZ; r > 0; r--) {
+			for (int r = snekLength; r > 0; r--) {
 				display[snekBody[r][0]][snekBody[r][1]] = '7';
 
 			}
@@ -1365,8 +1329,9 @@ int main() {
 			while (gameOverMessage) {
 								
 				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
+
 					gameOverMessage = false;
-					playAgain = 'y';
+					playAgain = true;
 					
 					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 					system->update();
@@ -1375,17 +1340,19 @@ int main() {
 
 
 				if (xKey = (0x8000 & GetAsyncKeyState((unsigned char)("X"[0]))) != 0) {
+
 					gameOverMessage = false;
-					playAgain = 'x';
+					playAgain = false;
+
+					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					system->update();
 				}
 
 				this_thread::sleep_for(10ms);
-
-				//cin >> playAgain;
 			}
 	}
 
-	while (playAgain == 'y' || playAgain == 'Y');
+	while (playAgain);
 
 	return 0;
 
