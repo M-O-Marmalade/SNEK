@@ -6,6 +6,17 @@
 //		/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
+// PROJECT OUTLINE //
+
+// Includes 
+// Variable Declarations
+// Audio System Setup (FMOD Studio)
+// Loading/Preparing Audio Events
+
+
+  //		  //
+ // Includes //
+//			//
 
 #include <Windows.h>
 #include <iostream>
@@ -18,20 +29,19 @@
 
 using namespace std;
 
+  //					   //
+ // Variable Declarations //
+//						 //
 
-//LOGIC VARIABLES (for managing game logic)
+//LOGIC VARIABLES
 char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, }
-int snekHead[2];				//the snek's head position on the play grid [x,y]
 int snekBody[625][2];			//the snek's body segments on the play grid [segment][x,y]
-int currentFruit[2]{ rand() % 25, rand() % 25 };	//location of the current fruit on the game grid [x,y]
 bool gameLose;					//current Game Lose state
 bool playAgain;					//decides whether or not to play again after losing
-int snekLength;					//current length of the snek (used to calculate current Score as well)
 int highScore = 0;				//current High Score
-int styleCounter = 0;			//current Style Score
 int styleHighScore = 0;			//current Style High Score
 
-//INPUT VARIABLES (for managing user input)
+//INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
 bool zKey;						//stores input from Z key
 char direction1 = 's';			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
@@ -41,25 +51,18 @@ bool holdE = false;				//"		"
 bool holdS = false;				//"		"
 bool holdN = false;				//"		"
 
-//LOGIC/SCORE VARIABLES (for managing the game state)
-
-
-//DISPLAY VARIABLES (for displaying the game)
-int frameRate = 10;				//frame rate setting
+//DISPLAY VARIABLES
 int currentFrame = 0;			//keeps track of how many frames have passed
 int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
-string screenString;			//character array to be displayed to the screen
 
-//UNUSED
+// UNUSED
 //int currentTrap = 0;			//current number of traps on the game grid
 //int trapLocations[200][2];	//locations of the traps on the game grid
 //int r = 4;					//used for counting the number of traps whose locations have been set
 //int actualTrapCount;
 //bool alternator1 = true;
-
-
 
 
 void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
@@ -68,27 +71,27 @@ void SleepinnnThang() {					//framerate for animation that plays after pressing 
 
 
 int main() {
-
-	//AUDIO SYSTEM SETUP (FMOD Studio)//
-
+	 //									 //
+	// Audio System Setup (FMOD Studio) //
+   //								   //
 	FMOD_RESULT result;																	//create an FMOD Result
 	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
 	result = FMOD::Studio::System::create(&system);										//create the Studio System object using the pointer
 	result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
 
 
-	FMOD::Studio::Bank* masterBank = NULL;																//pointer for the Master Bank
-	system->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);				//load Master Bank into pointer
+	FMOD::Studio::Bank* masterBank = NULL;																
+	system->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
 
-	FMOD::Studio::Bank* stringsBank = NULL;																//pointer for the Strings Bank
-	system->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);		//load Strings Bank into pointer
+	FMOD::Studio::Bank* stringsBank = NULL;																
+	system->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
 																							
-	FMOD::Studio::Bank* musicandFX = NULL;																//pointer for the MusicandFX Bank
-	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);	//load MusicandFX Bank into pointer
-
-	//LOADING AUDIO EVENTS//
-
-	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle
+	FMOD::Studio::Bank* musicandFX = NULL;																
+	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
+	//										  //
+	// TC1.1 - Loading/Preparing Audio Events //
+	//										  //
+	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen)
 	system->getEvent("event:/SplashJingle", &splashJingleDescription);
 
 	FMOD::Studio::EventInstance* splashJingleInstance = NULL;
@@ -100,76 +103,82 @@ int main() {
 	FMOD::Studio::EventInstance* aNewChipInstance = NULL;
 	aNewChipDescription->createInstance(&aNewChipInstance);
 
-	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;			//SnakeFruit
+	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;			//SnakeFruit (pickup fruit sound effect)
 	system->getEvent("event:/SnakeFruit", &snakeFruitDescription);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance = NULL;
 	snakeFruitDescription->createInstance(&snakeFruitInstance);
 
-	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;			//SnakeFruit11
+	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;			//SnakeFruit11 (snake eyes score sound)
 	system->getEvent("event:/SnakeFruit11", &snakeFruitDescription11);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance11 = NULL;
 	snakeFruitDescription11->createInstance(&snakeFruitInstance11);
 
-	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;			//SnakeMove
+	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;			//SnakeMove (movement sound effect)
 	system->getEvent("event:/SnakeMove", &snakeMoveDescription);
 
 	FMOD::Studio::EventInstance* snakeMoveInstance = NULL;
 	snakeMoveDescription->createInstance(&snakeMoveInstance);
 
-	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton
+	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton (game start sound effect)
 	system->getEvent("event:/StartButton", &startButtonDescription);
 
 	FMOD::Studio::EventInstance* startButtonInstance = NULL;
 	startButtonDescription->createInstance(&startButtonInstance);
 	
-	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss
+	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss (game over song)
 	system->getEvent("event:/FancyBoss", &fancyBossDescription);
 
 	FMOD::Studio::EventInstance* fancyBossInstance = NULL;
 	fancyBossDescription->createInstance(&fancyBossInstance);
 
-	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;			//SnakeLunge
+	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;			//SnakeLunge (lunge sound effect)
 	system->getEvent("event:/SnakeLunge", &snakeLungeDescription);
 
 	FMOD::Studio::EventInstance* snakeLungeInstance = NULL;
 	snakeLungeDescription->createInstance(&snakeLungeInstance);
 	
-	FMOD::Studio::EventDescription* deathDescription = NULL;				//Death
+	FMOD::Studio::EventDescription* deathDescription = NULL;				//Death (death collision sound)
 	system->getEvent("event:/Death", &deathDescription);
 
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
 	
-	//FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
-	//system->getEvent("event:/ProximitySound", &proximitySoundDescription);
+	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
+	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
 
-	//FMOD::Studio::EventInstance* proximitySoundInstance = NULL;
-	//proximitySoundDescription->createInstance(&proximitySoundInstance);
+	FMOD::Studio::EventInstance* proximitySoundInstance = NULL;
+	proximitySoundDescription->createInstance(&proximitySoundInstance);*/
 
-		
-	//GAME PROGRAMMING//
+	  //			   //
+	 // Display Setup //
+	//			  	 //
 
-	//set size of screen char array/string//
-	screenString.resize(nScreenWidth * nScreenHeight);
+	
 
 	//create screen buffer//
-	char *screen = new char[nScreenWidth * nScreenHeight];
+	char *screen = new char[nScreenWidth * nScreenHeight];		//create char[] buffer to be used in console buffer updates
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
+
+	string screenString;								 //character array to be displayed to the screen	
+	screenString.resize(nScreenWidth * nScreenHeight);	//set size of screen char array/string//
+	
+	for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {	//converts string buffer to char[] buffer to be written to console window
+		screen[u] = screenString[u];
+	}
 	   	
-	//set the cursor visibility//
+	//disable the cursor visibility//
 	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
-	cursorInfo.bVisible = false;					
+	cursorInfo.bVisible = false;	
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
 
-	//DWORD fontSize = 0;
-	//GetConsoleFontSize(hConsole, fontSize);
-
-	/*
+	/*DWORD fontSize = 0;
+	GetConsoleFontSize(hConsole, fontSize);
+		
 	SMALL_RECT *screenWindowCoordinates = new SMALL_RECT;
 	screenWindowCoordinates->Top = 15;
 	screenWindowCoordinates->Left = 0;
@@ -177,25 +186,20 @@ int main() {
 	screenWindowCoordinates->Right = 79;
 	SetConsoleWindowInfo(hConsole, true, screenWindowCoordinates);
 	
-
 	CHAR_INFO wAttributes;
 	wAttributes.Attributes = FOREGROUND_GREEN;
-	SetConsoleTextAttribute(hConsole, wAttributes);
-	*/
-		
-	for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-		screen[u] = screenString[u];
-	}
-		
-	int charToOverwrite = 992;
+	SetConsoleTextAttribute(hConsole, wAttributes);*/
+							
+	splashJingleInstance->start();	//Begin Splash Screen (FMOD)
+	system->update();
+
+	  //						 //
+	 // Splash Screen Animation //
+	//						   //
 	bool animation = true;
 	int u = 0;
-	
-	splashJingleInstance->start();
-	system->update();	//update FMOD system (playback commands/parameter changes)
-
-
-	while (animation) {
+	int charToOverwrite = 992;
+	while (animation) {			//Draw Splash Screen
 
 		screen[charToOverwrite] = "Citrus Studios"[u];
 		charToOverwrite++;
@@ -210,29 +214,9 @@ int main() {
 		}
 	}	
 	
-	/*
-	int secondsBro = time(0);
-	while (time(0) < secondsBro + 1) {
-		
-		screenString.replace((12 * 80) + 32, 14, "Citrus Studios");
-		
-		
-		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-			screen[u] = screenString[u];
-			
-		}
-		
-		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
-
-		this_thread::sleep_for(347ms);
-	}
-
-	*/
-
 	animation = true;
-	charToOverwrite = 992;
-	
-	while (animation) {
+	charToOverwrite = 992;	
+	while (animation) {			//Erase Splash Screen
 		
 		screen[charToOverwrite] = char(32);
 		charToOverwrite++;
@@ -247,82 +231,77 @@ int main() {
 		}
 		
 	}
-	
+
+	  //			  //
+	 // Start Screen //
+	//				//
 	bool startScreen = true;
-
-	bool startToggle = true;
-
-	int frameCount = 1;
+	bool startScreenToggle = true;
+	int startScreenFrameCount = 111;
 
 	this_thread::sleep_for(777ms);
 
-	aNewChipInstance->start();
-	snakeFruitInstance->start();
-
-	system->update(); //begin start screen playback
+	aNewChipInstance->start();	//begin start screen playback	
+	system->update();
 
 	while (startScreen) {
 
-		for (int u = 0; u < nScreenHeight * nScreenWidth; u++) {
+		/*for (int u = 0; u < nScreenHeight * nScreenWidth; u++) {	//clear display each frame
 
 			screenString[u] = char(32);
 
-		}
+		}*/
 
-		screenString.replace((7 * 80) + 20, 38,   "__    _    _              _  __   ____");
+		screenString.replace((7 * 80) + 20, 38,   "__    _    _              _  __   ____");		//draw logo each frame
 		screenString.replace((8 * 80) + 19, 40,  "/ /   | \\  | |     /\\     | |/ /  |  __|");
 		screenString.replace((9 * 80) + 19, 39,  "\\ \\   |  \\ | |    /  \\    | | /   | |__");
 		screenString.replace((10 * 80) + 20, 39,  "\\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
 		screenString.replace((11 * 80) + 20, 38,  "/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
 		screenString.replace((12 * 80) + 19, 40, "/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 
-		screenString.replace((22 * 80) + 33, 14, "Citrus Studios");
+		screenString.replace((22 * 80) + 33, 14, "Citrus Studios");		//draw studio name each frame
 
-		if (frameCount == 111 && !startToggle) {
-			startToggle = true;
-			frameCount = 0;
-			
-			snakeFruitInstance->start();
+		if (startScreenFrameCount == 111) {
+			switch (startScreenToggle) {
+			case true:
+				startScreenToggle = false;
+				screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
-			system->update(); //play snakefruitinstance sound for flashing "press start" button
+				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button
+				system->update();
+				break;
+			case false:
+				startScreenToggle = true;
+				screenString.replace((18 * 80) + 31, 18, "                  ");
+
+				break;
+			}
+
+			startScreenFrameCount = 0;
 		}
 
-		if (startToggle && frameCount == 111) {
-			startToggle = false;
-			frameCount = 0;
-		}
-
-		if (startToggle) {
-			screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");
-			
-		}
-
-		else { 
-			
-			screenString.replace((18 * 80) + 31, 18, "                  ");
-		}
-
-		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
+		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {	//convert string buffer to char[] buffer
 			screen[u] = screenString[u];
-
 		}
 
-		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);	//display the char[] buffer
 					
-		frameCount++;
+		startScreenFrameCount++;
 
 		this_thread::sleep_for(7ms);
 
 		if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 
+			startScreen = false;	//begin to exit start screen when Z key is pressed
+
 			aNewChipInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 			startButtonInstance->start();
 
-			system->update();	//play startbutton sound for pressing 'Z' at start screen
+			system->update();	//play startbutton sound
 
 			
 
-			//animation
+			//Game Start animation//
 
 			screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");
 
@@ -480,7 +459,7 @@ int main() {
 
 			//exit
 
-			startScreen = false;
+			
 
 		}
 	}
@@ -489,30 +468,31 @@ int main() {
 
 	this_thread::sleep_for(1389ms);
 
+	//some random maths and stuff//
 	//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	// 40 x 6
 	// 25 - 6 = 19
 	//19 / 2 = 9.5
 	//9 low, 40 in
 	//8 low, 39 in
+
 	do {
+		  //						  //
+		 // PRE-NEW-GAME PREPARATION //
+		//						    //		
 
-		//PRE-GAME PREP///////////////////////////////
+		srand(time(0));	//seed the RNG using system time
+		int currentFruit[2]{ rand() % 25, rand() % 25 };	//location of the current fruit on the game grid [x,y]
 
-		//bool startKey = false;
+		gameLose = false;	//reset game lose condition
 
-		srand(time(0));			//seed the RNG using system time
+		int snekHead[2] = { 12,12 };	//the snek's head position on the play grid [x,y]
+		
+		int snekLength = 10;	//current length of the snek (used to calculate current Score as well)
 
-		gameLose = false;		//reset game lose condition
+		int frameRate = 10;	//frame rate setting
 
-		snekHead[0] = 12;		//reset player position to center
-		snekHead[1] = 12;
-
-		snekLength = 0;			//reset snek length
-
-		frameRate = 10;		//reset the framerate
-
-		styleCounter = 0;	//reset the STYLE counter
+		int styleCounter = 0;	//current STYLE Score
 
 		//currentTrap = 0;
 		//r = 0;
@@ -535,26 +515,22 @@ int main() {
 
 		}
 
+		//FMOD-Related Variables//
 		int snekMoveTimelinePosition = 0;	//FMOD snakemovesound timeline position
-
 		int snekMoveTimelinePositionMax = 200;
-
 		bool isScoreUnder11 = true;
-
 		float snakeMoveReverbLevel = 0.0f;
-
 		float proximityToFruit;
-		//proximitySoundInstance->start();
-
 		bool wasZKeyHeld = false;
 
-		while (gameLose == false) {		//GAME LOOP/////////////////////////////////////////////////////////////////////////
+		  //		   //
+		 // GAME LOOP //
+		//			 //
+		while (gameLose == false) {			
 
-			
-
-
-			//SET FRAMERATE//
-
+			  //			   //
+			 // SET FRAMERATE //
+			//				 //
 			if (snekLength < 11) {
 				frameRate = 10;
 
@@ -595,126 +571,93 @@ int main() {
 
 			}
 
-			//GAME CLOCK////////////////////////
-
+			  //			//
+			 // TICK CLOCK //
+			//			  //
 			for (int q = 0; q < frameRate; q++) {
-				if (snekLength == 0) {
-					this_thread::sleep_for(27ms);	//25ms per tick
 
+				if (snekLength == 0) {
+					this_thread::sleep_for(27ms);
 				}
 
 				else if (snekLength > 0 && snekLength < 7) {
 					this_thread::sleep_for(17ms);
-
 				}
 
 				else if (snekLength > 6 && snekLength < 11) {
 					this_thread::sleep_for(15ms);
-
 				}
 
 				else if (snekLength > 10 && snekLength < 20) {
 					this_thread::sleep_for(14ms);
-
 				}
 
 				else if (snekLength > 19 && snekLength < 30) {
 					this_thread::sleep_for(13ms);
-
 				}
 
 				else if (snekLength > 29 && snekLength < 40) {
 					this_thread::sleep_for(12ms);
-
 				}
 
 				else if (snekLength > 39 && snekLength < 50) {
 					this_thread::sleep_for(11ms);
-
 				}
 
 				else if (snekLength > 49 && snekLength < 65) {
 					this_thread::sleep_for(10ms);
-
 				}
 
 				else if (snekLength > 64 && snekLength < 80) {
 					this_thread::sleep_for(9ms);
-
 				}
 
 				else if (snekLength > 79 && snekLength < 100) {
 					this_thread::sleep_for(8ms);
-
 				}
 
 				else if (snekLength > 99) {
 					this_thread::sleep_for(7ms);
-
 				}
-
-				currentTick++;
-
-				//READ PLAYER INPUT//
-
+				
+				  //				   //
+				 // READ PLAYER INPUT //
+				//					 //
 				for (int k = 0; k < 4; k++) {
 					arrowKeys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
 
 				}
 
+				zKey = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10;
 				
-				/*
-				//PAUSE/////
 
-				startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
-				if (startKey) {
-					bool paused = true;
-					this_thread::sleep_for(777ms);
-					while (paused) {
-						startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
-						if (startKey) {
-							paused = false;
-						}
-					}
-				}
-
-				*/
-
-				//CHECK + SET DIRECTION//
-
+				  //					   //
+				 // CHECK + SET DIRECTION //
+				//						 //
 				if (arrowKeys[0] && holdW == false && direction != 'e') {
 					direction1 = 'w';
-
 				}
 
 				else if (arrowKeys[1] && holdN == false && direction != 's') {
 					direction1 = 'n';
-
 				}
 
 				else if (arrowKeys[2] && holdE == false && direction != 'w') {
 					direction1 = 'e';
-
 				}
 
 				else if (arrowKeys[3] && holdS == false && direction != 'n') {
 					direction1 = 's';
-
 				}
 
-				
-
+				currentTick++;
 			}
-
 			
+			currentFrame++;		
 
-			//COUNT FRAMES////////////////////
+			//REFRESH DISPLAY//
 
-			currentFrame++;
-
-			//REFRESH DISPLAY/////////////////////////
-
-			for (int x = 0; x < 25; x++) {			//reset the game display
+			for (int x = 0; x < 25; x++) {
 
 				for (int y = 0; y < 25; y++) {
 
@@ -722,12 +665,13 @@ int main() {
 				}
 			}
 
-			//PASS MOVEMENT ON TO BODY SEGMENTS//
-
+			  //					//
+			 // MOVE BODY SEGMENTS //
+			//					  //
 			for (int r = snekLength; r > 0; r--) {
 
 				if (r > 1) {
-					snekBody[r][0] = snekBody[r - 1][0];	//move all segments except the head and the following segment
+					snekBody[r][0] = snekBody[r - 1][0];	//move all segments except the segment right before the head
 					snekBody[r][1] = snekBody[r - 1][1];
 
 				}
@@ -739,8 +683,9 @@ int main() {
 				}
 			}
 
-			//CHECK + SET DIRECTION//
-
+			  //					   //
+			 // CHECK + SET DIRECTION //
+			//						 //
 			if (direction1 == 'w' && holdW == false && direction != 'e') {
 				direction = 'w';
 
@@ -777,122 +722,96 @@ int main() {
 				holdN = false;
 			}
 
-			//PLACE SNEK BODY INTO DISPLAY ARRAY//
-
+			  //								    //
+			 // PLACE SNEK BODY INTO DISPLAY ARRAY //
+			//									  //
 			for (int r = snekLength; r > 0; r--) {
 				display[snekBody[r][0]][snekBody[r][1]] = '7';
 
 			}
 
-			//ADD STYLE POINTS//
-
-			if (direction == 'e' && ((zKey) && display[snekHead[0] + 1][snekHead[1]] == '8' || display[snekHead[0] + 1][snekHead[1]] == 'X' || display[snekHead[0] + 1][snekHead[1]] == '7' && display[snekHead[0] + 2][snekHead[1]] == 'z' || display[snekHead[0] + 2][snekHead[1]] == '+')) {
+			  //				  //
+			 // ADD STYLE POINTS //
+			//					//
+			
+			//E
+			if (direction == 'e' && ((zKey) && display[snekHead[0] + 1][snekHead[1]] == '8' || display[snekHead[0] + 1][snekHead[1]] == 'X' || display[snekHead[0] + 1][snekHead[1]] == '7' && display[snekHead[0] + 2][snekHead[1]] == 'z' || display[snekHead[0] + 2][snekHead[1]] == '+' && snekHead[0] + 2 < 25)) {
 				styleCounter++;
 				styleCounter++;
-
-			}	//E
-
-			if (direction == 'e' && ((display[snekHead[0] + 1][snekHead[1] + 1] == '8' || display[snekHead[0] + 1][snekHead[1] + 1] == 'X' || display[snekHead[0] + 1][snekHead[1] + 1] == '7') && (display[snekHead[0] + 1][snekHead[1] - 1] == '8' || display[snekHead[0] + 1][snekHead[1] - 1] == 'X' || display[snekHead[0] + 1][snekHead[1] - 1] == '7') && (display[snekHead[0] + 1][snekHead[1]] != '8' && display[snekHead[0] + 1][snekHead[1]] != 'X' && display[snekHead[0] + 1][snekHead[1]] != '7'))) {
-				styleCounter++;
-
-			}	//E
-
-			//////////////////////
-
-			if (direction == 'w' && ((zKey) && display[snekHead[0] - 1][snekHead[1]] == '8' || display[snekHead[0] - 1][snekHead[1]] == 'X' || display[snekHead[0] - 1][snekHead[1]] == '7' && display[snekHead[0] - 2][snekHead[1]] == 'z' || display[snekHead[0] - 2][snekHead[1]] == '+')) {
-				styleCounter++;
-				styleCounter++;
-
-			}	//W
-
-			if (direction == 'w' && ((display[snekHead[0] - 1][snekHead[1] + 1] == '8' || display[snekHead[0] - 1][snekHead[1] + 1] == 'X' || display[snekHead[0] - 1][snekHead[1] + 1] == '7') && (display[snekHead[0] - 1][snekHead[1] - 1] == '8' || display[snekHead[0] - 1][snekHead[1] - 1] == 'X' || display[snekHead[0] - 1][snekHead[1] - 1] == '7') && (display[snekHead[0] - 1][snekHead[1]] != '8' && display[snekHead[0] - 1][snekHead[1]] != 'X' && display[snekHead[0] - 1][snekHead[1]] != '7'))) {
-				styleCounter++;
-
-			}	//W
-
-			///////////////////////
-
-			if (direction == 's' && ((zKey) && display[snekHead[0]][snekHead[1] + 1] == '8' || display[snekHead[0]][snekHead[1] + 1] == 'X' || display[snekHead[0]][snekHead[1] + 1] == '7' && display[snekHead[0]][snekHead[1] + 2] == 'z' || display[snekHead[0]][snekHead[1] + 2] == '+')) {
-				styleCounter++;
-				styleCounter++;
-
-			}	//S
-
-			if (direction == 's' && ((display[snekHead[0] + 1][snekHead[1] + 1] == '8' || display[snekHead[0] + 1][snekHead[1] + 1] == 'X' || display[snekHead[0] + 1][snekHead[1] + 1] == '7') && (display[snekHead[0] - 1][snekHead[1] + 1] == '8' || display[snekHead[0] - 1][snekHead[1] + 1] == 'X' || display[snekHead[0] - 1][snekHead[1] + 1] == '7') && (display[snekHead[0]][snekHead[1] + 1] != '8' && display[snekHead[0]][snekHead[1] + 1] != 'X' && display[snekHead[0]][snekHead[1] + 1] != '7'))) {
-				styleCounter++;
-
-			}	//S
-
-			////////////////////////
-
-			if (direction == 'n' && ((zKey) && display[snekHead[0]][snekHead[1] - 1] == '8' || display[snekHead[0]][snekHead[1] - 1] == 'X' || display[snekHead[0]][snekHead[1] - 1] == '7' && display[snekHead[0]][snekHead[1] - 2] == 'z' || display[snekHead[0]][snekHead[1] - 2] == '+')) {
-				styleCounter++;
-				styleCounter++;
-
-			}	//N
-
-			if (direction == 'n' && ((display[snekHead[0] + 1][snekHead[1] - 1] == '8' || display[snekHead[0] + 1][snekHead[1] - 1] == 'X' || display[snekHead[0] + 1][snekHead[1] - 1] == '7') && (display[snekHead[0] - 1][snekHead[1] - 1] == '8' || display[snekHead[0] - 1][snekHead[1] - 1] == 'X' || display[snekHead[0] - 1][snekHead[1] - 1] == '7') && (display[snekHead[0]][snekHead[1] - 1] != '8' && display[snekHead[0]][snekHead[1] - 1] != 'X' && display[snekHead[0]][snekHead[1] - 1] != '7'))) {
-				styleCounter++;
-
-			}	//N
-
-			////////////add high style//
-
-			if (styleCounter > styleHighScore) {
-				styleHighScore++;
-
 			}
 
+			if (direction == 'e' && ((display[snekHead[0] + 1][snekHead[1] + 1] == '8' || display[snekHead[0] + 1][snekHead[1] + 1] == 'X' || display[snekHead[0] + 1][snekHead[1] + 1] == '7') && (display[snekHead[0] + 1][snekHead[1] - 1] == '8' || display[snekHead[0] + 1][snekHead[1] - 1] == 'X' || display[snekHead[0] + 1][snekHead[1] - 1] == '7')) && (display[snekHead[0] + 1][snekHead[1]] == 'z' || display[snekHead[0] + 1][snekHead[1]] == '+')) {
+				styleCounter++;
+			}
 
-			//MOVE PLAYER//
+			//W
+			if (direction == 'w' && ((zKey) && display[snekHead[0] - 1][snekHead[1]] == '8' || display[snekHead[0] - 1][snekHead[1]] == 'X' || display[snekHead[0] - 1][snekHead[1]] == '7' && display[snekHead[0] - 2][snekHead[1]] == 'z' || display[snekHead[0] - 2][snekHead[1]] == '+' && snekHead[0] - 2 >= 0)) {
+				styleCounter++;
+				styleCounter++;
+			}
 
+			if (direction == 'w' && ((display[snekHead[0] - 1][snekHead[1] + 1] == '8' || display[snekHead[0] - 1][snekHead[1] + 1] == 'X' || display[snekHead[0] - 1][snekHead[1] + 1] == '7') && (display[snekHead[0] - 1][snekHead[1] - 1] == '8' || display[snekHead[0] - 1][snekHead[1] - 1] == 'X' || display[snekHead[0] - 1][snekHead[1] - 1] == '7')) && (display[snekHead[0] - 1][snekHead[1]] == 'z' || display[snekHead[0] - 1][snekHead[1]] == '+')) {
+				styleCounter++;
+			}
+
+			//S
+			if (direction == 's' && ((zKey) && display[snekHead[0]][snekHead[1] + 1] == '8' || display[snekHead[0]][snekHead[1] + 1] == 'X' || display[snekHead[0]][snekHead[1] + 1] == '7' && display[snekHead[0]][snekHead[1] + 2] == 'z' || display[snekHead[0]][snekHead[1] + 2] == '+' && snekHead[1] + 2 < 25)) {
+				styleCounter++;
+				styleCounter++;
+			}
+
+			if (direction == 's' && ((display[snekHead[0] + 1][snekHead[1] + 1] == '8' || display[snekHead[0] + 1][snekHead[1] + 1] == 'X' || display[snekHead[0] + 1][snekHead[1] + 1] == '7') && (display[snekHead[0] - 1][snekHead[1] + 1] == '8' || display[snekHead[0] - 1][snekHead[1] + 1] == 'X' || display[snekHead[0] - 1][snekHead[1] + 1] == '7')) && (display[snekHead[0]][snekHead[1] + 1] == 'z' || display[snekHead[0]][snekHead[1] + 1] == '+')) {
+				styleCounter++;
+			}
+
+			//N
+			if (direction == 'n' && ((zKey) && display[snekHead[0]][snekHead[1] - 1] == '8' || display[snekHead[0]][snekHead[1] - 1] == 'X' || display[snekHead[0]][snekHead[1] - 1] == '7' && display[snekHead[0]][snekHead[1] - 2] == 'z' || display[snekHead[0]][snekHead[1] - 2] == '+' && snekHead[1] - 2 >= 0)) {
+				styleCounter++;
+				styleCounter++;
+			}
+
+			if (direction == 'n' && ((display[snekHead[0] + 1][snekHead[1] - 1] == '8' || display[snekHead[0] + 1][snekHead[1] - 1] == 'X' || display[snekHead[0] + 1][snekHead[1] - 1] == '7') && (display[snekHead[0] - 1][snekHead[1] - 1] == '8' || display[snekHead[0] - 1][snekHead[1] - 1] == 'X' || display[snekHead[0] - 1][snekHead[1] - 1] == '7')) && (display[snekHead[0]][snekHead[1] - 1] == 'z' || display[snekHead[0]][snekHead[1] - 1] == '+')) {
+				styleCounter++;
+			}
+					   			
+			  //			 //
+			 // MOVE PLAYER //
+			//			   //
 			if (direction == 'e') {
 				snekHead[0]++;
-
-				if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
+				
+				if (zKey) {
 					snekHead[0]++;
-
 				}
-
-
 			}
 
 			else if (direction == 'w') {
 				snekHead[0]--;
 
-				if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
+				if (zKey) {
 					snekHead[0]--;
-
 				}
-
-
 			}
 
 			else if (direction == 's') {
 				snekHead[1]++;
 
-
-				if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
+				if (zKey) {
 					snekHead[1]++;
-
 				}
-
-
 			}
 
 			else if (direction == 'n') {
 				snekHead[1]--;
 
-				if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
+				if (zKey) {
 					snekHead[1]--;
-
 				}
-
-
 			}
 
-			//DETECT IF PLAYER HAS HIT MAP EDGE//
-
+			  //								   //
+			 // DETECT IF PLAYER HAS HIT MAP EDGE //
+			//									 //
 			if (snekHead[0] < 0 || snekHead[0] > 24 || snekHead[1] < 0 || snekHead[1] > 24) {
 				gameLose = true;
 
@@ -903,8 +822,9 @@ int main() {
 						
 			}
 
-			//DETECT IF PLAYER HAS HIT THEMSELVES//
-
+			  //									 //
+			 // DETECT IF PLAYER HAS HIT THEMSELVES //
+			//									   //
 			if (display[snekHead[0]][snekHead[1]] == '7' || display[snekHead[0]][snekHead[1]] == 'X') {
 				gameLose = true;
 
@@ -912,20 +832,30 @@ int main() {
 				system->update();
 
 				break;
+			}
+
+			  //						 //
+			 // UPDATE STYLE HIGH SCORE //
+			//						   //
+			if (styleCounter > styleHighScore) {
+				styleHighScore++;
 
 			}
 
-			//DETECT IF PLAYER HAS HIT FRUIT/////
+			  //								  //
+			 // Calculate Proximity to the Fruit //
+			//									//
+			proximityToFruit = 1.0f - ((abs(snekHead[0] - currentFruit[0]) + abs(snekHead[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
 
+			  //								//
+			 // DETECT IF PLAYER HAS HIT FRUIT //
+			//								  //
 			if (snekHead[0] == currentFruit[0] && snekHead[1] == currentFruit[1]) {
+				
 				snekLength++;
-				//snekMoveTimelinePosition += 200;
-				
-				
+
 				if (snekLength == 11) {
 					snakeFruitInstance11->start();	//FMOD
-					//snakeFruitInstance11->setParameterByName("Delay Wet", 1.0f);
-					//snakeFruitInstance11->setParameterByName("Pitch Shifter Send", 1.0f);
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.125f;
 					isScoreUnder11 = false;
@@ -971,9 +901,10 @@ int main() {
 						break;
 				}
 
-				
-
-				if (snekLength > highScore) {		//set new high score
+				  //					//
+				 // SET NEW HIGH SCORE //
+				//					  //
+				if (snekLength > highScore) {
 					
 					highScore++;
 				}
@@ -989,8 +920,9 @@ int main() {
 								
 			}
 
-			else if ((zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snekLength > 10) {
-				snakeLungeInstance->start();	//FMOD				
+			else if (zKey && snekLength > 10) {
+				snakeLungeInstance->setPitch(proximityToFruit);
+				snakeLungeInstance->start();	//FMOD
 				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
 				if (!wasZKeyHeld) {
 					snekMoveTimelinePosition += 200;
@@ -1002,43 +934,38 @@ int main() {
 						
 				wasZKeyHeld = false;
 
+				snakeMoveInstance->setPitch(proximityToFruit);
 				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
 				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-
-				//FMOD::Studio:: snakeMoveInstancePlaybackState;
-				//snakeMoveInstance->getPlaybackState(snakeMoveInstancePlaybackState);
-
+				
 				if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED){
-					snakeMoveInstance->start();	//FMOD
 					
+					snakeMoveInstance->start();	//FMOD
+
 				}
 
 				snekMoveTimelinePosition += 200;
 
 				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+					
 					snekMoveTimelinePosition = 0;
 
 				}
 			}
-
-			//ADJUST PROXIMITY SOUND/////////////////////
-
-			proximityToFruit = 1.0f - ((abs(snekHead[0] - currentFruit[0]) + abs(snekHead[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+						
 			
-			snakeMoveInstance->setPitch(proximityToFruit);
-			//proximitySoundInstance->setParameterByName("Proximity Highpass", proximityToFruit);
 
-
-			//PLACE PLAYER INTO DISPLAY ARRAY////////////
+			//PLACE PLAYER INTO DISPLAY ARRAY//
 
 			display[snekHead[0]][snekHead[1]] = '8';
 
-			//PLACE FRUIT INTO DISPLAY ARRAY/////////////
+			//PLACE FRUIT INTO DISPLAY ARRAY//
 
 			display[currentFruit[0]][currentFruit[1]] = '+';
 
-			//DETERMINE TRAP LOCATIONS/////////////
-/*
+			
+/*			//DETERMINE TRAP LOCATIONS/////////////
+
 			if (currentTrap < snekLength) {
 				currentTrap++;
 
@@ -1149,90 +1076,72 @@ int main() {
 
 			}
 			*/
-			//DRAW SCREEN/////////////////////////////
-
-
-		
-
+			
+			  //			 //
+			 // DRAW SCREEN //	
+			//			   //
 			for (int t = 0; t < 25; t++) {
 				int q = 0;
-
-				//cout << endl;
 
 				for (q; q < 25; q++) {
 
 					if (display[q][t] == 'z') {
-						//cout << " ";
 						screenString[q + (80 * t)] = ' ';
 
 					}
 
 					else if (display[q][t] == '7') {
-						//cout << "8";
 						screenString[q + (80 * t)] = '8';
 					}
 
 					else if (display[q][t] == '8' && direction == 'n') {
-						//cout << "^";
 						screenString[q + (80 * t)] = '^';
 					}
 
 					else if (display[q][t] == '8' && direction == 's') {
-						//cout << "v";
 						screenString[q + (80 * t)] = 'v';
 					}
 
 					else if (display[q][t] == '8' && direction == 'w') {
-						//cout << "<";
 						screenString[q + (80 * t)] = '<';
 					}
 
 					else if (display[q][t] == '8' && direction == 'e') {
-						//cout << ">";
 						screenString[q + (80 * t)] = '>';
 					}
 
 					else {
-						//cout << display[q][t];
 						screenString[q + (80 * t)] = display[q][t];
 					}
 				}
 
-				//cout << "|";
 				screenString[q + (80 * t)] = '|';
 
 				if (t == 0 && q == 25) {
-					//cout << "	 __    _    _              _  __   ____";
 					screenString.replace(1 + q + (80 * t), 45, "       __    _    _              _  __   ____");
 				}
 
 				else if (t == 1 && q == 25) {
-					//cout << "	/ /   | \\  | |     /\\     | |/ /  |  __|";
 					screenString.replace(1 + q + (80 * t), 46, "      / /   | \\  | |     /\\     | |/ /  |  __|");
 				}
 				
 				else if (t == 2 && q == 25) {
-					//cout << "	\\ \\   |  \\ | |    /  \\    | | /   | |__";
 					screenString.replace(1 + q + (80 * t), 45, "      \\ \\   |  \\ | |    /  \\    | | /   | |__");
 				}
 
 				else if (t == 3 && q == 25) {
-					//cout << "	 \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|";
 					screenString.replace(1 + q + (80 * t), 46, "       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
 				}
 
 				else if (t == 4 && q == 25) {
-					//cout << "	 / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__";
 					screenString.replace(1 + q + (80 * t), 45, "       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
 				}
 
 				else if (t == 5 && q == 25) {
-					//cout << "       /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|";
 					screenString.replace(1 + q + (80 * t), 46, "      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 				}
 
 				else if (t == 7 && q == 25) {
-					//cout << "       SCORE: " << snekLength << "     HIGH SCORE: " << highScore;
 					
 					screenString.replace(1 + q + (80 * t), 14, "       SCORE: ");
 					
@@ -1251,7 +1160,7 @@ int main() {
 				}
 
 				else if (t == 9 && q == 25 && snekLength > 10) {
-					//cout << "       STYLE: " << styleCounter << "     HIGH STYLE: " << styleHighScore;
+
 					screenString.replace(1 + q + (80 * t), 14, "       STYLE: ");
 
 					string styleCounterString = to_string(styleCounter);
@@ -1267,7 +1176,6 @@ int main() {
 				}
 
 				else if (t == 17 && q == 25) {
-					//cout << "	use arrow keys ^ v < > to control";
 					screenString.replace(8 + q + (80 * t), 33, "use arrow keys ^ v < > to control");
 				}
 
@@ -1278,30 +1186,22 @@ int main() {
 				*/
 
 				else if (t == 21 && q == 25 && snekLength > 10) {
-					//cout << "           use Z key to lunge";
 					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
 				}
-
-				/*else if (t == 21 && q == 25 && snekLength <= 10) {
-					//cout << "           use Z key to lunge";
-					screenString.replace(12 + q + (80 * t), 18, "                  ");
-				}*/
 
 			}
 
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 				screen[u] = screenString[u];
-
 			}
 
 			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
-			system->update(); //play FMOD system
+			
+			system->update(); //update FMOD system
 		}
 
 		this_thread::sleep_for(1347ms);
 		
-		//cout << "GAME OVER\n\nPlay again? (Y/N)\n";
-
 		screenString.replace(14 + 25 + (80 * 21), 18, "                  ");
 		screenString.replace(8 + 25 + (80 * 17), 33, "                                 ");
 
@@ -1329,7 +1229,6 @@ int main() {
 			while (gameOverMessage) {
 								
 				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
-
 					gameOverMessage = false;
 					playAgain = true;
 					
@@ -1340,7 +1239,6 @@ int main() {
 
 
 				if (xKey = (0x8000 & GetAsyncKeyState((unsigned char)("X"[0]))) != 0) {
-
 					gameOverMessage = false;
 					playAgain = false;
 
@@ -1359,71 +1257,67 @@ int main() {
 }
 
 
+  //		  //
+ // JUNKYARD //
+//			//
+/*for (int q = 0; q < 25; q++) {
 
+	cout << q << " = " << display[q] << endl;
 
+}*/
 
+/*for (int q = 0; q < 25; q++) {
 
+	display[q] = 0;
 
+}*/
 
-/////////JUNKYARD//////////////
+/*
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //1 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //2 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //3 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //4 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //5 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //6 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //7 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //8 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //9 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //10
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //11
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //12
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //13
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //14
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //15
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //16
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //17
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //18
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //19
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //20
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //21
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //22
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //23
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //24
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++; //25
 
+}
+*/
 
+/*
+//PAUSE/////
 
-	/*for (int q = 0; q < 25; q++) {
+startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
+if (startKey) {
+	bool paused = true;
+	this_thread::sleep_for(777ms);
+	while (paused) {
+		startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
+		if (startKey) {
+			paused = false;
+		}
+	}
+}
 
-		cout << q << " = " << display[q] << endl;
-
-	}*/
-
-	/*for (int q = 0; q < 25; q++) {
-
-		display[q] = 0;
-
-	}*/
-
-	//display[snekHead[0]] = snekHead[1];
-
-
-
-	//for (int q = 0; q < 1;) {
-
-		//int z = 0;
-
-	//*1 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*2 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*3 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*4 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*5 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*6 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*7 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*8 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*9 */ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*10*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*11*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*12*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*13*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*14*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*15*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*16*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*17*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*18*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*19*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*20*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*21*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*22*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*23*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*24*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-	//*25*/ cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snekHead[0] == z) { cout << "="; } z++;
-
-	//}
-
-
-
-
-
-
-
-
+*/
 
 /*
 if (snekHead[0] >= 25) {
@@ -1437,19 +1331,7 @@ else if (snekHead[0] <= 1) {
 }
 */
 
-
-
-/*
-
-Sleep(frameRate);
-
-*/
-
-
 /*if (snekHead[0] - 1 < 0 && direction == 'w' || snekHead[0] + 1 > 25 && direction == 'e' || snekHead[1] - 1 < 0 && direction == 'n' || snekHead[1] + 1 > 25 && direction == 's') {
 				gameLose = true;
 
 			}*/
-
-
-			//int frameRate = 250;			//measured in ms
