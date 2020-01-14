@@ -35,11 +35,15 @@ using namespace std;
 
 //LOGIC VARIABLES
 char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, }
+int snekHead[2] = { 12,12 };	//the snek's head position on the play grid [x,y]
+int snekLength = 0;				//current length of the snek (used to calculate current Score as well)
 int snekBody[625][2];			//the snek's body segments on the play grid [segment][x,y]
 bool gameLose;					//current Game Lose state
 bool playAgain;					//decides whether or not to play again after losing
 int highScore = 0;				//current High Score
+int styleCounter = 0;			//current STYLE Score
 int styleHighScore = 0;			//current Style High Score
+int currentFruit[2];			//location of the current fruit on the game grid [x,y]
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -52,6 +56,7 @@ bool holdS = false;				//"		"
 bool holdN = false;				//"		"
 
 //DISPLAY VARIABLES
+int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
 int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
@@ -481,18 +486,18 @@ int main() {
 		 // PRE-NEW-GAME PREPARATION //
 		//						    //		
 
-		srand(time(0));	//seed the RNG using system time
-		int currentFruit[2]{ rand() % 25, rand() % 25 };	//location of the current fruit on the game grid [x,y]
-
 		gameLose = false;	//reset game lose condition
 
-		int snekHead[2] = { 12,12 };	//the snek's head position on the play grid [x,y]
-		
-		int snekLength = 0;	//current length of the snek (used to calculate current Score as well)
+		srand(time(0));	//seed the RNG using system time
+		currentFruit[0] = rand() % 25;
+		currentFruit[1] = rand() % 25;		
 
-		int frameRate = 10;	//frame rate setting
+		snekHead[0] = 12;
+		snekHead[1] = 12;		
+		snekLength = 0;
+		styleCounter = 0;
 
-		int styleCounter = 0;	//current STYLE Score
+		frameRate = 10;		
 
 		//currentTrap = 0;
 		//r = 0;
