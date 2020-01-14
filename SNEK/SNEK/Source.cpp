@@ -488,7 +488,7 @@ int main() {
 
 		int snekHead[2] = { 12,12 };	//the snek's head position on the play grid [x,y]
 		
-		int snekLength = 10;	//current length of the snek (used to calculate current Score as well)
+		int snekLength = 0;	//current length of the snek (used to calculate current Score as well)
 
 		int frameRate = 10;	//frame rate setting
 
