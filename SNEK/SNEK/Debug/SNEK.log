@@ -1,13 +1,1 @@
-﻿  Source.cpp
-c:\users\orangalang\source\repos\snekgit\snek 1.2\snek\source.cpp(165): warning C4244: 'initializing': conversion from 'time_t' to 'int', possible loss of data
-c:\users\orangalang\source\repos\snekgit\snek 1.2\snek\source.cpp(296): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-Source.obj : error LNK2019: unresolved external symbol "public: static enum FMOD_RESULT __stdcall FMOD::Studio::System::create(class FMOD::Studio::System * *,unsigned int)" (?create@System@Studio@FMOD@@SG?AW4FMOD_RESULT@@PAPAV123@I@Z) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::System::initialize(int,unsigned int,unsigned int,void *)" (?initialize@System@Studio@FMOD@@QAG?AW4FMOD_RESULT@@HIIPAX@Z) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::System::update(void)" (?update@System@Studio@FMOD@@QAG?AW4FMOD_RESULT@@XZ) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::System::getEvent(char const *,class FMOD::Studio::EventDescription * *)const " (?getEvent@System@Studio@FMOD@@QBG?AW4FMOD_RESULT@@PBDPAPAVEventDescription@23@@Z) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::System::loadBankFile(char const *,unsigned int,class FMOD::Studio::Bank * *)" (?loadBankFile@System@Studio@FMOD@@QAG?AW4FMOD_RESULT@@PBDIPAPAVBank@23@@Z) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::EventDescription::createInstance(class FMOD::Studio::EventInstance * *)const " (?createInstance@EventDescription@Studio@FMOD@@QBG?AW4FMOD_RESULT@@PAPAVEventInstance@23@@Z) referenced in function _main
-Source.obj : error LNK2019: unresolved external symbol "public: enum FMOD_RESULT __stdcall FMOD::Studio::EventInstance::start(void)" (?start@EventInstance@Studio@FMOD@@QAG?AW4FMOD_RESULT@@XZ) referenced in function _main
-C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x64\fmodL_vc.lib : warning LNK4272: library machine type 'x64' conflicts with target machine type 'x86'
-C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\studio\lib\x64\fmodstudioL_vc.lib : warning LNK4272: library machine type 'x64' conflicts with target machine type 'x86'
-C:\Users\Orangalang\source\repos\SNEKgit\SNEK 1.2\Debug\SNEK.exe : fatal error LNK1120: 7 unresolved externals
+﻿  SNEK.vcxproj -> E:\Users\Orangalang\source\repos\SNEK - Master\SNEK\Debug\SNEK.exe
