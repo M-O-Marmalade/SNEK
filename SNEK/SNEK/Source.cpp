@@ -1315,7 +1315,24 @@ int main() {
 				else if (t == 21 && q == 25 && highestCurrentLength > 10) {
 					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
 				}
+								
+			}
 
+			for (int pt = 0; pt < playerCount; pt++) {
+				switch (snek1[pt].direction_frame) {
+				case 'n':
+					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '^';
+					break;
+				case 's':
+					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'v';
+					break;
+				case 'e':
+					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '>';
+					break;
+				case 'w':
+					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '<';
+					break;
+				}
 			}
 
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
