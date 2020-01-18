@@ -45,16 +45,18 @@ int highScore = 0;				//current High Score
 int styleCounter = 0;			//current STYLE Score
 int styleHighScore = 0;			//current Style High Score
 int currentFruit[2];			//location of the current fruit on the game grid [x,y]
+int playerCount = 1;			//amount of players, can be increased at start screen
+int highestCurrentLength = 0;
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
 bool zKey;						//stores input from Z key
 //char direction1 = 's';			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
 //char direction = 's';			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
-bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
-bool holdE = false;				//"		"
-bool holdS = false;				//"		"
-bool holdN = false;				//"		"
+//bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
+//bool holdE = false;				//"		"
+//bool holdS = false;				//"		"
+//bool holdN = false;				//"		"
 
 //DISPLAY VARIABLES
 int frameRate = 10;				//frame rate setting
@@ -71,6 +73,10 @@ struct snek {
 	bool action_keys;
 	char direction_tick;
 	char direction_frame;
+	bool holdW = false;
+	bool holdE = false;
+	bool holdS = false;
+	bool holdN = false;
 };
 
 // UNUSED
@@ -260,6 +266,9 @@ int main() {
 	aNewChipInstance->start();	//begin start screen playback	
 	system->update();
 
+
+	
+	bool holdKey = false;
 	while (startScreen) {
 
 		/*for (int u = 0; u < nScreenHeight * nScreenWidth; u++) {	//clear display each frame
@@ -274,6 +283,8 @@ int main() {
 		screenString.replace((10 * 80) + 20, 39,  "\\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
 		screenString.replace((11 * 80) + 20, 38,  "/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
 		screenString.replace((12 * 80) + 19, 40, "/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
+
+		screenString.replace((20 * 80) + 34, 12, "Players: <" + to_string(playerCount) + ">");
 
 		screenString.replace((22 * 80) + 33, 14, "Citrus Studios");		//draw studio name each frame
 
@@ -305,6 +316,23 @@ int main() {
 		startScreenFrameCount++;
 
 		this_thread::sleep_for(7ms);
+
+		for (int o = 0; o < 4; o++) {
+			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
+						
+		}
+		if (arrowKeys[2] && playerCount < 4 && !holdKey) {
+			playerCount++;
+			holdKey++;
+		}
+		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
+			playerCount--;
+			holdKey++;
+		}
+		if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
+			holdKey = false;
+		}
+		
 
 		if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 
@@ -505,11 +533,31 @@ int main() {
 		//						    //		
 
 
-		snek snek1;
-		snek1.snek_head[0] = 12;
-		snek1.snek_head[1] = 12;
-		snek1.direction_tick = 's';
-		snek1.direction_frame = 's';
+		snek snek1[4];
+
+		snek1[0].snek_head[0] = 12;
+		snek1[0].snek_head[1] = 12;
+		snek1[0].direction_tick = 's';
+		snek1[0].direction_frame = 's';
+
+		snek1[1].snek_head[0] = 16;
+		snek1[1].snek_head[1] = 16;
+		snek1[1].direction_tick = 's';
+		snek1[1].direction_frame = 's';
+
+		snek1[2].snek_head[0] = 8;
+		snek1[2].snek_head[1] = 16;
+		snek1[2].direction_tick = 's';
+		snek1[2].direction_frame = 's';
+
+		snek1[3].snek_head[0] = 12;
+		snek1[3].snek_head[1] = 20;
+		snek1[3].direction_tick = 's';
+		snek1[3].direction_frame = 's';
+
+		
+
+		
 
 		gameLose = false;	//reset game lose condition
 
@@ -518,8 +566,13 @@ int main() {
 		currentFruit[1] = rand() % 25;		
 
 		//snekHead[0] = 12;
-		//snekHead[1] = 12;		
-		snek1.snek_length = 0;
+		//snekHead[1] = 12;	
+		for (int p = 0; p < playerCount; p++) {
+			snek1[p].snek_length = 0;
+		}
+
+		highestCurrentLength = 0;
+
 		styleCounter = 0;
 
 		frameRate = 10;		
@@ -561,42 +614,42 @@ int main() {
 			  //			   //
 			 // SET FRAMERATE //
 			//				 //
-			if (snek1.snek_length < 11) {
+			if (highestCurrentLength < 11) {
 				frameRate = 10;
 
 			}
 
-			else if (snek1.snek_length > 10 && snek1.snek_length < 30) {
+			else if (highestCurrentLength > 10 && highestCurrentLength < 30) {
 				frameRate = 9;
 
 			}
 
-			else if (snek1.snek_length > 29 && snek1.snek_length < 50) {
+			else if (highestCurrentLength > 29 && highestCurrentLength < 50) {
 				frameRate = 8;
 
 			}
 
-			else if (snek1.snek_length > 49 && snek1.snek_length < 72) {
+			else if (highestCurrentLength > 49 && highestCurrentLength < 72) {
 				frameRate = 7;
 
 			}
 
-			else if (snek1.snek_length > 71 && snek1.snek_length < 100) {
+			else if (highestCurrentLength > 71 && highestCurrentLength < 100) {
 				frameRate = 6;
 
 			}
 
-			else if (snek1.snek_length > 99 && snek1.snek_length < 123) {
+			else if (highestCurrentLength > 99 && highestCurrentLength < 123) {
 				frameRate = 5;
 
 			}
 
-			else if (snek1.snek_length > 122 && snek1.snek_length < 150) {
+			else if (highestCurrentLength > 122 && highestCurrentLength < 150) {
 				frameRate = 4;
 
 			}
 
-			else if (snek1.snek_length > 149) {
+			else if (highestCurrentLength > 149) {
 				frameRate = 3;
 
 			}
@@ -606,81 +659,94 @@ int main() {
 			//			  //
 			for (int q = 0; q < frameRate; q++) {
 
-				if (snek1.snek_length == 0) {
+				if (highestCurrentLength == 0) {
 					this_thread::sleep_for(27ms);
 				}
 
-				else if (snek1.snek_length > 0 && snek1.snek_length < 7) {
+				else if (highestCurrentLength > 0 && highestCurrentLength < 7) {
 					this_thread::sleep_for(17ms);
 				}
 
-				else if (snek1.snek_length > 6 && snek1.snek_length < 11) {
+				else if (highestCurrentLength > 6 && highestCurrentLength < 11) {
 					this_thread::sleep_for(15ms);
 				}
 
-				else if (snek1.snek_length > 10 && snek1.snek_length < 20) {
+				else if (highestCurrentLength > 10 && highestCurrentLength < 20) {
 					this_thread::sleep_for(14ms);
 				}
 
-				else if (snek1.snek_length > 19 && snek1.snek_length < 30) {
+				else if (highestCurrentLength > 19 && highestCurrentLength < 30) {
 					this_thread::sleep_for(13ms);
 				}
 
-				else if (snek1.snek_length > 29 && snek1.snek_length < 40) {
+				else if (highestCurrentLength > 29 && highestCurrentLength < 40) {
 					this_thread::sleep_for(12ms);
 				}
 
-				else if (snek1.snek_length > 39 && snek1.snek_length < 50) {
+				else if (highestCurrentLength > 39 && highestCurrentLength < 50) {
 					this_thread::sleep_for(11ms);
 				}
 
-				else if (snek1.snek_length > 49 && snek1.snek_length < 65) {
+				else if (highestCurrentLength > 49 && highestCurrentLength < 65) {
 					this_thread::sleep_for(10ms);
 				}
 
-				else if (snek1.snek_length > 64 && snek1.snek_length < 80) {
+				else if (highestCurrentLength > 64 && highestCurrentLength < 80) {
 					this_thread::sleep_for(9ms);
 				}
 
-				else if (snek1.snek_length > 79 && snek1.snek_length < 100) {
+				else if (highestCurrentLength > 79 && highestCurrentLength < 100) {
 					this_thread::sleep_for(8ms);
 				}
 
-				else if (snek1.snek_length > 99) {
+				else if (highestCurrentLength > 99) {
 					this_thread::sleep_for(7ms);
 				}
 				
 				  //				   //
 				 // READ PLAYER INPUT //
 				//					 //
-				for (int k = 0; k < 4; k++) {
-					snek1.directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
+				for (int k = 0; k < 4; k++) {	//player 1
+					snek1[0].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
 
 				}
 
-				snek1.action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && snek1.snek_length > 10;
+				for (int k = 0; k < 4; k++) {	//player 2
+					snek1[1].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("AWDS"[k]))) != 0;
+
+				}
+
+				snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && highestCurrentLength > 10;
+
+				snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0) && highestCurrentLength > 10;
 				
 
 				  //					   //
 				 // CHECK + SET DIRECTION //
 				//						 //
-				if (snek1.directional_keys[0] && holdW == false && snek1.direction_frame != 'e') {
-					snek1.direction_tick = 'w';
-				}
 
-				else if (snek1.directional_keys[1] && holdN == false && snek1.direction_frame != 's') {
-					snek1.direction_tick = 'n';
-				}
+				for (int pt = 0; pt < playerCount; pt++) {
 
-				else if (snek1.directional_keys[2] && holdE == false && snek1.direction_frame != 'w') {
-					snek1.direction_tick = 'e';
-				}
+					if (snek1[pt].directional_keys[0] && snek1[pt].holdW == false && snek1[pt].direction_frame != 'e') {
+						snek1[pt].direction_tick = 'w';
+					}
 
-				else if (snek1.directional_keys[3] && holdS == false && snek1.direction_frame != 'n') {
-					snek1.direction_tick = 's';
-				}
+					else if (snek1[pt].directional_keys[1] && snek1[pt].holdN == false && snek1[pt].direction_frame != 's') {
+						snek1[pt].direction_tick = 'n';
+					}
 
-				currentTick++;
+					else if (snek1[pt].directional_keys[2] && snek1[pt].holdE == false && snek1[pt].direction_frame != 'w') {
+						snek1[pt].direction_tick = 'e';
+					}
+
+					else if (snek1[pt].directional_keys[3] && snek1[pt].holdS == false && snek1[pt].direction_frame != 'n') {
+						snek1[pt].direction_tick = 's';
+					}
+
+				}					
+				
+				currentTick++;	
+				
 			}
 			
 			currentFrame++;		
@@ -698,169 +764,192 @@ int main() {
 			  //					//
 			 // MOVE BODY SEGMENTS //
 			//					  //
-			for (int r = snek1.snek_length; r > 0; r--) {
+			for (int pt = 0; pt < playerCount; pt++) {
 
-				if (r > 1) {
-					snek1.snek_body[r][0] = snek1.snek_body[r - 1][0];	//move all segments except the segment right before the head
-					snek1.snek_body[r][1] = snek1.snek_body[r - 1][1];
+				for (int r = snek1[pt].snek_length; r > 0; r--) {
 
+					if (r > 1) {
+						snek1[pt].snek_body[r][0] = snek1[pt].snek_body[r - 1][0];	//move all segments except the segment right before the head
+						snek1[pt].snek_body[r][1] = snek1[pt].snek_body[r - 1][1];
+
+					}
+
+					else {
+						snek1[pt].snek_body[r][0] = snek1[pt].snek_head[0];		//move the segment right before the head
+						snek1[pt].snek_body[r][1] = snek1[pt].snek_head[1];
+
+					}
 				}
 
-				else {
-					snek1.snek_body[r][0] = snek1.snek_head[0];		//move the segment right before the head
-					snek1.snek_body[r][1] = snek1.snek_head[1];
-
-				}
 			}
 
 			  //					   //
 			 // CHECK + SET DIRECTION //
 			//						 //
-			if (snek1.direction_tick == 'w' && holdW == false && snek1.direction_frame != 'e') {
-				snek1.direction_frame = 'w';
+			for (int pt = 0; pt < playerCount; pt++) {
 
-				holdW = true;
-				holdE = false;
-				holdS = false;
-				holdN = false;
-			}
+				if (snek1[pt].direction_tick == 'w' && snek1[pt].holdW == false && snek1[pt].direction_frame != 'e') {
+					snek1[pt].direction_frame = 'w';
 
-			else if (snek1.direction_tick == 'n' && holdN == false && snek1.direction_frame != 's') {
-				snek1.direction_frame = 'n';
+					snek1[pt].holdW = true;
+					snek1[pt].holdE = false;
+					snek1[pt].holdS = false;
+					snek1[pt].holdN = false;
+				}
 
-				holdN = true;
-				holdE = false;
-				holdS = false;
-				holdW = false;
-			}
+				else if (snek1[pt].direction_tick == 'n' && snek1[pt].holdN == false && snek1[pt].direction_frame != 's') {
+					snek1[pt].direction_frame = 'n';
 
-			else if (snek1.direction_tick == 'e' && holdE == false && snek1.direction_frame != 'w') {
-				snek1.direction_frame = 'e';
+					snek1[pt].holdN = true;
+					snek1[pt].holdE = false;
+					snek1[pt].holdS = false;
+					snek1[pt].holdW = false;
+				}
 
-				holdE = true;
-				holdW = false;
-				holdS = false;
-				holdN = false;
-			}
+				else if (snek1[pt].direction_tick == 'e' && snek1[pt].holdE == false && snek1[pt].direction_frame != 'w') {
+					snek1[pt].direction_frame = 'e';
 
-			else if (snek1.direction_tick == 's' && holdS == false && snek1.direction_frame != 'n') {
-				snek1.direction_frame = 's';
+					snek1[pt].holdE = true;
+					snek1[pt].holdW = false;
+					snek1[pt].holdS = false;
+					snek1[pt].holdN = false;
+				}
 
-				holdS = true;
-				holdE = false;
-				holdW = false;
-				holdN = false;
+				else if (snek1[pt].direction_tick == 's' && snek1[pt].holdS == false && snek1[pt].direction_frame != 'n') {
+					snek1[pt].direction_frame = 's';
+
+					snek1[pt].holdS = true;
+					snek1[pt].holdE = false;
+					snek1[pt].holdW = false;
+					snek1[pt].holdN = false;
+				}
 			}
 
 			  //								    //
 			 // PLACE SNEK BODY INTO DISPLAY ARRAY //
 			//									  //
-			for (int r = snek1.snek_length; r > 0; r--) {
-				display[snek1.snek_body[r][0]][snek1.snek_body[r][1]] = '7';
+			for (int pt = 0; pt < playerCount; pt++) {
 
+				for (int r = snek1[pt].snek_length; r > 0; r--) {
+					display[snek1[pt].snek_body[r][0]][snek1[pt].snek_body[r][1]] = '7';
+
+				}
 			}
 
 			  //				  //
 			 // ADD STYLE POINTS //
 			//					//
-			
-			//E
-			if (snek1.direction_frame == 'e' && ((snek1.action_keys) && display[snek1.snek_head[0] + 1][snek1.snek_head[1]] == '8' || display[snek1.snek_head[0] + 1][snek1.snek_head[1]] == 'X' || display[snek1.snek_head[0] + 1][snek1.snek_head[1]] == '7' && display[snek1.snek_head[0] + 2][snek1.snek_head[1]] == 'z' || display[snek1.snek_head[0] + 2][snek1.snek_head[1]] == '+' && snek1.snek_head[0] + 2 < 25)) {
-				styleCounter++;
-				styleCounter++;
-			}
+			for (int pt = 0; pt < playerCount; pt++) {
+				//E
+				if (snek1[pt].direction_frame == 'e' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] + 2 < 25)) {
+					styleCounter++;
+					styleCounter++;
+				}
 
-			if (snek1.direction_frame == 'e' && ((display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == '8' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == 'X' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == '7') && (display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == '8' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == 'X' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == '7')) && (display[snek1.snek_head[0] + 1][snek1.snek_head[1]] == 'z' || display[snek1.snek_head[0] + 1][snek1.snek_head[1]] == '+')) {
-				styleCounter++;
-			}
+				if (snek1[pt].direction_frame == 'e' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '+')) {
+					styleCounter++;
+				}
 
-			//W
-			if (snek1.direction_frame == 'w' && ((snek1.action_keys) && display[snek1.snek_head[0] - 1][snek1.snek_head[1]] == '8' || display[snek1.snek_head[0] - 1][snek1.snek_head[1]] == 'X' || display[snek1.snek_head[0] - 1][snek1.snek_head[1]] == '7' && display[snek1.snek_head[0] - 2][snek1.snek_head[1]] == 'z' || display[snek1.snek_head[0] - 2][snek1.snek_head[1]] == '+' && snek1.snek_head[0] - 2 >= 0)) {
-				styleCounter++;
-				styleCounter++;
-			}
+				//W
+				if (snek1[pt].direction_frame == 'w' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] - 2 >= 0)) {
+					styleCounter++;
+					styleCounter++;
+				}
 
-			if (snek1.direction_frame == 'w' && ((display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == '8' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == 'X' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == '7') && (display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == '8' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == 'X' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == '7')) && (display[snek1.snek_head[0] - 1][snek1.snek_head[1]] == 'z' || display[snek1.snek_head[0] - 1][snek1.snek_head[1]] == '+')) {
-				styleCounter++;
-			}
+				if (snek1[pt].direction_frame == 'w' && ((display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '+')) {
+					styleCounter++;
+				}
 
-			//S
-			if (snek1.direction_frame == 's' && ((snek1.action_keys) && display[snek1.snek_head[0]][snek1.snek_head[1] + 1] == '8' || display[snek1.snek_head[0]][snek1.snek_head[1] + 1] == 'X' || display[snek1.snek_head[0]][snek1.snek_head[1] + 1] == '7' && display[snek1.snek_head[0]][snek1.snek_head[1] + 2] == 'z' || display[snek1.snek_head[0]][snek1.snek_head[1] + 2] == '+' && snek1.snek_head[1] + 2 < 25)) {
-				styleCounter++;
-				styleCounter++;
-			}
+				//S
+				if (snek1[pt].direction_frame == 's' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == '+' && snek1[pt].snek_head[1] + 2 < 25)) {
+					styleCounter++;
+					styleCounter++;
+				}
 
-			if (snek1.direction_frame == 's' && ((display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == '8' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == 'X' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] + 1] == '7') && (display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == '8' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == 'X' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] + 1] == '7')) && (display[snek1.snek_head[0]][snek1.snek_head[1] + 1] == 'z' || display[snek1.snek_head[0]][snek1.snek_head[1] + 1] == '+')) {
-				styleCounter++;
-			}
+				if (snek1[pt].direction_frame == 's' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '+')) {
+					styleCounter++;
+				}
 
-			//N
-			if (snek1.direction_frame == 'n' && ((snek1.action_keys) && display[snek1.snek_head[0]][snek1.snek_head[1] - 1] == '8' || display[snek1.snek_head[0]][snek1.snek_head[1] - 1] == 'X' || display[snek1.snek_head[0]][snek1.snek_head[1] - 1] == '7' && display[snek1.snek_head[0]][snek1.snek_head[1] - 2] == 'z' || display[snek1.snek_head[0]][snek1.snek_head[1] - 2] == '+' && snek1.snek_head[1] - 2 >= 0)) {
-				styleCounter++;
-				styleCounter++;
-			}
+				//N
+				if (snek1[pt].direction_frame == 'n' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == '+' && snek1[pt].snek_head[1] - 2 >= 0)) {
+					styleCounter++;
+					styleCounter++;
+				}
 
-			if (snek1.direction_frame == 'n' && ((display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == '8' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == 'X' || display[snek1.snek_head[0] + 1][snek1.snek_head[1] - 1] == '7') && (display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == '8' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == 'X' || display[snek1.snek_head[0] - 1][snek1.snek_head[1] - 1] == '7')) && (display[snek1.snek_head[0]][snek1.snek_head[1] - 1] == 'z' || display[snek1.snek_head[0]][snek1.snek_head[1] - 1] == '+')) {
-				styleCounter++;
+				if (snek1[pt].direction_frame == 'n' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '+')) {
+					styleCounter++;
+				}
 			}
 					   			
 			  //			 //
 			 // MOVE PLAYER //
 			//			   //
-			if (snek1.direction_frame == 'e') {
-				snek1.snek_head[0]++;
-				
-				if (snek1.action_keys) {
-					snek1.snek_head[0]++;
+			for (int pt = 0; pt < playerCount; pt++) {
+
+				if (snek1[pt].direction_frame == 'e') {
+					snek1[pt].snek_head[0]++;
+
+					if (snek1[pt].action_keys) {
+						snek1[pt].snek_head[0]++;
+					}
 				}
-			}
 
-			else if (snek1.direction_frame == 'w') {
-				snek1.snek_head[0]--;
+				else if (snek1[pt].direction_frame == 'w') {
+					snek1[pt].snek_head[0]--;
 
-				if (snek1.action_keys) {
-					snek1.snek_head[0]--;
+					if (snek1[pt].action_keys) {
+						snek1[pt].snek_head[0]--;
+					}
 				}
-			}
 
-			else if (snek1.direction_frame == 's') {
-				snek1.snek_head[1]++;
+				else if (snek1[pt].direction_frame == 's') {
+					snek1[pt].snek_head[1]++;
 
-				if (snek1.action_keys) {
-					snek1.snek_head[1]++;
+					if (snek1[pt].action_keys) {
+						snek1[pt].snek_head[1]++;
+					}
 				}
-			}
 
-			else if (snek1.direction_frame == 'n') {
-				snek1.snek_head[1]--;
+				else if (snek1[pt].direction_frame == 'n') {
+					snek1[pt].snek_head[1]--;
 
-				if (snek1.action_keys) {
-					snek1.snek_head[1]--;
+					if (snek1[pt].action_keys) {
+						snek1[pt].snek_head[1]--;
+					}
 				}
 			}
 
 			  //								   //
 			 // DETECT IF PLAYER HAS HIT MAP EDGE //
 			//									 //
-			if (snek1.snek_head[0] < 0 || snek1.snek_head[0] > 24 || snek1.snek_head[1] < 0 || snek1.snek_head[1] > 24) {
-				gameLose = true;
+			for (int pt = 0; pt < playerCount; pt++) {
+				if (snek1[pt].snek_head[0] < 0 || snek1[pt].snek_head[0] > 24 || snek1[pt].snek_head[1] < 0 || snek1[pt].snek_head[1] > 24) {
+					gameLose = true;
 
-				deathInstance->start();
-				system->update();
+					deathInstance->start();
+					system->update();
 
-				break;
-						
+					break;
+
+				}
 			}
 
+			
 			  //									 //
 			 // DETECT IF PLAYER HAS HIT THEMSELVES //
 			//									   //
-			if (display[snek1.snek_head[0]][snek1.snek_head[1]] == '7' || display[snek1.snek_head[0]][snek1.snek_head[1]] == 'X') {
-				gameLose = true;
+			for (int pt = 0; pt < playerCount; pt++) {
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X') {
+					gameLose = true;
 
-				deathInstance->start();
-				system->update();
+					deathInstance->start();
+					system->update();
 
+					break;
+				}
+			}
+
+			if (gameLose == true) {
 				break;
 			}
 
@@ -875,26 +964,28 @@ int main() {
 			  //								  //
 			 // Calculate Proximity to the Fruit //
 			//									//
-			proximityToFruit = 1.0f - ((abs(snek1.snek_head[0] - currentFruit[0]) + abs(snek1.snek_head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+			proximityToFruit = 1.0f - ((abs(snek1[0].snek_head[0] - currentFruit[0]) + abs(snek1[0].snek_head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
 
 			  //								//
 			 // DETECT IF PLAYER HAS HIT FRUIT //
 			//								  //
-			if (snek1.snek_head[0] == currentFruit[0] && snek1.snek_head[1] == currentFruit[1]) {
-				
-				snek1.snek_length++;
+			for (int pt = 0; pt < playerCount; pt++) {
 
-				if (snek1.snek_length == 11) {
-					snakeFruitInstance11->start();	//FMOD
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.125f;
-					isScoreUnder11 = false;
-				}
-				else {
-					snakeFruitInstance->start();	//FMOD	
-				}
-				
-				switch (snek1.snek_length) {
+				if (snek1[pt].snek_head[0] == currentFruit[0] && snek1[pt].snek_head[1] == currentFruit[1]) {
+
+					snek1[pt].snek_length++;
+
+					if (snek1[pt].snek_length == 11) {
+						snakeFruitInstance11->start();	//FMOD
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.125f;
+						isScoreUnder11 = false;
+					}
+					else {
+						snakeFruitInstance->start();	//FMOD	
+					}
+
+					switch (snek1[pt].snek_length) {
 					case 20:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.250f;
@@ -929,66 +1020,72 @@ int main() {
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 1.0f;
 						break;
+					}
+
+					//					//
+				   // SET NEW HIGH SCORE //
+				  //					  //
+					if (snek1[pt].snek_length > highScore) {
+
+						highScore++;
+					}
+
+					if (snek1[pt].snek_length > highestCurrentLength) {
+						highestCurrentLength++;
+					}
+
+					for (int e = 0; e == 0;) {
+						currentFruit[0] = rand() % 25;
+						currentFruit[1] = rand() % 25;
+
+						if ((currentFruit[0] != snek1[pt].snek_head[0] && currentFruit[1] != snek1[pt].snek_head[1]) && display[currentFruit[0]][currentFruit[1]] != '7' && display[currentFruit[0]][currentFruit[1]] != 'X') {
+							e = 1;
+						}
+					}
+
 				}
 
-				  //					//
-				 // SET NEW HIGH SCORE //
-				//					  //
-				if (snek1.snek_length > highScore) {
-					
-					highScore++;
-				}
 
-				for (int e = 0; e == 0;) {
-					currentFruit[0] = rand() % 25;
-					currentFruit[1] = rand() % 25;
-
-					if ((currentFruit[0] != snek1.snek_head[0] && currentFruit[1] != snek1.snek_head[1]) && display[currentFruit[0]][currentFruit[1]] != '7' && display[currentFruit[0]][currentFruit[1]] != 'X') {
-						e = 1;
+				else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
+					snakeLungeInstance->setPitch(proximityToFruit);
+					snakeLungeInstance->start();	//FMOD
+					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
+					if (!wasZKeyHeld) {
+						snekMoveTimelinePosition += 200;
+						wasZKeyHeld = true;
 					}
 				}
-								
-			}
 
-			else if (snek1.action_keys && snek1.snek_length > 10) {
-				snakeLungeInstance->setPitch(proximityToFruit);
-				snakeLungeInstance->start();	//FMOD
-				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
-				if (!wasZKeyHeld) {
+				else {
+
+					wasZKeyHeld = false;
+
+					snakeMoveInstance->setPitch(proximityToFruit);
+					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
+
+					if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED) {
+
+						snakeMoveInstance->start();	//FMOD
+
+					}
+
 					snekMoveTimelinePosition += 200;
-					wasZKeyHeld = true;
+
+					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+
+						snekMoveTimelinePosition = 0;
+
+					}
 				}
+
 			}
-
-			else {
-						
-				wasZKeyHeld = false;
-
-				snakeMoveInstance->setPitch(proximityToFruit);
-				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-				
-				if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED){
-					
-					snakeMoveInstance->start();	//FMOD
-
-				}
-
-				snekMoveTimelinePosition += 200;
-
-				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-					
-					snekMoveTimelinePosition = 0;
-
-				}
-			}
-						
 			
 
 			//PLACE PLAYER INTO DISPLAY ARRAY//
-
-			display[snek1.snek_head[0]][snek1.snek_head[1]] = '8';
-
+			for (int pt = 0; pt < playerCount; pt++) {
+				display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] = '8';
+			}
 			//PLACE FRUIT INTO DISPLAY ARRAY//
 
 			display[currentFruit[0]][currentFruit[1]] = '+';
@@ -996,7 +1093,7 @@ int main() {
 			
 /*			//DETERMINE TRAP LOCATIONS/////////////
 
-			if (currentTrap < snek1.snek_length) {
+			if (currentTrap < snek1[0].snek_length) {
 				currentTrap++;
 
 				if (currentTrap == 3) {
@@ -1005,7 +1102,7 @@ int main() {
 						trapLocations[0][0] = rand() % 25;
 						trapLocations[0][1] = rand() % 25;
 
-						if ((trapLocations[0][0] != snek1.snek_head[0] && trapLocations[0][1] != snek1.snek_head[1]) && display[trapLocations[0][0]][trapLocations[0][1]] != '7' && display[trapLocations[0][0]][trapLocations[0][1]] != '+') {
+						if ((trapLocations[0][0] != snek1[0].snek_head[0] && trapLocations[0][1] != snek1[0].snek_head[1]) && display[trapLocations[0][0]][trapLocations[0][1]] != '7' && display[trapLocations[0][0]][trapLocations[0][1]] != '+') {
 
 							actualTrapCount++;
 
@@ -1020,7 +1117,7 @@ int main() {
 						trapLocations[1][0] = rand() % 25;
 						trapLocations[1][1] = rand() % 25;
 
-						if ((trapLocations[1][0] != snek1.snek_head[0] && trapLocations[1][1] != snek1.snek_head[1]) && display[trapLocations[1][0]][trapLocations[1][1]] != '7' && display[trapLocations[1][0]][trapLocations[1][1]] != '+') {
+						if ((trapLocations[1][0] != snek1[0].snek_head[0] && trapLocations[1][1] != snek1[0].snek_head[1]) && display[trapLocations[1][0]][trapLocations[1][1]] != '7' && display[trapLocations[1][0]][trapLocations[1][1]] != '+') {
 
 							actualTrapCount++;
 
@@ -1035,7 +1132,7 @@ int main() {
 						trapLocations[2][0] = rand() % 25;
 						trapLocations[2][1] = rand() % 25;
 
-						if ((trapLocations[2][0] != snek1.snek_head[0] && trapLocations[2][1] != snek1.snek_head[1]) && display[trapLocations[2][0]][trapLocations[2][1]] != '7' && display[trapLocations[2][0]][trapLocations[2][1]] != '+') {
+						if ((trapLocations[2][0] != snek1[0].snek_head[0] && trapLocations[2][1] != snek1[0].snek_head[1]) && display[trapLocations[2][0]][trapLocations[2][1]] != '7' && display[trapLocations[2][0]][trapLocations[2][1]] != '+') {
 
 							actualTrapCount++;
 
@@ -1047,7 +1144,7 @@ int main() {
 						trapLocations[3][0] = rand() % 25;
 						trapLocations[3][1] = rand() % 25;
 
-						if ((trapLocations[3][0] != snek1.snek_head[0] && trapLocations[3][1] != snek1.snek_head[1]) && display[trapLocations[3][0]][trapLocations[3][1]] != '7' && display[trapLocations[3][0]][trapLocations[3][1]] != '+') {
+						if ((trapLocations[3][0] != snek1[0].snek_head[0] && trapLocations[3][1] != snek1[0].snek_head[1]) && display[trapLocations[3][0]][trapLocations[3][1]] != '7' && display[trapLocations[3][0]][trapLocations[3][1]] != '+') {
 
 							actualTrapCount++;
 
@@ -1068,7 +1165,7 @@ int main() {
 							trapLocations[r][0] = rand() % 25;
 							trapLocations[r][1] = rand() % 25;
 
-							if ((trapLocations[r][0] != snek1.snek_head[0] && trapLocations[r][1] != snek1.snek_head[1]) && display[trapLocations[r][0]][trapLocations[r][1]] != '7' && display[trapLocations[r][0]][trapLocations[r][1]] != '+') {
+							if ((trapLocations[r][0] != snek1[0].snek_head[0] && trapLocations[r][1] != snek1[0].snek_head[1]) && display[trapLocations[r][0]][trapLocations[r][1]] != '7' && display[trapLocations[r][0]][trapLocations[r][1]] != '+') {
 
 								actualTrapCount++;
 								r++;
@@ -1100,7 +1197,7 @@ int main() {
 			*/
 			//DETERMINE IF PLAYER HAS HIT A TRAP//////
 /*
-			if (actualTrapCount < 0 && display[snek1.snek_head[0]][snek1.snek_head[1]] == 'X') {
+			if (actualTrapCount < 0 && display[snek1[0].snek_head[0]][snek1[0].snek_head[1]] == 'X') {
 				gameLose = true;
 				break;
 
@@ -1124,19 +1221,19 @@ int main() {
 						screenString[q + (80 * t)] = '8';
 					}
 
-					else if (display[q][t] == '8' && snek1.direction_frame == 'n') {
+					else if (display[q][t] == '8' && snek1[0].direction_frame == 'n') {
 						screenString[q + (80 * t)] = '^';
 					}
 
-					else if (display[q][t] == '8' && snek1.direction_frame == 's') {
+					else if (display[q][t] == '8' && snek1[0].direction_frame == 's') {
 						screenString[q + (80 * t)] = 'v';
 					}
 
-					else if (display[q][t] == '8' && snek1.direction_frame == 'w') {
+					else if (display[q][t] == '8' && snek1[0].direction_frame == 'w') {
 						screenString[q + (80 * t)] = '<';
 					}
 
-					else if (display[q][t] == '8' && snek1.direction_frame == 'e') {
+					else if (display[q][t] == '8' && snek1[0].direction_frame == 'e') {
 						screenString[q + (80 * t)] = '>';
 					}
 
@@ -1175,7 +1272,7 @@ int main() {
 					
 					screenString.replace(1 + q + (80 * t), 14, "       SCORE: ");
 					
-					string snekLengthString = to_string(snek1.snek_length);
+					string snekLengthString = to_string(highestCurrentLength);
 										
 					screenString.replace(15 + q + (80 * t), snekLengthString.length(), snekLengthString);
 
@@ -1189,7 +1286,7 @@ int main() {
 
 				}
 
-				else if (t == 9 && q == 25 && snek1.snek_length > 10) {
+				else if (t == 9 && q == 25 && highestCurrentLength > 10) {
 
 					screenString.replace(1 + q + (80 * t), 14, "       STYLE: ");
 
@@ -1215,7 +1312,7 @@ int main() {
 				}
 				*/
 
-				else if (t == 21 && q == 25 && snek1.snek_length > 10) {
+				else if (t == 21 && q == 25 && highestCurrentLength > 10) {
 					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
 				}
 
@@ -1308,31 +1405,31 @@ int main() {
 }*/
 
 /*
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //1 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //2 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //3 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //4 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //5 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //6 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //7 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //8 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //9 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //10
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //11
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //12
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //13
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //14
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //15
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //16
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //17
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //18
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //19
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //20
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //21
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //22
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //23
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //24
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1.snek_head[0] == z) { cout << "="; } z++; //25
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //1 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //2 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //3 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //4 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //5 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //6 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //7 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //8 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //9 
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //10
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //11
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //12
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //13
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //14
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //15
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //16
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //17
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //18
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //19
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //20
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //21
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //22
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //23
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //24
+cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //25
 
 }
 */
@@ -1355,18 +1452,18 @@ if (startKey) {
 */
 
 /*
-if (snek1.snek_head[0] >= 25) {
+if (snek1[0].snek_head[0] >= 25) {
 	direction = 'w';
 
 }
 
-else if (snek1.snek_head[0] <= 1) {
+else if (snek1[0].snek_head[0] <= 1) {
 	direction = 'e';
 
 }
 */
 
-/*if (snek1.snek_head[0] - 1 < 0 && direction == 'w' || snek1.snek_head[0] + 1 > 25 && direction == 'e' || snek1.snek_head[1] - 1 < 0 && direction == 'n' || snek1.snek_head[1] + 1 > 25 && direction == 's') {
+/*if (snek1[0].snek_head[0] - 1 < 0 && direction == 'w' || snek1[0].snek_head[0] + 1 > 25 && direction == 'e' || snek1[0].snek_head[1] - 1 < 0 && direction == 'n' || snek1[0].snek_head[1] + 1 > 25 && direction == 's') {
 				gameLose = true;
 
 			}*/
