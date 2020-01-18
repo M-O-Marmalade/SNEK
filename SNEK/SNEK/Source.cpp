@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include "fmod.hpp"
 #include "fmod_studio.hpp"
+#include "fstream"
 
 using namespace std;
 
@@ -490,6 +491,13 @@ int main() {
 	//19 / 2 = 9.5
 	//9 low, 40 in
 	//8 low, 39 in
+
+	ifstream scoreFileRead;
+	scoreFileRead.open("ScoreFile.txt");
+	string highScoreFromFile;
+	getline(scoreFileRead, highScoreFromFile);
+	highScore = stoi(highScoreFromFile);
+	scoreFileRead.close();
 
 	do {
 		  //						  //
@@ -1221,6 +1229,11 @@ int main() {
 			
 			system->update(); //update FMOD system
 		}
+
+		ofstream scoreFileWrite;
+		scoreFileWrite.open("ScoreFile.txt", ios::trunc);
+		scoreFileWrite << to_string(highScore);
+		scoreFileWrite.close();
 
 		this_thread::sleep_for(1347ms);
 		
