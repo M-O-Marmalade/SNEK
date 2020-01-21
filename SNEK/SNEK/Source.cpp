@@ -6,18 +6,43 @@
 //		/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
+//////////////////////
 // PROJECT OUTLINE //
+////////////////////
 
 // Includes 
 // Variable Declarations
 // Audio System Setup (FMOD Studio)
 // Loading/Preparing Audio Events
-
+// Display Setup
+// Splash Screen Animation
+// Start Screen
+// Pre-New Game Perparation
+// [Game Loop Start]
+// Set Framerate
+// Tick Clock
+// Read Player Input
+// Check + Set Direction [Tick Resolution]
+// Refresh Display
+// Move Body Segments
+// Check + Set Direction [Frame Resolution]
+// Place Snek Body Into Display Array
+// Add Style Points
+// Move Player
+// Detect if Player Has Hit Map Edge
+// Detect if Player Has Hit Themselves
+// Update Style High Score
+// Calculate Proximity to the Fruit
+// Detect if Player Has Hit Fruit
+// Set New High Score
+// Place Player Into Display Array
+// Place Fruit Into Display Array
+// Draw Screen
+// Game Over Screen
 
   //		  //
  // Includes //
 //			//
-
 #include <Windows.h>
 #include <iostream>
 #include <string>
@@ -35,10 +60,7 @@ using namespace std;
 //						 //
 
 //LOGIC VARIABLES
-char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, }
-//int snekHead[2] = { 12,12 };	//the snek's head position on the play grid [x,y]
-//int snekLength = 0;				//current length of the snek (used to calculate current Score as well)
-//int snekBody[625][2];			//the snek's body segments on the play grid [segment][x,y]
+char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
 bool gameLose;					//current Game Lose state
 bool playAgain;					//decides whether or not to play again after losing
 int highScore = 0;				//current High Score
@@ -46,17 +68,13 @@ int styleCounter = 0;			//current STYLE Score
 int styleHighScore = 0;			//current Style High Score
 int currentFruit[2];			//location of the current fruit on the game grid [x,y]
 int playerCount = 1;			//amount of players, can be increased at start screen
-int highestCurrentLength = 0;
+int highestCurrentLength = 0;	//highest length out of all current players/sneks
+int portalCount = 0;			//amount of portals on the map
+int portalCoordinates[6][2];	//coordinates of the current portals on the map
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
 bool zKey;						//stores input from Z key
-//char direction1 = 's';			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
-//char direction = 's';			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
-//bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
-//bool holdE = false;				//"		"
-//bool holdS = false;				//"		"
-//bool holdN = false;				//"		"
 
 //DISPLAY VARIABLES
 int frameRate = 10;				//frame rate setting
@@ -66,17 +84,17 @@ int nScreenWidth = 80;			//width of the console window (measured in characters, 
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
 struct snek {
-	int snek_head[2];
-	int snek_length = 0;
-	int snek_body[625][2];
-	bool directional_keys[4];
-	bool action_keys;
-	char direction_tick;
-	char direction_frame;
-	bool holdW = false;
-	bool holdE = false;
-	bool holdS = false;
-	bool holdN = false;
+	int snek_head[2];				//the snek's head position on the play grid [x,y]
+	int snek_length = 0;			//current length of the snek (used to calculate current Score as well)
+	int snek_body[625][2];			//the snek's body segments on the play grid [segment][x,y]
+	bool directional_keys[4];		//stores input from directional keys
+	bool action_keys;				//stores input from action keys
+	char direction_tick;			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
+	char direction_frame;			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
+	bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
+	bool holdE = false;				//"		"
+	bool holdS = false;				//"		"
+	bool holdN = false;				//"		"
 };
 
 // UNUSED
@@ -110,9 +128,9 @@ int main() {
 																							
 	FMOD::Studio::Bank* musicandFX = NULL;																
 	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
-	//										  //
-	// TC1.1 - Loading/Preparing Audio Events //
-	//										  //
+	  //							    //
+	 // Loading/Preparing Audio Events //
+	//							      //
 	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen)
 	system->getEvent("event:/SplashJingle", &splashJingleDescription);
 
@@ -529,7 +547,7 @@ int main() {
 
 	do {
 		  //						  //
-		 // PRE-NEW-GAME PREPARATION //
+		 // PRE-NEW GAME PREPARATION //
 		//						    //		
 
 
@@ -556,7 +574,7 @@ int main() {
 		snek1[3].direction_frame = 's';
 
 		
-
+		portalCount = 0;
 		
 
 		gameLose = false;	//reset game lose condition
@@ -606,9 +624,9 @@ int main() {
 		float proximityToFruit;
 		bool wasZKeyHeld = false;
 
-		  //		   //
-		 // GAME LOOP //
-		//			 //
+		  //				 //
+		 // GAME LOOP START //
+		//				   //
 		while (gameLose == false) {			
 
 			  //			   //
@@ -975,6 +993,15 @@ int main() {
 
 					snek1[pt].snek_length++;
 
+					for (int e = 0; e == 0;) {
+						currentFruit[0] = rand() % 25;
+						currentFruit[1] = rand() % 25;
+
+						if ((currentFruit[0] != snek1[pt].snek_head[0] && currentFruit[1] != snek1[pt].snek_head[1]) && display[currentFruit[0]][currentFruit[1]] != '7' && display[currentFruit[0]][currentFruit[1]] != 'X' && display[currentFruit[0]][currentFruit[1]] != 'p') {
+							e = 1;
+						}
+					}
+
 					if (snek1[pt].snek_length == 11) {
 						snakeFruitInstance11->start();	//FMOD
 						snekMoveTimelinePositionMax += 200;
@@ -1022,9 +1049,9 @@ int main() {
 						break;
 					}
 
-					//					//
+					//					  //
 				   // SET NEW HIGH SCORE //
-				  //					  //
+				  //					//
 					if (snek1[pt].snek_length > highScore) {
 
 						highScore++;
@@ -1032,15 +1059,6 @@ int main() {
 
 					if (snek1[pt].snek_length > highestCurrentLength) {
 						highestCurrentLength++;
-					}
-
-					for (int e = 0; e == 0;) {
-						currentFruit[0] = rand() % 25;
-						currentFruit[1] = rand() % 25;
-
-						if ((currentFruit[0] != snek1[pt].snek_head[0] && currentFruit[1] != snek1[pt].snek_head[1]) && display[currentFruit[0]][currentFruit[1]] != '7' && display[currentFruit[0]][currentFruit[1]] != 'X') {
-							e = 1;
-						}
 					}
 
 				}
@@ -1080,7 +1098,66 @@ int main() {
 				}
 
 			}
+
 			
+
+			  //				//
+			 // Create Portals //
+			//				  //
+			if (highestCurrentLength == 14 && portalCount < 1) {
+				portalCount++;
+
+				for (int e = 0; e == 0;) {
+					portalCoordinates[0][0] = rand() % 25;
+					portalCoordinates[0][1] = rand() % 25;
+
+					if (portalCoordinates[0][0] != snek1[0].snek_head[0] && portalCoordinates[0][1] != snek1[0].snek_head[1]) {
+						if (display[portalCoordinates[0][0]][portalCoordinates[0][1]] != '7' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'p') {
+							e = 1;
+						}
+					}
+				}
+
+				for (int e = 0; e == 0;) {
+					portalCoordinates[1][0] = rand() % 25;
+					portalCoordinates[1][1] = rand() % 25;
+
+					if (portalCoordinates[1][0] != snek1[0].snek_head[0] && portalCoordinates[1][1] != snek1[0].snek_head[1]) {
+						if (display[portalCoordinates[1][0]][portalCoordinates[1][1]] != '7' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'p') {
+							e = 1;
+						}
+					}
+				}
+
+			}
+
+			  //							 //
+			 // Pass Player Through Portals //
+			//							   //
+			for (int pt = 0; pt < playerCount; pt++) {
+				for (int hh = 0; hh < portalCount * 2; hh++) {
+					if (snek1[pt].snek_head[0] == portalCoordinates[hh][0] && snek1[pt].snek_head[1] == portalCoordinates[hh][1]) {
+						snek1[pt].snek_head[0] = portalCoordinates[((hh + 1) % 2)][0];
+						snek1[pt].snek_head[1] = portalCoordinates[((hh + 1) % 2)][1];	
+						break;
+					}
+				}
+			}
+
+			/*
+			enter 0   
+			exit 1
+
+			(0 + 1) % 2
+
+
+			enter 1
+			exit 0
+
+			(1 + 1) % 2
+			
+			*/
+
 
 			//PLACE PLAYER INTO DISPLAY ARRAY//
 			for (int pt = 0; pt < playerCount; pt++) {
@@ -1237,6 +1314,10 @@ int main() {
 						screenString[q + (80 * t)] = '>';
 					}
 
+					else if (display[q][t] == 'p') {
+						screenString[q + (80 * t)] = 'O';
+					}
+
 					else {
 						screenString[q + (80 * t)] = display[q][t];
 					}
@@ -1335,6 +1416,10 @@ int main() {
 				}
 			}
 
+			for (int yt = 0; yt < portalCount*2; yt++) {				
+				screenString[portalCoordinates[yt][0] + (80 * portalCoordinates[yt][1])] = 'O';
+			}
+
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 				screen[u] = screenString[u];
 			}
@@ -1344,6 +1429,9 @@ int main() {
 			system->update(); //update FMOD system
 		}
 
+		  //				  //
+		 // GAME OVER SCREEN //
+		//					//
 		ofstream scoreFileWrite;
 		scoreFileWrite.open("ScoreFile.txt", ios::trunc);
 		scoreFileWrite << to_string(highScore);
