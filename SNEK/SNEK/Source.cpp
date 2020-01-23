@@ -304,6 +304,15 @@ int main() {
 
 		screenString.replace((20 * 80) + 34, 12, "Players: <" + to_string(playerCount) + ">");
 
+		if (playerCount == 2) {
+			screenString.replace((20 * 80) + 51, 23, "P1 Controls: Arrow Keys");
+			screenString.replace((20 * 80) + 8, 17, "P2 Controls: WASD");
+		}
+		else {
+			screenString.replace((20 * 80) + 51, 23, "                       ");
+			screenString.replace((20 * 80) + 8, 17, "                 ");
+		}
+
 		screenString.replace((22 * 80) + 33, 14, "Citrus Studios");		//draw studio name each frame
 
 		if (startScreenFrameCount == 111) {
@@ -339,7 +348,7 @@ int main() {
 			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
 						
 		}
-		if (arrowKeys[2] && playerCount < 4 && !holdKey) {
+		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
 			playerCount++;
 			holdKey++;
 		}
@@ -553,17 +562,18 @@ int main() {
 
 		snek snek1[4];
 
-		snek1[0].snek_head[0] = 12;
+
+		snek1[0].snek_head[0] = (24 / (playerCount + 1)) * playerCount + (playerCount - 1);
 		snek1[0].snek_head[1] = 12;
 		snek1[0].direction_tick = 's';
 		snek1[0].direction_frame = 's';
 
-		snek1[1].snek_head[0] = 16;
-		snek1[1].snek_head[1] = 16;
+		snek1[1].snek_head[0] = 7;
+		snek1[1].snek_head[1] = 12;
 		snek1[1].direction_tick = 's';
 		snek1[1].direction_frame = 's';
 
-		snek1[2].snek_head[0] = 8;
+		/*snek1[2].snek_head[0] = 8;
 		snek1[2].snek_head[1] = 16;
 		snek1[2].direction_tick = 's';
 		snek1[2].direction_frame = 's';
@@ -571,9 +581,8 @@ int main() {
 		snek1[3].snek_head[0] = 12;
 		snek1[3].snek_head[1] = 20;
 		snek1[3].direction_tick = 's';
-		snek1[3].direction_frame = 's';
-
-		
+		snek1[3].direction_frame = 's';*/
+			
 		portalCount = 0;
 		
 
@@ -594,6 +603,8 @@ int main() {
 		styleCounter = 0;
 
 		frameRate = 10;		
+
+		currentFrame = 0;
 
 		//currentTrap = 0;
 		//r = 0;
@@ -957,7 +968,7 @@ int main() {
 			 // DETECT IF PLAYER HAS HIT THEMSELVES //
 			//									   //
 			for (int pt = 0; pt < playerCount; pt++) {
-				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X') {
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '8') {
 					gameLose = true;
 
 					deathInstance->start();
@@ -1420,13 +1431,28 @@ int main() {
 				screenString[portalCoordinates[yt][0] + (80 * portalCoordinates[yt][1])] = 'O';
 			}
 
+			if (playerCount == 2 && currentFrame == 1) {
+				screenString.replace(10 * 80 + 14, 8, "Player 1");
+				screenString.replace(11 * 80 + 17, 1, "|");
+				//screenString.replace(12 * 80 + 17, 1, "V");
+
+				screenString.replace(10 * 80 + 4, 8, "Player 2");
+				screenString.replace(11 * 80 + 7, 1, "|");
+				//screenString.replace(12 * 80 + 7, 1, "V");				
+			}
+
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 				screen[u] = screenString[u];
 			}
 
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 			
-			system->update(); //update FMOD system
+
+			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+
+			if (playerCount == 2 && currentFrame == 1)
+			this_thread::sleep_for(3s);
+			
+			system->update(); //update FMOD system			
 		}
 
 		  //				  //
@@ -1449,7 +1475,8 @@ int main() {
 			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, "GAME OVER");
 			screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, ">Press [Z] to play again");
 			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, ">Press [X] to quit");
-
+			screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
+						
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 				screen[u] = screenString[u];
 
@@ -1464,12 +1491,41 @@ int main() {
 			this_thread::sleep_for(527ms);
 
 			while (gameOverMessage) {
+
+				for (int o = 0; o < 4; o++) {
+					arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
+
+				}
+
+				if (arrowKeys[2] && playerCount < 2 && !holdKey) {
+					playerCount++;
+					holdKey++;
+				}
+
+				else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
+					playerCount--;
+					holdKey++;
+				}
+
+				if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
+					holdKey = false;
+				}
+
+				screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
+
+				for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
+					screen[u] = screenString[u];
+
+				}
+
+				WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 								
 				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 					gameOverMessage = false;
 					playAgain = true;
 					
 					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					snakeFruitInstance->start();
 					system->update();
 				}
 
