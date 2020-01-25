@@ -549,10 +549,15 @@ int main() {
 
 	ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile.txt");
-	string highScoreFromFile;
-	getline(scoreFileRead, highScoreFromFile);
-	highScore = stoi(highScoreFromFile);
-	scoreFileRead.close();
+	if (scoreFileRead.is_open()) {
+		string highScoreFromFile;
+		getline(scoreFileRead, highScoreFromFile);
+		highScore = stoi(highScoreFromFile);
+		scoreFileRead.close();
+	}
+	else {
+		highScore = 0;
+	}
 
 	do {
 		  //						  //
