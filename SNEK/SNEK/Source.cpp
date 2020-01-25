@@ -648,7 +648,17 @@ int main() {
 			  //			   //
 			 // SET FRAMERATE //
 			//				 //
-			if (highestCurrentLength < 11) {
+			if (highestCurrentLength < 1) {
+				frameRate = 30;
+
+			}
+
+			else if (highestCurrentLength > 0 && highestCurrentLength < 7) {
+				frameRate = 20;
+
+			}
+
+			else if (highestCurrentLength > 6 && highestCurrentLength < 11) {
 				frameRate = 10;
 
 			}
@@ -692,50 +702,6 @@ int main() {
 			 // TICK CLOCK //
 			//			  //
 			for (int q = 0; q < frameRate; q++) {
-
-				if (highestCurrentLength == 0) {
-					Sleep(27);
-				}
-
-				else if (highestCurrentLength > 0 && highestCurrentLength < 7) {
-					Sleep(17);
-				}
-
-				else if (highestCurrentLength > 6 && highestCurrentLength < 11) {
-					Sleep(15);
-				}
-
-				else if (highestCurrentLength > 10 && highestCurrentLength < 20) {
-					Sleep(14);
-				}
-
-				else if (highestCurrentLength > 19 && highestCurrentLength < 30) {
-					Sleep(13);
-				}
-
-				else if (highestCurrentLength > 29 && highestCurrentLength < 40) {
-					Sleep(12);
-				}
-
-				else if (highestCurrentLength > 39 && highestCurrentLength < 50) {
-					Sleep(11);
-				}
-
-				else if (highestCurrentLength > 49 && highestCurrentLength < 65) {
-					Sleep(10);
-				}
-
-				else if (highestCurrentLength > 64 && highestCurrentLength < 80) {
-					Sleep(9);
-				}
-
-				else if (highestCurrentLength > 79 && highestCurrentLength < 100) {
-					Sleep(8);
-				}
-
-				else if (highestCurrentLength > 99) {
-					Sleep(7);
-				}
 				
 				  //				   //
 				 // READ PLAYER INPUT //
@@ -779,6 +745,8 @@ int main() {
 
 				}					
 				
+				Sleep(7);
+
 				currentTick++;	
 				
 			}
