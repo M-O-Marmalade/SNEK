@@ -4,8 +4,6 @@
 ScoreFile.txt
 
 *Browse.VC.db
-*.vcxproj
-*.filters
 
 # User-specific files
 *.suo
