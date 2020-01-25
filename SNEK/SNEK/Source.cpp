@@ -694,47 +694,47 @@ int main() {
 			for (int q = 0; q < frameRate; q++) {
 
 				if (highestCurrentLength == 0) {
-					this_thread::sleep_for(27ms);
+					Sleep(27);
 				}
 
 				else if (highestCurrentLength > 0 && highestCurrentLength < 7) {
-					this_thread::sleep_for(17ms);
+					Sleep(17);
 				}
 
 				else if (highestCurrentLength > 6 && highestCurrentLength < 11) {
-					this_thread::sleep_for(15ms);
+					Sleep(15);
 				}
 
 				else if (highestCurrentLength > 10 && highestCurrentLength < 20) {
-					this_thread::sleep_for(14ms);
+					Sleep(14);
 				}
 
 				else if (highestCurrentLength > 19 && highestCurrentLength < 30) {
-					this_thread::sleep_for(13ms);
+					Sleep(13);
 				}
 
 				else if (highestCurrentLength > 29 && highestCurrentLength < 40) {
-					this_thread::sleep_for(12ms);
+					Sleep(12);
 				}
 
 				else if (highestCurrentLength > 39 && highestCurrentLength < 50) {
-					this_thread::sleep_for(11ms);
+					Sleep(11);
 				}
 
 				else if (highestCurrentLength > 49 && highestCurrentLength < 65) {
-					this_thread::sleep_for(10ms);
+					Sleep(10);
 				}
 
 				else if (highestCurrentLength > 64 && highestCurrentLength < 80) {
-					this_thread::sleep_for(9ms);
+					Sleep(9);
 				}
 
 				else if (highestCurrentLength > 79 && highestCurrentLength < 100) {
-					this_thread::sleep_for(8ms);
+					Sleep(8);
 				}
 
 				else if (highestCurrentLength > 99) {
-					this_thread::sleep_for(7ms);
+					Sleep(7);
 				}
 				
 				  //				   //
@@ -1124,8 +1124,8 @@ int main() {
 				portalCount++;
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[0][0] = rand() % 25;
-					portalCoordinates[0][1] = rand() % 25;
+					portalCoordinates[0][0] = (rand() % 21) + 2;
+					portalCoordinates[0][1] = (rand() % 21) + 2;
 
 					if (portalCoordinates[0][0] != snek1[0].snek_head[0] && portalCoordinates[0][1] != snek1[0].snek_head[1]) {
 						if (display[portalCoordinates[0][0]][portalCoordinates[0][1]] != '7' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'p') {
@@ -1135,8 +1135,8 @@ int main() {
 				}
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[1][0] = rand() % 25;
-					portalCoordinates[1][1] = rand() % 25;
+					portalCoordinates[1][0] = (rand() % 21) + 2;
+					portalCoordinates[1][1] = (rand() % 21) + 2;
 
 					if (portalCoordinates[1][0] != snek1[0].snek_head[0] && portalCoordinates[1][1] != snek1[0].snek_head[1]) {
 						if (display[portalCoordinates[1][0]][portalCoordinates[1][1]] != '7' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'p') {
@@ -1455,7 +1455,7 @@ int main() {
 			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			if (playerCount == 2 && currentFrame == 1)
-			this_thread::sleep_for(3s);
+			Sleep(3000);
 			
 			system->update(); //update FMOD system			
 		}
@@ -1468,7 +1468,7 @@ int main() {
 		scoreFileWrite << to_string(highScore);
 		scoreFileWrite.close();
 
-		this_thread::sleep_for(1347ms);
+		Sleep(1347);
 		
 		screenString.replace(14 + 25 + (80 * 21), 18, "                  ");
 		screenString.replace(8 + 25 + (80 * 17), 33, "                                 ");
