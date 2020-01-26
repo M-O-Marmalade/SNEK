@@ -115,7 +115,8 @@ void SleepinnnThang() {					//framerate for animation that plays after pressing 
 }
 
 
-int main() {
+int main() {	
+
 	 //									 //
 	// AUDIO SYSTEM SETUP (FMOD Studio) //
    //								   //
@@ -133,6 +134,7 @@ int main() {
 																							
 	FMOD::Studio::Bank* musicandFX = NULL;																
 	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
+
 	  //							    //
 	 // LOADING/PREPARING AUDIO EVENTS //
 	//							      //
@@ -602,8 +604,16 @@ int main() {
 		gameLose = false;	//reset game lose condition
 
 		srand(time(0));	//seed the RNG using system time
-		currentFruit[0] = rand() % 25;
-		currentFruit[1] = rand() % 25;		
+		for (bool inLoop = true; inLoop;) {
+
+			currentFruit[0] = rand() % 13 + 6;
+			currentFruit[1] = rand() % 13 + 6;
+
+			if (currentFruit[0] != 13) {
+				inLoop = false;
+			}
+		}
+				
 
 		//snekHead[0] = 12;
 		//snekHead[1] = 12;	
@@ -615,7 +625,7 @@ int main() {
 
 		styleCounter = 0;
 
-		frameRate = 30;		
+		frameRate = 50;		
 
 		currentFrame = 0;
 
@@ -659,10 +669,10 @@ int main() {
 			if (gotNewFruit = true) {
 				switch (highestCurrentLength) {
 				case 1:
-					frameRate = 20;
+					frameRate = 12;
 					break;
 				case 7:
-					frameRate = 10;
+					frameRate = 11;
 					break;
 				case 11:
 					frameRate = 9;
@@ -741,7 +751,7 @@ int main() {
 
 				}					
 				
-				Sleep(7);
+				this_thread::sleep_for(15ms);
 
 				currentTick++;	
 				
