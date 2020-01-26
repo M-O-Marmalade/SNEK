@@ -1,22 +1,22 @@
-//		 __    _    _              _  __   ____
-//		/ /   | \  | |     /\     | |/ /  |  __|
-//		\ \   |  \ | |    /  \    | | /   | |__
-//		 \ \  | | \| |   / /\ \   |   \   |  __|
-//		 / /  | |\ \ |  /  __  \  | |\ \  | |__
-//		/_/   |_| \__| /__/  \__\ |_| \_\ |____|
+//	 __    _    _              _  __   ____
+//	/ /   | \  | |     /\     | |/ /  |  __|
+//	\ \   |  \ | |    /  \    | | /   | |__
+//	 \ \  | | \| |   / /\ \   |   \   |  __|
+//	 / /  | |\ \ |  /  __  \  | |\ \  | |__
+//	/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
-//////////////////////
-// PROJECT OUTLINE //
-////////////////////
-
-// Includes 
+  /////////////////////
+ // PROJECT OUTLINE //
+/////////////////////
+// Includes/Namespaces
 // Variable Declarations
 // Audio System Setup (FMOD Studio)
 // Loading/Preparing Audio Events
 // Display Setup
 // Splash Screen Animation
 // Start Screen
+// Read High Score From File
 // Pre-New Game Perparation
 // [Game Loop Start]
 // Set Framerate
@@ -35,14 +35,16 @@
 // Calculate Proximity to the Fruit
 // Detect if Player Has Hit Fruit
 // Set New High Score
+// Create Portals
+// Pass Player Through Portals
 // Place Player Into Display Array
 // Place Fruit Into Display Array
 // Draw Screen
 // Game Over Screen
 
-  //		  //
- // Includes //
-//			//
+  //					 //
+ // INCLUDES/NAMESPACES //
+//					   //
 #include <Windows.h>
 #include <iostream>
 #include <string>
@@ -56,7 +58,7 @@
 using namespace std;
 
   //					   //
- // Variable Declarations //
+ // VARIABLE DECLARATIONS //
 //						 //
 
 //LOGIC VARIABLES
@@ -95,6 +97,7 @@ struct snek {
 	bool holdE = false;				//"		"
 	bool holdS = false;				//"		"
 	bool holdN = false;				//"		"
+	float iProximityToFruit;		//stores each player's distance to the fruit
 };
 
 // UNUSED
@@ -112,7 +115,7 @@ void SleepinnnThang() {					//framerate for animation that plays after pressing 
 
 int main() {
 	 //									 //
-	// Audio System Setup (FMOD Studio) //
+	// AUDIO SYSTEM SETUP (FMOD Studio) //
    //								   //
 	FMOD_RESULT result;																	//create an FMOD Result
 	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
@@ -129,7 +132,7 @@ int main() {
 	FMOD::Studio::Bank* musicandFX = NULL;																
 	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
 	  //							    //
-	 // Loading/Preparing Audio Events //
+	 // LOADING/PREPARING AUDIO EVENTS //
 	//							      //
 	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen)
 	system->getEvent("event:/SplashJingle", &splashJingleDescription);
@@ -192,7 +195,7 @@ int main() {
 	proximitySoundDescription->createInstance(&proximitySoundInstance);*/
 
 	  //			   //
-	 // Display Setup //
+	 // DISPLAY SETUP //
 	//			  	 //
 
 	
@@ -234,7 +237,7 @@ int main() {
 	system->update();
 
 	  //						 //
-	 // Splash Screen Animation //
+	 // SPLASH SCREEN ANIMATION //
 	//						   //
 	bool animation = true;
 	int u = 0;
@@ -273,7 +276,7 @@ int main() {
 	}
 
 	  //			  //
-	 // Start Screen //
+	 // START SCREEN //
 	//				//
 	bool startScreen = true;
 	bool startScreenToggle = true;
@@ -547,6 +550,9 @@ int main() {
 	//9 low, 40 in
 	//8 low, 39 in
 
+	  //					  //
+	 // READ HIGH SCORE FILE //
+	//						//
 	ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile.txt");
 	if (scoreFileRead.is_open()) {
@@ -640,9 +646,9 @@ int main() {
 		float proximityToFruit;
 		bool wasZKeyHeld = false;
 
-		  //				 //
-		 // GAME LOOP START //
-		//				   //
+		  //				   //
+		 // [GAME LOOP START] //
+		//				     //
 		while (gameLose == false) {			
 
 			  //			   //
@@ -755,9 +761,9 @@ int main() {
 				snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0) && highestCurrentLength > 10;
 				
 
-				  //					   //
-				 // CHECK + SET DIRECTION //
-				//						 //
+				  //										 //
+				 // CHECK + SET DIRECTION [TICK RESOLUTION] //
+				//										   //
 
 				for (int pt = 0; pt < playerCount; pt++) {
 
@@ -783,10 +789,11 @@ int main() {
 				
 			}
 			
-			currentFrame++;		
+			currentFrame++;	
 
-			//REFRESH DISPLAY//
-
+			  //				 //
+			 // REFRESH DISPLAY //
+			//				   //
 			for (int x = 0; x < 25; x++) {
 
 				for (int y = 0; y < 25; y++) {
@@ -817,9 +824,9 @@ int main() {
 
 			}
 
-			  //					   //
-			 // CHECK + SET DIRECTION //
-			//						 //
+			  //										  //
+			 // CHECK + SET DIRECTION [FRAME RESOLUTION] //
+			//											//
 			for (int pt = 0; pt < playerCount; pt++) {
 
 				if (snek1[pt].direction_tick == 'w' && snek1[pt].holdW == false && snek1[pt].direction_frame != 'e') {
@@ -996,9 +1003,18 @@ int main() {
 			}
 
 			  //								  //
-			 // Calculate Proximity to the Fruit //
+			 // CALCULATE PROXIMITY TO THE FRUIT //
 			//									//
-			proximityToFruit = 1.0f - ((abs(snek1[0].snek_head[0] - currentFruit[0]) + abs(snek1[0].snek_head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+			for (int pt = 0; pt < playerCount; pt++) {
+				snek1[pt].iProximityToFruit = 1.0f - ((abs(snek1[pt].snek_head[0] - currentFruit[0]) + abs(snek1[pt].snek_head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+			}
+			if (playerCount > 1 && snek1[1].iProximityToFruit > snek1[0].iProximityToFruit) {
+				proximityToFruit = snek1[1].iProximityToFruit;
+			}
+			else {
+				proximityToFruit = snek1[0].iProximityToFruit;
+			}
+			
 
 			  //								//
 			 // DETECT IF PLAYER HAS HIT FRUIT //
@@ -1118,7 +1134,7 @@ int main() {
 			
 
 			  //				//
-			 // Create Portals //
+			 // CREATE PORTALS //
 			//				  //
 			if (highestCurrentLength == 14 && portalCount < 1) {
 				portalCount++;
@@ -1148,7 +1164,7 @@ int main() {
 			}
 
 			  //							 //
-			 // Pass Player Through Portals //
+			 // PASS PLAYER THROUGH PORTALS //
 			//							   //
 			for (int pt = 0; pt < playerCount; pt++) {
 				for (int hh = 0; hh < portalCount * 2; hh++) {
@@ -1174,13 +1190,16 @@ int main() {
 			
 			*/
 
-
-			//PLACE PLAYER INTO DISPLAY ARRAY//
+			  //								 //
+			 // PLACE PLAYER INTO DISPLAY ARRAY //
+			//								   //
 			for (int pt = 0; pt < playerCount; pt++) {
 				display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] = '8';
 			}
-			//PLACE FRUIT INTO DISPLAY ARRAY//
 
+			  //								//
+			 // PLACE FRUIT INTO DISPLAY ARRAY //
+			//								  //
 			display[currentFruit[0]][currentFruit[1]] = '+';
 
 			
@@ -1401,13 +1420,7 @@ int main() {
 
 				else if (t == 17 && q == 25) {
 					screenString.replace(8 + q + (80 * t), 33, "use arrow keys ^ v < > to control");
-				}
-
-				/*else if (t == 19 && q == 25) {
-					//cout << "	use arrow keys ^ v < > to control";
-					screenString.replace(8 + q + (80 * t), 18, "Press [S] to pause");
-				}
-				*/
+				}					
 
 				else if (t == 21 && q == 25 && highestCurrentLength > 10) {
 					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
@@ -1437,13 +1450,12 @@ int main() {
 			}
 
 			if (playerCount == 2 && currentFrame == 1) {
+
 				screenString.replace(10 * 80 + 14, 8, "Player 1");
-				screenString.replace(11 * 80 + 17, 1, "|");
-				//screenString.replace(12 * 80 + 17, 1, "V");
+				screenString.replace(11 * 80 + 17, 1, "|");				
 
 				screenString.replace(10 * 80 + 4, 8, "Player 2");
-				screenString.replace(11 * 80 + 7, 1, "|");
-				//screenString.replace(12 * 80 + 7, 1, "V");				
+				screenString.replace(11 * 80 + 7, 1, "|");	
 			}
 
 			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
