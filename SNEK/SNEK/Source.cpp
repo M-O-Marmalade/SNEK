@@ -41,6 +41,7 @@
 // Place Fruit Into Display Array
 // Draw Screen
 // Game Over Screen
+// Write High Score To File
 
   //					 //
  // INCLUDES/NAMESPACES //
@@ -73,6 +74,7 @@ int playerCount = 1;			//amount of players, can be increased at start screen
 int highestCurrentLength = 0;	//highest length out of all current players/sneks
 int portalCount = 0;			//amount of portals on the map
 int portalCoordinates[6][2];	//coordinates of the current portals on the map
+bool gotNewFruit = false;
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -613,7 +615,7 @@ int main() {
 
 		styleCounter = 0;
 
-		frameRate = 10;		
+		frameRate = 30;		
 
 		currentFrame = 0;
 
@@ -654,56 +656,44 @@ int main() {
 			  //			   //
 			 // SET FRAMERATE //
 			//				 //
-			if (highestCurrentLength < 1) {
-				frameRate = 30;
-
+			if (gotNewFruit = true) {
+				switch (highestCurrentLength) {
+				case 1:
+					frameRate = 20;
+					break;
+				case 7:
+					frameRate = 10;
+					break;
+				case 11:
+					frameRate = 9;
+					break;
+				case 20:
+					frameRate = 8;
+					break;
+				case 30:
+					frameRate = 7;
+					break;
+				case 40:
+					frameRate = 6;
+					break;
+				case 50:
+					frameRate = 5;
+					break;
+				case 60:
+					frameRate = 4;
+					break;
+				case 70:
+					frameRate = 3;
+					break;
+				case 80:
+					frameRate = 2;
+					break;
+				case 90:
+					frameRate = 1;
+					break;
+				}
 			}
-
-			else if (highestCurrentLength > 0 && highestCurrentLength < 7) {
-				frameRate = 20;
-
-			}
-
-			else if (highestCurrentLength > 6 && highestCurrentLength < 11) {
-				frameRate = 10;
-
-			}
-
-			else if (highestCurrentLength > 10 && highestCurrentLength < 30) {
-				frameRate = 9;
-
-			}
-
-			else if (highestCurrentLength > 29 && highestCurrentLength < 50) {
-				frameRate = 8;
-
-			}
-
-			else if (highestCurrentLength > 49 && highestCurrentLength < 72) {
-				frameRate = 7;
-
-			}
-
-			else if (highestCurrentLength > 71 && highestCurrentLength < 100) {
-				frameRate = 6;
-
-			}
-
-			else if (highestCurrentLength > 99 && highestCurrentLength < 123) {
-				frameRate = 5;
-
-			}
-
-			else if (highestCurrentLength > 122 && highestCurrentLength < 150) {
-				frameRate = 4;
-
-			}
-
-			else if (highestCurrentLength > 149) {
-				frameRate = 3;
-
-			}
-
+			
 			  //			//
 			 // TICK CLOCK //
 			//			  //
@@ -983,6 +973,7 @@ int main() {
 				proximityToFruit = snek1[0].iProximityToFruit;
 			}
 			
+			gotNewFruit = false;
 
 			  //								//
 			 // DETECT IF PLAYER HAS HIT FRUIT //
@@ -992,6 +983,7 @@ int main() {
 				if (snek1[pt].snek_head[0] == currentFruit[0] && snek1[pt].snek_head[1] == currentFruit[1]) {
 
 					snek1[pt].snek_length++;
+					gotNewFruit = true;
 
 					for (int e = 0; e == 0;) {
 						currentFruit[0] = rand() % 25;
@@ -1083,17 +1075,13 @@ int main() {
 					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
 
 					if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED) {
-
 						snakeMoveInstance->start();	//FMOD
-
 					}
 
 					snekMoveTimelinePosition += 200;
 
 					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-
 						snekMoveTimelinePosition = 0;
-
 					}
 				}
 
@@ -1443,6 +1431,10 @@ int main() {
 		  //				  //
 		 // GAME OVER SCREEN //
 		//					//
+
+		  //						  //
+		 // WRITE HIGH SCORE TO FILE //
+		//							//
 		ofstream scoreFileWrite;
 		scoreFileWrite.open("ScoreFile.txt", ios::trunc);
 		scoreFileWrite << to_string(highScore);
@@ -1454,7 +1446,6 @@ int main() {
 		screenString.replace(8 + 25 + (80 * 17), 33, "                                 ");
 
 		fancyBossInstance->start();
-
 		system->update(); //begin FMOD sound generation/song playback
 
 			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, "GAME OVER");
