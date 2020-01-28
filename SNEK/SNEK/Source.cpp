@@ -40,6 +40,10 @@
 // Place Player Into Display Array
 // Place Fruit Into Display Array
 // Draw Screen
+// Color the Screen
+// Color the Fruit Pink
+// Color Player 1 Green
+// Color Player 2 Red
 // Game Over Screen
 // Write High Score To File
 
@@ -55,6 +59,8 @@
 #include "fmod.hpp"
 #include "fmod_studio.hpp"
 #include "fstream"
+#include "Wincon.h"
+#include <vector>
 
 using namespace std;
 
@@ -87,6 +93,8 @@ int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
+
+
 struct snek {
 	int snek_head[2];				//the snek's head position on the play grid [x,y]
 	int snek_length = 0;			//current length of the snek (used to calculate current Score as well)
@@ -100,6 +108,8 @@ struct snek {
 	bool holdS = false;				//"		"
 	bool holdN = false;				//"		"
 	float iProximityToFruit;		//stores each player's distance to the fruit
+	bool justGotNewFruit = true;
+	int snekSwallowTimer = 1;
 };
 
 // UNUSED
@@ -246,12 +256,16 @@ int main() {
 	bool animation = true;
 	int u = 0;
 	int charToOverwrite = 992;
+
+	vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+
 	while (animation) {			//Draw Splash Screen
 
 		screen[charToOverwrite] = "Citrus Studios"[u];
 		charToOverwrite++;
 		u++;
 		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 		this_thread::sleep_for(77ms);
 
@@ -293,6 +307,30 @@ int main() {
 
 
 	
+	for (int yt = 0; yt < 1040; yt++) {
+		attributes[yt] = FOREGROUND_GREEN;
+	}
+	for (int yt = 0; yt < 960; yt++) {
+		attributes[yt + 1040] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	}
+	for (int yt = 1440; yt < 1520; yt++) {
+		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	}
+	for (int yt = 1600; yt < 1625; yt++) {
+		attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+	}
+	for (int yt = 1625; yt < 1651; yt++) {
+		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE;
+	}
+	for (int yt = 1651; yt < 1680; yt++) {
+		attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	}
+	for (int yt = 1680; yt < 2000; yt++) {
+		attributes[yt] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	}
+
+	WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+
 	bool holdKey = false;
 	while (startScreen) {
 
@@ -669,19 +707,19 @@ int main() {
 			if (gotNewFruit = true) {
 				switch (highestCurrentLength) {
 				case 1:
-					frameRate = 12;
+					frameRate = 16;
 					break;
 				case 7:
-					frameRate = 11;
+					frameRate = 14;
 					break;
 				case 11:
-					frameRate = 9;
+					frameRate = 12;
 					break;
 				case 20:
-					frameRate = 8;
+					frameRate = 9;
 					break;
 				case 30:
-					frameRate = 7;
+					frameRate = 8;
 					break;
 				case 40:
 					frameRate = 6;
@@ -775,9 +813,9 @@ int main() {
 			//					  //
 			for (int pt = 0; pt < playerCount; pt++) {
 
-				for (int r = snek1[pt].snek_length; r > 0; r--) {
+				for (int r = snek1[pt].snek_length - 1; r >= 0; r--) {
 
-					if (r > 1) {
+					if (r > 0) {
 						snek1[pt].snek_body[r][0] = snek1[pt].snek_body[r - 1][0];	//move all segments except the segment right before the head
 						snek1[pt].snek_body[r][1] = snek1[pt].snek_body[r - 1][1];
 
@@ -839,7 +877,7 @@ int main() {
 			//									  //
 			for (int pt = 0; pt < playerCount; pt++) {
 
-				for (int r = snek1[pt].snek_length; r > 0; r--) {
+				for (int r = snek1[pt].snek_length - 1; r >= 0; r--) {
 					display[snek1[pt].snek_body[r][0]][snek1[pt].snek_body[r][1]] = '7';
 
 				}
@@ -993,7 +1031,10 @@ int main() {
 				if (snek1[pt].snek_head[0] == currentFruit[0] && snek1[pt].snek_head[1] == currentFruit[1]) {
 
 					snek1[pt].snek_length++;
+					snek1[pt].justGotNewFruit = true;
 					gotNewFruit = true;
+					snek1[pt].snekSwallowTimer = 0;
+					
 
 					for (int e = 0; e == 0;) {
 						currentFruit[0] = rand() % 25;
@@ -1350,7 +1391,7 @@ int main() {
 					screenString.replace(1 + q + (80 * t), 46, "      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 				}
 
-				else if (t == 7 && q == 25) {
+				else if (t == 7 && q == 25 && playerCount == 1) {
 					
 					screenString.replace(1 + q + (80 * t), 14, "       SCORE: ");
 					
@@ -1365,6 +1406,28 @@ int main() {
 					string highScoreString = to_string(highScore);
 
 					screenString.replace(32 + snekLengthString.length() + q + (80 * t), highScoreString.length(), highScoreString);
+
+				}
+
+				else if (t == 7 && q == 25 && playerCount == 2) {
+
+					screenString.replace(1 + q + (80 * t), 14, "    P1 SCORE: ");
+
+					string snekLengthString0 = to_string(snek1[0].snek_length);
+
+					screenString.replace(15 + q + (80 * t), snekLengthString0.length(), snekLengthString0);
+
+					screenString.replace(1 + q + (80 * (t + 1)), 14, "    P2 SCORE: ");
+
+					string snekLengthString1 = to_string(snek1[1].snek_length);
+
+					screenString.replace(15 + q + (80 * (t + 1)), snekLengthString1.length(), snekLengthString1);
+
+					screenString.replace(15 + snekLengthString0.length() + q + (80 * t), 17, "     HIGH SCORE: ");
+										
+					string highScoreString = to_string(highScore);
+
+					screenString.replace(32 + snekLengthString0.length() + q + (80 * t), highScoreString.length(), highScoreString);
 
 				}
 
@@ -1384,11 +1447,11 @@ int main() {
 
 				}
 
-				else if (t == 17 && q == 25) {
+				else if (t == 17 && q == 25 && playerCount == 1) {
 					screenString.replace(8 + q + (80 * t), 33, "use arrow keys ^ v < > to control");
 				}					
 
-				else if (t == 21 && q == 25 && highestCurrentLength > 10) {
+				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 0) {
 					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
 				}
 								
@@ -1432,6 +1495,76 @@ int main() {
 
 			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
+			  //				  //
+			 // COLOR THE SCREEN //
+			//				    //
+
+			//reset entire display color to green//
+			for (int yt = 0; yt < nScreenWidth * nScreenHeight; yt++) {		
+				attributes[yt] = FOREGROUND_GREEN;
+			}
+
+			  //					  //
+			 // COLOR THE FRUIT PINK //
+			//						//
+			attributes[currentFruit[0] + (currentFruit[1] * 80)] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;		
+
+			  //					  //
+			 // COLOR PLAYER 1 GREEN //
+			//						//
+			attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+
+			if (!snek1[0].justGotNewFruit) {
+				for (int l = 0; l < snek1[0].snek_length; l++) {
+					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+				}	
+				if (snek1[0].snekSwallowTimer <= snek1[0].snek_length) {						
+					attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+					snek1[0].snekSwallowTimer++;
+				}					
+			}
+			else {
+				snek1[0].justGotNewFruit = false;
+				for (int l = 0; l < snek1[0].snek_length - 1; l++) {
+					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+				}
+				if (snek1[0].snekSwallowTimer == 0) {
+					attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+					snek1[0].snekSwallowTimer++;
+				}					
+			}				
+				
+			  //					//
+			 // COLOR PLAYER 2 RED //
+			//					  //
+			if (playerCount == 2) {
+				attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+
+				if (!snek1[1].justGotNewFruit) {
+					for (int l = 0; l < snek1[1].snek_length; l++) {
+						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					}
+					if (snek1[1].snekSwallowTimer <= snek1[1].snek_length) {
+						attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						snek1[1].snekSwallowTimer++;
+					}
+				}
+				else {
+					snek1[1].justGotNewFruit = false;
+					for (int l = 0; l < snek1[1].snek_length - 1; l++) {
+						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					}
+					if (snek1[1].snekSwallowTimer == 0) {
+						attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						snek1[1].snekSwallowTimer++;
+					}
+				}
+			}
+			
+			
+			WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+						
+			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
 			Sleep(3000);
 			
