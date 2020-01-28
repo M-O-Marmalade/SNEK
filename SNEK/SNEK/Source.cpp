@@ -1357,9 +1357,14 @@ int main() {
 			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
 				kickInstance->start();
 			}
-			if (i16thNote == 5 || i16thNote == 13) {
+
+			if (highestCurrentLength > 19 && i16thNote == 5 || i16thNote == 13) {
+				snare2Instance->start();
+			}
+			else if (highestCurrentLength < 20 && i16thNote == 5 || i16thNote == 13) {
 				snare1Instance->start();
 			}
+
 
 			if (i16thNote < 16) {
 				i16thNote++;
