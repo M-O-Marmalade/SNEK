@@ -93,6 +93,9 @@ int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
+//SOUND VARIABLES
+int i16thNote = 1;
+
 
 
 struct snek {
@@ -201,6 +204,30 @@ int main() {
 
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
+
+	FMOD::Studio::EventDescription* criticalDescription = NULL;				//Critical (snake only has a head sound)
+	system->getEvent("event:/Critical", &criticalDescription);
+
+	FMOD::Studio::EventInstance* criticalInstance = NULL;
+	criticalDescription->createInstance(&criticalInstance);
+
+	FMOD::Studio::EventDescription* kickDescription = NULL;				//Kick Drum
+	system->getEvent("event:/Kick", &kickDescription);
+
+	FMOD::Studio::EventInstance* kickInstance = NULL;
+	kickDescription->createInstance(&kickInstance);
+
+	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
+	system->getEvent("event:/Snare1", &snare1Description);
+
+	FMOD::Studio::EventInstance* snare1Instance = NULL;
+	snare1Description->createInstance(&snare1Instance);
+
+	FMOD::Studio::EventDescription* snare2Description = NULL;				//Snare Drum 2
+	system->getEvent("event:/Snare2", &snare2Description);
+
+	FMOD::Studio::EventInstance* snare2Instance = NULL;
+	snare2Description->createInstance(&snare2Instance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -663,7 +690,7 @@ int main() {
 
 		styleCounter = 0;
 
-		frameRate = 50;		
+		frameRate = 100;		
 
 		currentFrame = 0;
 
@@ -707,37 +734,37 @@ int main() {
 			if (gotNewFruit = true) {
 				switch (highestCurrentLength) {
 				case 1:
-					frameRate = 16;
+					frameRate = 32;
 					break;
 				case 7:
-					frameRate = 14;
+					frameRate = 27;
 					break;
 				case 11:
-					frameRate = 12;
+					frameRate = 22;
 					break;
 				case 20:
-					frameRate = 9;
+					frameRate = 18;
 					break;
 				case 30:
-					frameRate = 8;
+					frameRate = 16;
 					break;
 				case 40:
-					frameRate = 6;
+					frameRate = 12;
 					break;
 				case 50:
-					frameRate = 5;
+					frameRate = 10;
 					break;
 				case 60:
-					frameRate = 4;
+					frameRate = 8;
 					break;
 				case 70:
-					frameRate = 3;
+					frameRate = 7;
 					break;
 				case 80:
-					frameRate = 2;
+					frameRate = 6;
 					break;
 				case 90:
-					frameRate = 1;
+					frameRate = 5;
 					break;
 				}
 			}
@@ -789,7 +816,7 @@ int main() {
 
 				}					
 				
-				this_thread::sleep_for(15ms);
+				this_thread::sleep_for(7ms);
 
 				currentTick++;	
 				
@@ -1210,7 +1237,8 @@ int main() {
 			display[currentFruit[0]][currentFruit[1]] = '+';
 
 			
-/*			//DETERMINE TRAP LOCATIONS/////////////
+			/*
+			//DETERMINE TRAP LOCATIONS/////////////
 
 			if (currentTrap < snek1[0].snek_length) {
 				currentTrap++;
@@ -1315,7 +1343,7 @@ int main() {
 			}
 			*/
 			//DETERMINE IF PLAYER HAS HIT A TRAP//////
-/*
+			/*
 			if (actualTrapCount < 0 && display[snek1[0].snek_head[0]][snek1[0].snek_head[1]] == 'X') {
 				gameLose = true;
 				break;
@@ -1323,6 +1351,24 @@ int main() {
 			}
 			*/
 			
+			  //				  //
+			 // AUDIO PROCESSING //
+			//					//
+			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
+				kickInstance->start();
+			}
+			if (i16thNote == 5 || i16thNote == 13) {
+				snare1Instance->start();
+			}
+
+			if (i16thNote < 16) {
+				i16thNote++;
+			}
+			else {
+				i16thNote = 1;
+			}
+			
+
 			  //			 //
 			 // DRAW SCREEN //	
 			//			   //
