@@ -85,6 +85,7 @@ bool gotNewFruit = false;
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
 bool zKey;						//stores input from Z key
+bool actionKeyHeld = false;		//indicates whether any one player is holding an action key
 
 //DISPLAY VARIABLES
 int frameRate = 10;				//frame rate setting
@@ -92,12 +93,17 @@ int currentFrame = 0;			//keeps track of how many frames have passed
 int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
+vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);	//stores colors for display
 
-//SOUND VARIABLES
-int i16thNote = 1;
+//SOUND VARIABLES (FMOD)
+int snekMoveTimelinePosition = 0;		//snakeMoveInstance timeline position
+int snekMoveTimelinePositionMax = 200;	//snakeMoveInstance timeline position max
+bool isScoreUnder11 = true;				//changes to false when highestCurrentLength passes 11
+float snakeMoveReverbLevel = 0.0f;		//reverb level for the snakeMoveInstance sound
+float proximityToFruit;					//stores the closest player's proximity to the current fruit				
+int i16thNote = 1;						//counts each frame and resets back to 1 after reaching 16 (it skips 17 and goes back to 1)
 
-
-
+//PLAYER-SPECIFIC STRUCTURE/VARIABLES
 struct snek {
 	int snek_head[2];				//the snek's head position on the play grid [x,y]
 	int snek_length = 0;			//current length of the snek (used to calculate current Score as well)
@@ -110,23 +116,15 @@ struct snek {
 	bool holdE = false;				//"		"
 	bool holdS = false;				//"		"
 	bool holdN = false;				//"		"
+	bool holdAction = false;		//was the player's action key held during the previous frame?
 	float iProximityToFruit;		//stores each player's distance to the fruit
-	bool justGotNewFruit = true;
-	int snekSwallowTimer = 1;
+	bool justGotNewFruit = true;	//did the player just get a new fruit this/last frame?
+	int snekSwallowTimer = 1;		//counts the frames since the player last swallowed a fruit, maxes out at player's snek_length + 1
 };
-
-// UNUSED
-//int currentTrap = 0;			//current number of traps on the game grid
-//int trapLocations[200][2];	//locations of the traps on the game grid
-//int r = 4;					//used for counting the number of traps whose locations have been set
-//int actualTrapCount;
-//bool alternator1 = true;
-
 
 void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
 	this_thread::sleep_for(33ms);
 }
-
 
 int main() {	
 
@@ -285,9 +283,7 @@ int main() {
 	//						   //
 	bool animation = true;
 	int u = 0;
-	int charToOverwrite = 992;
-
-	vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+	int charToOverwrite = 992;	
 
 	while (animation) {			//Draw Splash Screen
 
@@ -608,20 +604,10 @@ int main() {
 			
 
 		}
-	}
-
-	
+	}	
 
 	this_thread::sleep_for(1389ms);
-
-	//some random maths and stuff//
-	//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	// 40 x 6
-	// 25 - 6 = 19
-	//19 / 2 = 9.5
-	//9 low, 40 in
-	//8 low, 39 in
-
+	   
 	  //					  //
 	 // READ HIGH SCORE FILE //
 	//						//
@@ -640,38 +626,34 @@ int main() {
 	do {
 		  //						  //
 		 // PRE-NEW GAME PREPARATION //
-		//						    //		
-
-
-		snek snek1[4];
-
+		//						    //	
+		snek snek1[2];
 
 		snek1[0].snek_head[0] = (24 / (playerCount + 1)) * playerCount + (playerCount - 1);
 		snek1[0].snek_head[1] = 12;
 		snek1[0].direction_tick = 's';
 		snek1[0].direction_frame = 's';
 
-		snek1[1].snek_head[0] = 7;
-		snek1[1].snek_head[1] = 12;
-		snek1[1].direction_tick = 's';
-		snek1[1].direction_frame = 's';
-
-		/*snek1[2].snek_head[0] = 8;
-		snek1[2].snek_head[1] = 16;
-		snek1[2].direction_tick = 's';
-		snek1[2].direction_frame = 's';
-
-		snek1[3].snek_head[0] = 12;
-		snek1[3].snek_head[1] = 20;
-		snek1[3].direction_tick = 's';
-		snek1[3].direction_frame = 's';*/
-			
-		portalCount = 0;
-		
-
+		if (playerCount == 2) {
+			snek1[1].snek_head[0] = 7;
+			snek1[1].snek_head[1] = 12;
+			snek1[1].direction_tick = 's';
+			snek1[1].direction_frame = 's';
+		}
+					
 		gameLose = false;	//reset game lose condition
+		frameRate = 100;	//reset the framerate
+		currentFrame = 0;	//reset the frame counter
 
-		srand(time(0));	//seed the RNG using system time
+		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
+			snek1[p].snek_length = 0;
+		}
+
+		highestCurrentLength = 0;	//reset the highest current length
+		styleCounter = 0;	//reset the style counter
+		portalCount = 0;	//reset the amount of portals on the map back to 0
+
+		srand(time(0));	//seed the RNG using system time, and make a new fruit location
 		for (bool inLoop = true; inLoop;) {
 
 			currentFruit[0] = rand() % 13 + 6;
@@ -681,51 +663,33 @@ int main() {
 				inLoop = false;
 			}
 		}
-				
 
-		//snekHead[0] = 12;
-		//snekHead[1] = 12;	
-		for (int p = 0; p < playerCount; p++) {
-			snek1[p].snek_length = 0;
-		}
+		//Reset the Game Grid Display//
+		for (int x = 0; x < 25; x++) {			
 
-		highestCurrentLength = 0;
-
-		styleCounter = 0;
-
-		frameRate = 100;		
-
-		currentFrame = 0;
-
-		//currentTrap = 0;
-		//r = 0;
-		//actualTrapCount = 0;
-
-		for (int x = 0; x < 25; x++) {			//reset the game display
-			
 			for (int y = 0; y < 25; y++) {
 				display[x][y] = 'z';
 
 			}
 		}
 
-		for (int n = 0; n < nScreenHeight * nScreenWidth; n++){
+		//Reset the Screen String Buffer//
+		for (int n = 0; n < nScreenHeight * nScreenWidth; n++) {	
 			screenString.replace(n, 1, " ");
 		}
 
+		//Reset the Screen Char Buffer//
 		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
 			screen[u] = char(32);
 
 		}
 
-		//FMOD-Related Variables//
-		int snekMoveTimelinePosition = 0;	//FMOD snakemovesound timeline position
-		int snekMoveTimelinePositionMax = 200;
-		bool isScoreUnder11 = true;
-		float snakeMoveReverbLevel = 0.0f;
-		float proximityToFruit;
-		bool wasZKeyHeld = false;
-
+		//Reset FMOD-Related Sound Variables//
+		snekMoveTimelinePosition = 0;
+		snekMoveTimelinePositionMax = 200;
+		isScoreUnder11 = true;
+		snakeMoveReverbLevel = 0.0f;
+			   
 		  //				   //
 		 // [GAME LOOP START] //
 		//				     //
@@ -792,8 +756,7 @@ int main() {
 
 				snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && highestCurrentLength > 10;
 
-				snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0) && highestCurrentLength > 10;
-				
+				snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0) && highestCurrentLength > 10;				
 
 				  //										 //
 				 // CHECK + SET DIRECTION [TICK RESOLUTION] //
@@ -1002,11 +965,7 @@ int main() {
 			for (int pt = 0; pt < playerCount; pt++) {
 				if (snek1[pt].snek_head[0] < 0 || snek1[pt].snek_head[0] > 24 || snek1[pt].snek_head[1] < 0 || snek1[pt].snek_head[1] > 24) {
 					gameLose = true;
-
-					deathInstance->start();		//(FMOD)
-					system->update();
-
-					break;
+					//break;
 
 				}
 			}
@@ -1018,44 +977,37 @@ int main() {
 			for (int pt = 0; pt < playerCount; pt++) {
 				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '8') {
 					gameLose = true;
-
-					deathInstance->start();		//(FMOD)
-					system->update();
-
-					break;
+					//break;
 				}
-			}
-
-			if (gameLose == true) {
-				break;
 			}
 
 			  //						 //
 			 // UPDATE STYLE HIGH SCORE //
 			//						   //
-			if (styleCounter > styleHighScore) {
+			if (styleCounter > styleHighScore && !gameLose) {
 				styleHighScore++;
-
 			}
 
 			  //								  //
 			 // CALCULATE PROXIMITY TO THE FRUIT //
 			//									//
-			for (int pt = 0; pt < playerCount; pt++) {
+			for (int pt = 0; pt < playerCount; pt++) {	//calculate each player's individual proximity
 				snek1[pt].iProximityToFruit = 1.0f - ((abs(snek1[pt].snek_head[0] - currentFruit[0]) + abs(snek1[pt].snek_head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
 			}
-			if (playerCount > 1 && snek1[1].iProximityToFruit > snek1[0].iProximityToFruit) {
+			if (playerCount > 1 && snek1[1].iProximityToFruit > snek1[0].iProximityToFruit) {	//use whichever one is closer
 				proximityToFruit = snek1[1].iProximityToFruit;
 			}
 			else {
-				proximityToFruit = snek1[0].iProximityToFruit;
+				proximityToFruit = snek1[0].iProximityToFruit;	//if there is only one player, then 
 			}
 			
-			gotNewFruit = false;
+			
 
 			  //								//
 			 // DETECT IF PLAYER HAS HIT FRUIT //
 			//								  //
+			gotNewFruit = false;
+
 			for (int pt = 0; pt < playerCount; pt++) {
 
 				if (snek1[pt].snek_head[0] == currentFruit[0] && snek1[pt].snek_head[1] == currentFruit[1]) {
@@ -1076,110 +1028,21 @@ int main() {
 					}
 
 					if (snek1[pt].snek_length == 11) {
-						snakeFruitInstance11->start();	//(FMOD)
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.125f;
 						isScoreUnder11 = false;
-					}
-					else {
-						snakeFruitInstance->start();	//(FMOD)	
-					}
+					}					
 
-					switch (snek1[pt].snek_length) {
-					case 20:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.250f;
-						break;
-
-					case 30:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.375f;
-						break;
-
-					case 40:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.5f;
-						break;
-
-					case 50:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.625f;
-						break;
-
-					case 60:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.750f;
-						break;
-
-					case 70:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 0.875f;
-						break;
-
-					case 80:
-						snekMoveTimelinePositionMax += 200;
-						snakeMoveReverbLevel = 1.0f;
-						break;
-					}
-
+					  //					//
+					 // SET NEW HIGH SCORE //
 					//					  //
-				   // SET NEW HIGH SCORE //
-				  //					//
-					if (snek1[pt].snek_length > highScore) {
-
-						highScore++;
-					}
-
-					if (snek1[pt].snek_length > highestCurrentLength) {
+					if (snek1[pt].snek_length > highestCurrentLength) {		//update current highest length
 						highestCurrentLength++;
-					}
-
-				}
-
-
-				else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
-					snakeLungeInstance->setPitch(proximityToFruit);		//(FMOD)
-					snakeLungeInstance->start();
-					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
-					if (!wasZKeyHeld) {
-						snekMoveTimelinePosition += 200;
-						wasZKeyHeld = true;
+						if (highestCurrentLength > highScore) {				//update high score
+							highScore++;
+						}
 					}
 				}
-
-				else {
-
-					wasZKeyHeld = false;
-
-					snakeMoveInstance->setPitch(proximityToFruit);		//(FMOD)
-					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-
-					if (highestCurrentLength != 0 && (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED)) {
-						snakeMoveInstance->start();	//(FMOD)
-					}
-
-					/*
-					else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
-						criticalInstance->setPitch(proximityToFruit);
-						criticalInstance->start();
-					}
-					else {
-						criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-					}
-					*/
-
-					snekMoveTimelinePosition += 200;
-
-					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-						snekMoveTimelinePosition = 0;
-					}
-				}
-
 			}
-
 			
-
 			  //				//
 			 // CREATE PORTALS //
 			//				  //
@@ -1222,9 +1085,8 @@ int main() {
 					}
 				}
 			}
-
 			/*
-			enter 0   
+			enter 0		//some random maths for portal traversal
 			exit 1
 
 			(0 + 1) % 2
@@ -1250,131 +1112,113 @@ int main() {
 			display[currentFruit[0]][currentFruit[1]] = '+';
 
 			
-			/*
-			//DETERMINE TRAP LOCATIONS/////////////
-
-			if (currentTrap < snek1[0].snek_length) {
-				currentTrap++;
-
-				if (currentTrap == 3) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[0][0] = rand() % 25;
-						trapLocations[0][1] = rand() % 25;
-
-						if ((trapLocations[0][0] != snek1[0].snek_head[0] && trapLocations[0][1] != snek1[0].snek_head[1]) && display[trapLocations[0][0]][trapLocations[0][1]] != '7' && display[trapLocations[0][0]][trapLocations[0][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap == 7) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[1][0] = rand() % 25;
-						trapLocations[1][1] = rand() % 25;
-
-						if ((trapLocations[1][0] != snek1[0].snek_head[0] && trapLocations[1][1] != snek1[0].snek_head[1]) && display[trapLocations[1][0]][trapLocations[1][1]] != '7' && display[trapLocations[1][0]][trapLocations[1][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap == 11) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[2][0] = rand() % 25;
-						trapLocations[2][1] = rand() % 25;
-
-						if ((trapLocations[2][0] != snek1[0].snek_head[0] && trapLocations[2][1] != snek1[0].snek_head[1]) && display[trapLocations[2][0]][trapLocations[2][1]] != '7' && display[trapLocations[2][0]][trapLocations[2][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-
-					for (int e = 0; e == 0;) {
-						trapLocations[3][0] = rand() % 25;
-						trapLocations[3][1] = rand() % 25;
-
-						if ((trapLocations[3][0] != snek1[0].snek_head[0] && trapLocations[3][1] != snek1[0].snek_head[1]) && display[trapLocations[3][0]][trapLocations[3][1]] != '7' && display[trapLocations[3][0]][trapLocations[3][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap > 11) {
-
-					if (alternator1 = true) {
-						alternator1 = false;
-
-						for (int e = 0; e == 0;) {
-
-
-
-							trapLocations[r][0] = rand() % 25;
-							trapLocations[r][1] = rand() % 25;
-
-							if ((trapLocations[r][0] != snek1[0].snek_head[0] && trapLocations[r][1] != snek1[0].snek_head[1]) && display[trapLocations[r][0]][trapLocations[r][1]] != '7' && display[trapLocations[r][0]][trapLocations[r][1]] != '+') {
-
-								actualTrapCount++;
-								r++;
-								e = 1;
-
-
-
-
-							}
-						}
-					}
-
-					else {
-						alternator1 = true;
-
-					}
-				}
-
-
-
-			}
-			*/
-			//PLACE TRAPS INTO DISPLAY ARRAY/////////////
-			/*
-			for (int w = 0; w < actualTrapCount; w++) {
-				display[trapLocations[w][0]][trapLocations[w][1]] = 'X';
-
-			}
-			*/
-			//DETERMINE IF PLAYER HAS HIT A TRAP//////
-			/*
-			if (actualTrapCount < 0 && display[snek1[0].snek_head[0]][snek1[0].snek_head[1]] == 'X') {
-				gameLose = true;
-				break;
-
-			}
-			*/
-			
 			  //				  //
 			 // AUDIO PROCESSING //
-			//					//			
-			if (highestCurrentLength > 19 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {		//(FMOD)
+			//					//		
+			if (gameLose) {					//play the death sound if the game is lost
+				deathInstance->start();
+			}
+
+			if (gotNewFruit) {				//if someone gets a new fruit..
+				for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
+					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
+						if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
+							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
+						}
+						else {									//..otherwise, play the default fruit eating sound
+							snakeFruitInstance->start();
+						}
+					}
+				}
+
+				switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
+				case 11:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.125f;
+					break;
+
+				case 20:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.250f;
+					break;
+
+				case 30:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.375f;
+					break;
+
+				case 40:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.5f;
+					break;
+
+				case 50:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.625f;
+					break;
+
+				case 60:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.750f;
+					break;
+
+				case 70:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 0.875f;
+					break;
+
+				case 80:
+					snekMoveTimelinePositionMax += 200;
+					snakeMoveReverbLevel = 1.0f;
+					break;
+				}
+			}	
+			else if (snek1[0].action_keys || snek1[1].action_keys) {
+				snakeLungeInstance->setPitch(proximityToFruit);
+				snakeLungeInstance->start();
+				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
+				if (!actionKeyHeld) {
+					snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
+					actionKeyHeld = true;
+				}
+			}
+			else {
+
+				actionKeyHeld = false;
+
+				snakeMoveInstance->setPitch(proximityToFruit);
+				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
+
+				if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED) {
+					snakeMoveInstance->start();
+				}
+
+				/*
+				else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
+					criticalInstance->setPitch(proximityToFruit);
+					criticalInstance->start();
+				}
+				else {
+					criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+				}
+				*/
+
+				snekMoveTimelinePosition += 200;
+				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+					snekMoveTimelinePosition = 0;
+				}
+			}
+
+			//DRUMS//			
+			if (highestCurrentLength > 19 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {
 				kick2Instance->start();
 			}
 			else if (highestCurrentLength < 20 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {
 				kickInstance->start();
 			}
 
-			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {		//(FMOD)
+			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
 				kickInstance->start();
 			}
 
@@ -1384,6 +1228,7 @@ int main() {
 			else if (highestCurrentLength < 20 && (i16thNote == 5 || i16thNote == 13)) {
 				snare1Instance->start();
 			}
+			//Update 16th note counter//
 			if (i16thNote < 16) {
 				i16thNote++;
 			}
@@ -1740,6 +1585,168 @@ int main() {
   //		  //
  // JUNKYARD //
 //			//
+// UNUSED
+//int currentTrap = 0;			//current number of traps on the game grid
+//int trapLocations[200][2];	//locations of the traps on the game grid
+//int r = 4;					//used for counting the number of traps whose locations have been set
+//int actualTrapCount;
+//bool alternator1 = true;
+
+				/*else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
+					snakeLungeInstance->setPitch(proximityToFruit);		//(FMOD)
+					snakeLungeInstance->start();
+					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
+					if (!snek1[pt].holdAction) {
+						snekMoveTimelinePosition += 200;
+						snek1[pt].holdAction = true;
+					}
+				}*/
+
+				/*else {
+
+					snek1[pt].holdAction = false;
+
+					snakeMoveInstance->setPitch(proximityToFruit);		//(FMOD)
+					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
+
+					if (highestCurrentLength != 0 && (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED)) {
+						snakeMoveInstance->start();	//(FMOD)
+					}
+
+					/*
+					else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
+						criticalInstance->setPitch(proximityToFruit);
+						criticalInstance->start();
+					}
+					else {
+						criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					}
+
+
+					snekMoveTimelinePosition += 200;
+
+					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+						snekMoveTimelinePosition = 0;
+					}
+				}*/
+
+			/*
+			//DETERMINE TRAP LOCATIONS/////////////
+
+			if (currentTrap < snek1[0].snek_length) {
+				currentTrap++;
+
+				if (currentTrap == 3) {
+
+					for (int e = 0; e == 0;) {
+						trapLocations[0][0] = rand() % 25;
+						trapLocations[0][1] = rand() % 25;
+
+						if ((trapLocations[0][0] != snek1[0].snek_head[0] && trapLocations[0][1] != snek1[0].snek_head[1]) && display[trapLocations[0][0]][trapLocations[0][1]] != '7' && display[trapLocations[0][0]][trapLocations[0][1]] != '+') {
+
+							actualTrapCount++;
+
+							e = 1;
+						}
+					}
+				}
+
+				if (currentTrap == 7) {
+
+					for (int e = 0; e == 0;) {
+						trapLocations[1][0] = rand() % 25;
+						trapLocations[1][1] = rand() % 25;
+
+						if ((trapLocations[1][0] != snek1[0].snek_head[0] && trapLocations[1][1] != snek1[0].snek_head[1]) && display[trapLocations[1][0]][trapLocations[1][1]] != '7' && display[trapLocations[1][0]][trapLocations[1][1]] != '+') {
+
+							actualTrapCount++;
+
+							e = 1;
+						}
+					}
+				}
+
+				if (currentTrap == 11) {
+
+					for (int e = 0; e == 0;) {
+						trapLocations[2][0] = rand() % 25;
+						trapLocations[2][1] = rand() % 25;
+
+						if ((trapLocations[2][0] != snek1[0].snek_head[0] && trapLocations[2][1] != snek1[0].snek_head[1]) && display[trapLocations[2][0]][trapLocations[2][1]] != '7' && display[trapLocations[2][0]][trapLocations[2][1]] != '+') {
+
+							actualTrapCount++;
+
+							e = 1;
+						}
+					}
+
+					for (int e = 0; e == 0;) {
+						trapLocations[3][0] = rand() % 25;
+						trapLocations[3][1] = rand() % 25;
+
+						if ((trapLocations[3][0] != snek1[0].snek_head[0] && trapLocations[3][1] != snek1[0].snek_head[1]) && display[trapLocations[3][0]][trapLocations[3][1]] != '7' && display[trapLocations[3][0]][trapLocations[3][1]] != '+') {
+
+							actualTrapCount++;
+
+							e = 1;
+						}
+					}
+				}
+
+				if (currentTrap > 11) {
+
+					if (alternator1 = true) {
+						alternator1 = false;
+
+						for (int e = 0; e == 0;) {
+
+
+
+							trapLocations[r][0] = rand() % 25;
+							trapLocations[r][1] = rand() % 25;
+
+							if ((trapLocations[r][0] != snek1[0].snek_head[0] && trapLocations[r][1] != snek1[0].snek_head[1]) && display[trapLocations[r][0]][trapLocations[r][1]] != '7' && display[trapLocations[r][0]][trapLocations[r][1]] != '+') {
+
+								actualTrapCount++;
+								r++;
+								e = 1;
+
+
+
+
+							}
+						}
+					}
+
+					else {
+						alternator1 = true;
+
+					}
+				}
+
+
+
+			}
+			*/
+			//PLACE TRAPS INTO DISPLAY ARRAY/////////////
+			/*
+			for (int w = 0; w < actualTrapCount; w++) {
+				display[trapLocations[w][0]][trapLocations[w][1]] = 'X';
+
+			}
+			*/
+			//DETERMINE IF PLAYER HAS HIT A TRAP//////
+			/*
+			if (actualTrapCount < 0 && display[snek1[0].snek_head[0]][snek1[0].snek_head[1]] == 'X') {
+				gameLose = true;
+				break;
+
+			}
+			*/
+
+
+
 /*for (int q = 0; q < 25; q++) {
 
 	cout << q << " = " << display[q] << endl;
