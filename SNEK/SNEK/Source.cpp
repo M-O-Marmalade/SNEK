@@ -151,7 +151,7 @@ int main() {
 	  //							    //
 	 // LOADING/PREPARING AUDIO EVENTS //
 	//							      //
-	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen)
+	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen) (FMOD)
 	system->getEvent("event:/SplashJingle", &splashJingleDescription);
 
 	FMOD::Studio::EventInstance* splashJingleInstance = NULL;
@@ -217,6 +217,12 @@ int main() {
 	FMOD::Studio::EventInstance* kickInstance = NULL;
 	kickDescription->createInstance(&kickInstance);
 
+	FMOD::Studio::EventDescription* kick2Description = NULL;				//Kick Drum 2
+	system->getEvent("event:/Kick2", &kick2Description);
+
+	FMOD::Studio::EventInstance* kick2Instance = NULL;
+	kick2Description->createInstance(&kick2Instance);
+
 	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
 	system->getEvent("event:/Snare1", &snare1Description);
 
@@ -269,10 +275,7 @@ int main() {
 	screenWindowCoordinates->Bottom = 0;
 	screenWindowCoordinates->Right = 79;
 	SetConsoleWindowInfo(hConsole, true, screenWindowCoordinates);
-	
-	CHAR_INFO wAttributes;
-	wAttributes.Attributes = FOREGROUND_GREEN;
-	SetConsoleTextAttribute(hConsole, wAttributes);*/
+	*/
 							
 	splashJingleInstance->start();	//Begin Splash Screen (FMOD)
 	system->update();
@@ -329,7 +332,7 @@ int main() {
 
 	this_thread::sleep_for(777ms);
 
-	aNewChipInstance->start();	//begin start screen playback	
+	aNewChipInstance->start();	//begin start screen playback	(FMOD)
 	system->update();
 
 
@@ -393,7 +396,7 @@ int main() {
 				startScreenToggle = false;
 				screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
-				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button
+				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button (FMOD)
 				system->update();
 				break;
 			case false:
@@ -437,7 +440,7 @@ int main() {
 
 			startScreen = false;	//begin to exit start screen when Z key is pressed
 
-			aNewChipInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+			aNewChipInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);	//FMOD)
 			startButtonInstance->start();
 
 			system->update();	//play startbutton sound
@@ -749,22 +752,22 @@ int main() {
 					frameRate = 16;
 					break;
 				case 40:
-					frameRate = 12;
+					frameRate = 14;
 					break;
 				case 50:
-					frameRate = 10;
+					frameRate = 13;
 					break;
 				case 60:
-					frameRate = 8;
+					frameRate = 12;
 					break;
 				case 70:
-					frameRate = 7;
+					frameRate = 11;
 					break;
 				case 80:
-					frameRate = 6;
+					frameRate = 10;
 					break;
 				case 90:
-					frameRate = 5;
+					frameRate = 9;
 					break;
 				}
 			}
@@ -1000,7 +1003,7 @@ int main() {
 				if (snek1[pt].snek_head[0] < 0 || snek1[pt].snek_head[0] > 24 || snek1[pt].snek_head[1] < 0 || snek1[pt].snek_head[1] > 24) {
 					gameLose = true;
 
-					deathInstance->start();
+					deathInstance->start();		//(FMOD)
 					system->update();
 
 					break;
@@ -1016,7 +1019,7 @@ int main() {
 				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '8') {
 					gameLose = true;
 
-					deathInstance->start();
+					deathInstance->start();		//(FMOD)
 					system->update();
 
 					break;
@@ -1073,13 +1076,13 @@ int main() {
 					}
 
 					if (snek1[pt].snek_length == 11) {
-						snakeFruitInstance11->start();	//FMOD
+						snakeFruitInstance11->start();	//(FMOD)
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.125f;
 						isScoreUnder11 = false;
 					}
 					else {
-						snakeFruitInstance->start();	//FMOD	
+						snakeFruitInstance->start();	//(FMOD)	
 					}
 
 					switch (snek1[pt].snek_length) {
@@ -1135,8 +1138,8 @@ int main() {
 
 
 				else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
-					snakeLungeInstance->setPitch(proximityToFruit);
-					snakeLungeInstance->start();	//FMOD
+					snakeLungeInstance->setPitch(proximityToFruit);		//(FMOD)
+					snakeLungeInstance->start();
 					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
 					if (!wasZKeyHeld) {
 						snekMoveTimelinePosition += 200;
@@ -1148,13 +1151,23 @@ int main() {
 
 					wasZKeyHeld = false;
 
-					snakeMoveInstance->setPitch(proximityToFruit);
+					snakeMoveInstance->setPitch(proximityToFruit);		//(FMOD)
 					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
 					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
 
-					if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED) {
-						snakeMoveInstance->start();	//FMOD
+					if (highestCurrentLength != 0 && (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED)) {
+						snakeMoveInstance->start();	//(FMOD)
 					}
+
+					/*
+					else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
+						criticalInstance->setPitch(proximityToFruit);
+						criticalInstance->start();
+					}
+					else {
+						criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					}
+					*/
 
 					snekMoveTimelinePosition += 200;
 
@@ -1353,27 +1366,31 @@ int main() {
 			
 			  //				  //
 			 // AUDIO PROCESSING //
-			//					//
-			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
+			//					//			
+			if (highestCurrentLength > 19 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {		//(FMOD)
+				kick2Instance->start();
+			}
+			else if (highestCurrentLength < 20 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {
 				kickInstance->start();
 			}
 
-			if (highestCurrentLength > 19 && i16thNote == 5 || i16thNote == 13) {
+			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {		//(FMOD)
+				kickInstance->start();
+			}
+
+			if (highestCurrentLength > 19 && (i16thNote == 5 || i16thNote == 13)) {
 				snare2Instance->start();
 			}
-			else if (highestCurrentLength < 20 && i16thNote == 5 || i16thNote == 13) {
+			else if (highestCurrentLength < 20 && (i16thNote == 5 || i16thNote == 13)) {
 				snare1Instance->start();
 			}
-
-
 			if (i16thNote < 16) {
 				i16thNote++;
 			}
 			else {
 				i16thNote = 1;
 			}
-			
-
+						
 			  //			 //
 			 // DRAW SCREEN //	
 			//			   //
@@ -1639,7 +1656,7 @@ int main() {
 		screenString.replace(14 + 25 + (80 * 21), 18, "                  ");
 		screenString.replace(8 + 25 + (80 * 17), 33, "                                 ");
 
-		fancyBossInstance->start();
+		fancyBossInstance->start();			//(FMOD)
 		system->update(); //begin FMOD sound generation/song playback
 
 			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, "GAME OVER");
@@ -1694,7 +1711,7 @@ int main() {
 					gameOverMessage = false;
 					playAgain = true;
 					
-					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
 					snakeFruitInstance->start();
 					system->update();
 				}
@@ -1705,7 +1722,7 @@ int main() {
 					gameOverMessage = false;
 					playAgain = false;
 
-					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
 					system->update();
 				}
 
