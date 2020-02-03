@@ -1286,7 +1286,7 @@ int main() {
 					screenString.replace(8 + q + (80 * t), 33, L"use arrow keys ^ v < > to control");
 				}					
 
-				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 0) {
+				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 1) {
 					screenString.replace(14 + q + (80 * t), 18, L"use Z key to lunge");
 				}
 								
@@ -1432,7 +1432,18 @@ int main() {
 
 		Sleep(1347);
 		
-		screenString.replace(14 + 25 + (80 * 21), 18, L"                  ");
+		if (playerCount == 2) {
+			if (snek1[0].justDied) {
+				screenString.replace(19 + 25 + (80 * 12), 18, L"PLAYER 1 DIED!    ");
+			}
+			else {
+				screenString.replace(19 + 25 + (80 * 12), 18, L"PLAYER 2 DIED!    ");
+			}
+		}
+		else {
+			screenString.replace(14 + 25 + (80 * 21), 18, L"                  ");
+		}
+		
 		screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
 
 		fancyBossInstance->start();			//(FMOD)
