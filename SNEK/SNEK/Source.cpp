@@ -93,7 +93,6 @@ int currentFrame = 0;			//keeps track of how many frames have passed
 int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
-vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);	//stores colors for display
 
 //SOUND VARIABLES (FMOD)
 int snekMoveTimelinePosition = 0;		//snakeMoveInstance timeline position
@@ -251,8 +250,10 @@ int main() {
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 
-	string screenString;								 //character array to be displayed to the screen	
+	wstring screenString;								 //character array to be displayed to the screen	
 	screenString.resize(nScreenWidth * nScreenHeight);	//set size of screen char array/string//
+
+	vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);	//stores colors for display
 		   	
 	//disable the cursor visibility//
 	CONSOLE_CURSOR_INFO cursorInfo;					
@@ -283,7 +284,7 @@ int main() {
 
 	while (animation) {			//Draw Splash Screen
 
-		screenString[charToOverwrite] = "Citrus Studios"[u];
+		screenString[charToOverwrite] = L"Citrus Studios"[u];
 		charToOverwrite++;
 		u++;
 		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
@@ -362,38 +363,38 @@ int main() {
 
 		}*/
 
-		screenString.replace((7 * 80) + 20, 38,   "__    _    _              _  __   ____");		//draw logo each frame
-		screenString.replace((8 * 80) + 19, 40,  "/ /   | \\  | |     /\\     | |/ /  |  __|");
-		screenString.replace((9 * 80) + 19, 39,  "\\ \\   |  \\ | |    /  \\    | | /   | |__");
-		screenString.replace((10 * 80) + 20, 39,  "\\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
-		screenString.replace((11 * 80) + 20, 38,  "/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
-		screenString.replace((12 * 80) + 19, 40, "/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
+		screenString.replace((7 * 80) + 20, 38,   L"__    _    _              _  __   ____");		//draw logo each frame
+		screenString.replace((8 * 80) + 19, 40,  L"/ /   | \\  | |     /\\     | |/ /  |  __|");
+		screenString.replace((9 * 80) + 19, 39,  L"\\ \\   |  \\ | |    /  \\    | | /   | |__");
+		screenString.replace((10 * 80) + 20, 39,  L"\\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
+		screenString.replace((11 * 80) + 20, 38,  L"/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
+		screenString.replace((12 * 80) + 19, 40, L"/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 
-		screenString.replace((20 * 80) + 34, 12, "Players: <" + to_string(playerCount) + ">");
+		screenString.replace((20 * 80) + 34, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
 		if (playerCount == 2) {
-			screenString.replace((20 * 80) + 51, 23, "P1 Controls: Arrow Keys");
-			screenString.replace((20 * 80) + 8, 17, "P2 Controls: WASD");
+			screenString.replace((20 * 80) + 51, 23, L"P1 Controls: Arrow Keys");
+			screenString.replace((20 * 80) + 8, 17, L"P2 Controls: WASD");
 		}
 		else {
-			screenString.replace((20 * 80) + 51, 23, "                       ");
-			screenString.replace((20 * 80) + 8, 17, "                 ");
+			screenString.replace((20 * 80) + 51, 23, L"                       ");
+			screenString.replace((20 * 80) + 8, 17, L"                 ");
 		}
 
-		screenString.replace((22 * 80) + 33, 14, "Citrus Studios");		//draw studio name each frame
+		screenString.replace((22 * 80) + 33, 14, L"Citrus Studios");		//draw studio name each frame
 
 		if (startScreenFrameCount == 111) {
 			switch (startScreenToggle) {
 			case true:
 				startScreenToggle = false;
-				screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");	//draw "Press Z to start" every 111th frame
+				screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
 				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button (FMOD)
 				system->update();
 				break;
 			case false:
 				startScreenToggle = true;
-				screenString.replace((18 * 80) + 31, 18, "                  ");
+				screenString.replace((18 * 80) + 31, 18, L"                  ");
 
 				break;
 			}
@@ -437,85 +438,85 @@ int main() {
 
 			//Game Start animation//
 
-			screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");
+			screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 					   
-			screenString.replace((18 * 80) + 31, 18, "Press [Z++to start");
+			screenString.replace((18 * 80) + 31, 18, L"Press [Z++to start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Press [+AR+o start");
+			screenString.replace((18 * 80) + 31, 18, L"Press [+AR+o start");
 			
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Press +TART+ start");
+			screenString.replace((18 * 80) + 31, 18, L"Press +TART+ start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Press+START!+start");
+			screenString.replace((18 * 80) + 31, 18, L"Press+START!+start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Pres+ START! +tart");
+			screenString.replace((18 * 80) + 31, 18, L"Pres+ START! +tart");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Pre+  START!  +art");
+			screenString.replace((18 * 80) + 31, 18, L"Pre+  START!  +art");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "Pr+   START!   +rt");
+			screenString.replace((18 * 80) + 31, 18, L"Pr+   START!   +rt");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "P+    START!    +t");
+			screenString.replace((18 * 80) + 31, 18, L"P+    START!    +t");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "+     START!     +");
+			screenString.replace((18 * 80) + 31, 18, L"+     START!     +");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
-			screenString.replace((18 * 80) + 31, 18, "-                -");
+			screenString.replace((18 * 80) + 31, 18, L"-                -");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
-			screenString.replace((18 * 80) + 31, 18, "-     START!     -");
+			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
-			screenString.replace((18 * 80) + 31, 18, "-                -");
+			screenString.replace((18 * 80) + 31, 18, L"-                -");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(77ms);
 
-			screenString.replace((18 * 80) + 31, 18, "-     START!     -");
+			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 		}
@@ -590,7 +591,7 @@ int main() {
 
 		//Reset the Screen String Buffer//
 		for (int n = 0; n < nScreenHeight * nScreenWidth; n++) {	
-			screenString.replace(n, 1, " ");
+			screenString.replace(n, 1, L" ");
 		}
 
 		//Reset FMOD-Related Sound Variables//
@@ -1202,42 +1203,42 @@ int main() {
 				screenString[q + (80 * t)] = '|';
 
 				if (t == 0 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, "       __    _    _              _  __   ____");
+					screenString.replace(1 + q + (80 * t), 45, L"       __    _    _              _  __   ____");
 				}
 
 				else if (t == 1 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, "      / /   | \\  | |     /\\     | |/ /  |  __|");
+					screenString.replace(1 + q + (80 * t), 46, L"      / /   | \\  | |     /\\     | |/ /  |  __|");
 				}
 				
 				else if (t == 2 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, "      \\ \\   |  \\ | |    /  \\    | | /   | |__");
+					screenString.replace(1 + q + (80 * t), 45, L"      \\ \\   |  \\ | |    /  \\    | | /   | |__");
 				}
 
 				else if (t == 3 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, "       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
+					screenString.replace(1 + q + (80 * t), 46, L"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
 				}
 
 				else if (t == 4 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, "       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
+					screenString.replace(1 + q + (80 * t), 45, L"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
 				}
 
 				else if (t == 5 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, "      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
+					screenString.replace(1 + q + (80 * t), 46, L"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 				}
 
 				else if (t == 7 && q == 25 && playerCount == 1) {
 					
-					screenString.replace(1 + q + (80 * t), 14, "       SCORE: ");
+					screenString.replace(1 + q + (80 * t), 14, L"       SCORE: ");
 					
-					string snekLengthString = to_string(highestCurrentLength);
+					wstring snekLengthString = to_wstring(highestCurrentLength);
 										
 					screenString.replace(15 + q + (80 * t), snekLengthString.length(), snekLengthString);
 
-					screenString.replace(15 + snekLengthString.length() + q + (80 * t), 17, "     HIGH SCORE: ");
+					screenString.replace(15 + snekLengthString.length() + q + (80 * t), 17, L"     HIGH SCORE: ");
 
 					
 					
-					string highScoreString = to_string(highScore);
+					wstring highScoreString = to_wstring(highScore);
 
 					screenString.replace(32 + snekLengthString.length() + q + (80 * t), highScoreString.length(), highScoreString);
 
@@ -1245,21 +1246,21 @@ int main() {
 
 				else if (t == 7 && q == 25 && playerCount == 2) {
 
-					screenString.replace(1 + q + (80 * t), 14, "    P1 SCORE: ");
+					screenString.replace(1 + q + (80 * t), 14, L"    P1 SCORE: ");
 
-					string snekLengthString0 = to_string(snek1[0].snek_length);
+					wstring snekLengthString0 = to_wstring(snek1[0].snek_length);
 
 					screenString.replace(15 + q + (80 * t), snekLengthString0.length(), snekLengthString0);
 
-					screenString.replace(1 + q + (80 * (t + 1)), 14, "    P2 SCORE: ");
+					screenString.replace(1 + q + (80 * (t + 1)), 14, L"    P2 SCORE: ");
 
-					string snekLengthString1 = to_string(snek1[1].snek_length);
+					wstring snekLengthString1 = to_wstring(snek1[1].snek_length);
 
 					screenString.replace(15 + q + (80 * (t + 1)), snekLengthString1.length(), snekLengthString1);
 
-					screenString.replace(15 + snekLengthString0.length() + q + (80 * t), 17, "     HIGH SCORE: ");
+					screenString.replace(15 + snekLengthString0.length() + q + (80 * t), 17, L"     HIGH SCORE: ");
 										
-					string highScoreString = to_string(highScore);
+					wstring highScoreString = to_wstring(highScore);
 
 					screenString.replace(32 + snekLengthString0.length() + q + (80 * t), highScoreString.length(), highScoreString);
 
@@ -1267,26 +1268,26 @@ int main() {
 
 				else if (t == 9 && q == 25 && highestCurrentLength > 10) {
 
-					screenString.replace(1 + q + (80 * t), 14, "       STYLE: ");
+					screenString.replace(1 + q + (80 * t), 14, L"       STYLE: ");
 
-					string styleCounterString = to_string(styleCounter);
+					wstring styleCounterString = to_wstring(styleCounter);
 
 					screenString.replace(15 + q + (80 * t), styleCounterString.length(), styleCounterString);
 
-					screenString.replace(16 + styleCounterString.length() + q + (80 * t), 17, "     HIGH STYLE: ");
+					screenString.replace(16 + styleCounterString.length() + q + (80 * t), 17, L"     HIGH STYLE: ");
 
-					string highStyleString = to_string(styleHighScore);
+					wstring highStyleString = to_wstring(styleHighScore);
 
 					screenString.replace(33 + styleCounterString.length() + q + (80 * t), highStyleString.length(), highStyleString);
 
 				}
 
 				else if (t == 17 && q == 25 && playerCount == 1) {
-					screenString.replace(8 + q + (80 * t), 33, "use arrow keys ^ v < > to control");
+					screenString.replace(8 + q + (80 * t), 33, L"use arrow keys ^ v < > to control");
 				}					
 
 				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 0) {
-					screenString.replace(14 + q + (80 * t), 18, "use Z key to lunge");
+					screenString.replace(14 + q + (80 * t), 18, L"use Z key to lunge");
 				}
 								
 			}
@@ -1314,11 +1315,11 @@ int main() {
 
 			if (playerCount == 2 && currentFrame == 1) {
 
-				screenString.replace(10 * 80 + 14, 8, "Player 1");
-				screenString.replace(11 * 80 + 17, 1, "|");				
+				screenString.replace(10 * 80 + 14, 8, L"Player 1");
+				screenString.replace(11 * 80 + 17, 1, L"|");				
 
-				screenString.replace(10 * 80 + 4, 8, "Player 2");
-				screenString.replace(11 * 80 + 7, 1, "|");	
+				screenString.replace(10 * 80 + 4, 8, L"Player 2");
+				screenString.replace(11 * 80 + 7, 1, L"|");	
 			}
 			
 
@@ -1431,16 +1432,16 @@ int main() {
 
 		Sleep(1347);
 		
-		screenString.replace(14 + 25 + (80 * 21), 18, "                  ");
-		screenString.replace(8 + 25 + (80 * 17), 33, "                                 ");
+		screenString.replace(14 + 25 + (80 * 21), 18, L"                  ");
+		screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
 
 		fancyBossInstance->start();			//(FMOD)
 		system->update(); //begin FMOD sound generation/song playback
 
-			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, "GAME OVER");
-			screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, ">Press [Z] to play again");
-			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, ">Press [X] to quit");
-			screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
+			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, L"GAME OVER");
+			screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, L">Press [Z] to play again");
+			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
+			screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
@@ -1471,7 +1472,7 @@ int main() {
 					holdKey = false;
 				}
 
-				screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
+				screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
 				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 								
