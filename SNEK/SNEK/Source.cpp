@@ -51,16 +51,16 @@
  // INCLUDES/NAMESPACES //
 //					   //
 #include <Windows.h>
+#include <Wincon.h>
+#include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <thread>
 #include <chrono>
-#include <cstdlib>
-#include "fmod.hpp"
-#include "fmod_studio.hpp"
-#include "fstream"
-#include "Wincon.h"
-#include <vector>
+#include <fstream>
+#include <fmod.hpp>
+#include <fmod_studio.hpp>
 
 using namespace std;
 
@@ -120,6 +120,7 @@ struct snek {
 	float iProximityToFruit;		//stores each player's distance to the fruit
 	bool justGotNewFruit = true;	//did the player just get a new fruit this/last frame?
 	int snekSwallowTimer = 1;		//counts the frames since the player last swallowed a fruit, maxes out at player's snek_length + 1
+	bool justDied = false;
 };
 
 void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
@@ -246,18 +247,13 @@ int main() {
 	
 
 	//create screen buffer//
-	char *screen = new char[nScreenWidth * nScreenHeight];		//create char[] buffer to be used in console buffer updates
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 
 	string screenString;								 //character array to be displayed to the screen	
 	screenString.resize(nScreenWidth * nScreenHeight);	//set size of screen char array/string//
-	
-	for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {	//converts string buffer to char[] buffer to be written to console window
-		screen[u] = screenString[u];
-	}
-	   	
+		   	
 	//disable the cursor visibility//
 	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
@@ -287,10 +283,10 @@ int main() {
 
 	while (animation) {			//Draw Splash Screen
 
-		screen[charToOverwrite] = "Citrus Studios"[u];
+		screenString[charToOverwrite] = "Citrus Studios"[u];
 		charToOverwrite++;
 		u++;
-		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 		this_thread::sleep_for(77ms);
@@ -305,10 +301,10 @@ int main() {
 	charToOverwrite = 992;	
 	while (animation) {			//Erase Splash Screen
 		
-		screen[charToOverwrite] = char(32);
+		screenString[charToOverwrite] = char(32);
 		charToOverwrite++;
 		
-		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 		
 		this_thread::sleep_for(77ms);
 		
@@ -403,13 +399,9 @@ int main() {
 			}
 
 			startScreenFrameCount = 0;
-		}
+		}				
 
-		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {	//convert string buffer to char[] buffer
-			screen[u] = screenString[u];
-		}
-
-		WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);	//display the char[] buffer
+		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);	//display the char[] buffer
 					
 		startScreenFrameCount++;
 
@@ -447,162 +439,85 @@ int main() {
 
 			screenString.replace((18 * 80) + 31, 18, "Press [Z] to start");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 					   
 			screenString.replace((18 * 80) + 31, 18, "Press [Z++to start");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Press [+AR+o start");
-
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Press +TART+ start");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Press+START!+start");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Pres+ START! +tart");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Pre+  START!  +art");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "Pr+   START!   +rt");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "P+    START!    +t");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "+     START!     +");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			SleepinnnThang();
 
 			screenString.replace((18 * 80) + 31, 18, "-                -");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
 			screenString.replace((18 * 80) + 31, 18, "-     START!     -");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
 			screenString.replace((18 * 80) + 31, 18, "-                -");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			this_thread::sleep_for(77ms);
 
 			screenString.replace((18 * 80) + 31, 18, "-     START!     -");
 
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
-
-
-
-			//exit
-
-			
-
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 		}
 	}	
 
@@ -612,7 +527,7 @@ int main() {
 	 // READ HIGH SCORE FILE //
 	//						//
 	ifstream scoreFileRead;
-	scoreFileRead.open("ScoreFile.txt");
+	scoreFileRead.open("ScoreFile");
 	if (scoreFileRead.is_open()) {
 		string highScoreFromFile;
 		getline(scoreFileRead, highScoreFromFile);
@@ -676,12 +591,6 @@ int main() {
 		//Reset the Screen String Buffer//
 		for (int n = 0; n < nScreenHeight * nScreenWidth; n++) {	
 			screenString.replace(n, 1, " ");
-		}
-
-		//Reset the Screen Char Buffer//
-		for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-			screen[u] = char(32);
-
 		}
 
 		//Reset FMOD-Related Sound Variables//
@@ -956,7 +865,7 @@ int main() {
 					if (snek1[pt].action_keys) {
 						snek1[pt].snek_head[1]--;
 					}
-				}
+				}				
 			}
 
 			  //								   //
@@ -964,9 +873,21 @@ int main() {
 			//									 //
 			for (int pt = 0; pt < playerCount; pt++) {
 				if (snek1[pt].snek_head[0] < 0 || snek1[pt].snek_head[0] > 24 || snek1[pt].snek_head[1] < 0 || snek1[pt].snek_head[1] > 24) {
+					snek1[pt].justDied = true;
 					gameLose = true;
-					//break;
-
+										
+					if (snek1[pt].snek_head[0] > 24) {
+						snek1[pt].snek_head[0] = 24;
+					}
+					else if (snek1[pt].snek_head[0] < 0) {
+						snek1[pt].snek_head[0] = 0;
+					}
+					else if (snek1[pt].snek_head[1] > 24) {
+						snek1[pt].snek_head[1] = 24;
+					}
+					else if (snek1[pt].snek_head[1] < 0) {
+						snek1[pt].snek_head[1] = 0;
+					}
 				}
 			}
 
@@ -976,8 +897,8 @@ int main() {
 			//									   //
 			for (int pt = 0; pt < playerCount; pt++) {
 				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '7' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1]] == '8') {
+					snek1[pt].justDied = true;
 					gameLose = true;
-					//break;
 				}
 			}
 
@@ -1399,14 +1320,9 @@ int main() {
 				screenString.replace(10 * 80 + 4, 8, "Player 2");
 				screenString.replace(11 * 80 + 7, 1, "|");	
 			}
-
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
-			}
-
 			
 
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			  //				  //
 			 // COLOR THE SCREEN //
@@ -1424,52 +1340,69 @@ int main() {
 
 			  //					  //
 			 // COLOR PLAYER 1 GREEN //
-			//						//
-			attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			//						//			
+			
+			if (!snek1[0].justDied) {
+				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 
-			if (!snek1[0].justGotNewFruit) {
-				for (int l = 0; l < snek1[0].snek_length; l++) {
-					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-				}	
-				if (snek1[0].snekSwallowTimer <= snek1[0].snek_length) {						
-					attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
-					snek1[0].snekSwallowTimer++;
-				}					
+				if (!snek1[0].justGotNewFruit) {
+					for (int l = 0; l < snek1[0].snek_length; l++) {
+						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+					}
+					if (snek1[0].snekSwallowTimer <= snek1[0].snek_length) {
+						attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						snek1[0].snekSwallowTimer++;
+					}
+				}
+				else {
+					snek1[0].justGotNewFruit = false;
+					for (int l = 0; l < snek1[0].snek_length - 1; l++) {
+						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+					}
+					if (snek1[0].snekSwallowTimer == 0) {
+						attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						snek1[0].snekSwallowTimer++;
+					}
+				}
 			}
 			else {
-				snek1[0].justGotNewFruit = false;
+				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY;
 				for (int l = 0; l < snek1[0].snek_length - 1; l++) {
-					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY;
 				}
-				if (snek1[0].snekSwallowTimer == 0) {
-					attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
-					snek1[0].snekSwallowTimer++;
-				}					
-			}				
+			}
 				
 			  //					//
 			 // COLOR PLAYER 2 RED //
 			//					  //
 			if (playerCount == 2) {
-				attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+				if (!snek1[1].justDied) {
+					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
 
-				if (!snek1[1].justGotNewFruit) {
-					for (int l = 0; l < snek1[1].snek_length; l++) {
-						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					if (!snek1[1].justGotNewFruit) {
+						for (int l = 0; l < snek1[1].snek_length; l++) {
+							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+						}
+						if (snek1[1].snekSwallowTimer <= snek1[1].snek_length) {
+							attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+							snek1[1].snekSwallowTimer++;
+						}
 					}
-					if (snek1[1].snekSwallowTimer <= snek1[1].snek_length) {
-						attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
-						snek1[1].snekSwallowTimer++;
+					else {
+						snek1[1].justGotNewFruit = false;
+						for (int l = 0; l < snek1[1].snek_length - 1; l++) {
+							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+						}
+						if (snek1[1].snekSwallowTimer == 0) {
+							attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+							snek1[1].snekSwallowTimer++;
+						}
 					}
 				}
 				else {
-					snek1[1].justGotNewFruit = false;
+					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 					for (int l = 0; l < snek1[1].snek_length - 1; l++) {
-						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
-					}
-					if (snek1[1].snekSwallowTimer == 0) {
-						attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
-						snek1[1].snekSwallowTimer++;
+						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 					}
 				}
 			}
@@ -1492,7 +1425,7 @@ int main() {
 		 // WRITE HIGH SCORE TO FILE //
 		//							//
 		ofstream scoreFileWrite;
-		scoreFileWrite.open("ScoreFile.txt", ios::trunc);
+		scoreFileWrite.open("ScoreFile", ios::trunc);
 		scoreFileWrite << to_string(highScore);
 		scoreFileWrite.close();
 
@@ -1508,13 +1441,8 @@ int main() {
 			screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, ">Press [Z] to play again");
 			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, ">Press [X] to quit");
 			screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
-						
-			for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-				screen[u] = screenString[u];
 
-			}
-
-			WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
 			bool gameOverMessage = true;
 
@@ -1545,12 +1473,7 @@ int main() {
 
 				screenString.replace((18 * 80) + 46, 12, "Players: <" + to_string(playerCount) + ">");
 
-				for (int u = 0; u < (nScreenHeight * nScreenWidth); u++) {
-					screen[u] = screenString[u];
-
-				}
-
-				WriteConsoleOutputCharacter(hConsole, screen, nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 								
 				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 					gameOverMessage = false;
