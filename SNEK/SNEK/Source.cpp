@@ -39,6 +39,7 @@
 // Pass Player Through Portals
 // Place Player Into Display Array
 // Place Fruit Into Display Array
+// Audio Processing
 // Draw Screen
 // Color the Screen
 // Color the Fruit Pink
@@ -241,9 +242,7 @@ int main() {
 
 	  //			   //
 	 // DISPLAY SETUP //
-	//			  	 //
-
-	
+	//			  	 //	
 
 	//create screen buffer//
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
@@ -921,10 +920,9 @@ int main() {
 			}
 			else {
 				proximityToFruit = snek1[0].iProximityToFruit;	//if there is only one player, then 
-			}
-			
-			
+			}			
 
+			
 			  //								//
 			 // DETECT IF PLAYER HAS HIT FRUIT //
 			//								  //
