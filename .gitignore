@@ -22,7 +22,6 @@ FMOD BUILD FOLDER.lnk
 [Rr]eleases/
 x64/
 x86/
-bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -72,7 +71,6 @@ artifacts/
 *.log
 *.vspscc
 *.vssscc
-.builds
 *.pidb
 *.svclog
 *.scc

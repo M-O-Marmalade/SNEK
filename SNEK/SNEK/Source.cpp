@@ -414,11 +414,11 @@ int main() {
 		}
 		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
 			playerCount++;
-			holdKey++;
+			holdKey = true;
 		}
 		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
 			playerCount--;
-			holdKey++;
+			holdKey = true;
 		}
 		if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
 			holdKey = false;
@@ -1471,12 +1471,12 @@ int main() {
 
 				if (arrowKeys[2] && playerCount < 2 && !holdKey) {
 					playerCount++;
-					holdKey++;
+					holdKey = true;
 				}
 
 				else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
 					playerCount--;
-					holdKey++;
+					holdKey = true;
 				}
 
 				if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
