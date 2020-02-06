@@ -121,6 +121,9 @@ struct snek {
 	bool justGotNewFruit = true;	//did the player just get a new fruit this/last frame?
 	int snekSwallowTimer = 1;		//counts the frames since the player last swallowed a fruit, maxes out at player's snek_length + 1
 	bool justDied = false;
+	int potentialFruitSpot1;
+	int potentialFruitSpot2;
+	int potentialFruitSpot3;
 };
 
 void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
@@ -233,6 +236,18 @@ int main() {
 
 	FMOD::Studio::EventInstance* snare2Instance = NULL;
 	snare2Description->createInstance(&snare2Instance);
+
+	FMOD::Studio::EventDescription* a808DrumDescription = NULL;				//808 Drum
+	system->getEvent("event:/808Drum", &a808DrumDescription);
+
+	FMOD::Studio::EventInstance* a808DrumInstance = NULL;
+	a808DrumDescription->createInstance(&a808DrumInstance);
+
+	FMOD::Studio::EventDescription* cymbalDescription = NULL;				//Cymbal
+	system->getEvent("event:/Cymbal", &cymbalDescription);
+
+	FMOD::Studio::EventInstance* cymbalInstance = NULL;
+	cymbalDescription->createInstance(&cymbalInstance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -936,14 +951,43 @@ int main() {
 					snek1[pt].justGotNewFruit = true;
 					gotNewFruit = true;
 					snek1[pt].snekSwallowTimer = 0;
-					
-
-					for (int e = 0; e == 0;) {
-						currentFruit[0] = rand() % 25;
-						currentFruit[1] = rand() % 25;
-
+										
+					for (int e = 0; e < 300; e++) {
+						currentFruit[0] = rand() % 25;		//create a potential fruit spot
+						currentFruit[1] = rand() % 25;						
+											   				
+						//check if that spot is currently filled//
 						if ((currentFruit[0] != snek1[pt].snek_head[0] && currentFruit[1] != snek1[pt].snek_head[1]) && display[currentFruit[0]][currentFruit[1]] != '7' && display[currentFruit[0]][currentFruit[1]] != 'X' && display[currentFruit[0]][currentFruit[1]] != 'p') {
-							e = 1;
+
+							//a temp proximity to use in the for loop for the new fruit//
+							int proximityToFruitTemp = (abs(snek1[pt].snek_head[0] - currentFruit[0]) + abs(snek1[pt].snek_head[1] - currentFruit[1]));
+
+							//calculate snek's potential spots to be on the beat
+							if (i16thNote == 1) {
+								snek1[pt].potentialFruitSpot1 = 17;
+							}
+							else {
+								snek1[pt].potentialFruitSpot1 = 17 - i16thNote;
+							}
+
+							if (i16thNote >= 5) {
+								snek1[pt].potentialFruitSpot2 = 16 - (i16thNote - 5);
+							}
+							else {
+								snek1[pt].potentialFruitSpot2 = 5 - i16thNote;
+							}
+
+							if (i16thNote >= 13) {
+								snek1[pt].potentialFruitSpot3 = 16 - (i16thNote - 13);
+							}
+							else {
+								snek1[pt].potentialFruitSpot3 = 13 - i16thNote;
+							}
+
+							//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
+							if (proximityToFruitTemp == snek1[pt].potentialFruitSpot1 || proximityToFruitTemp == snek1[pt].potentialFruitSpot2 || proximityToFruitTemp == snek1[pt].potentialFruitSpot3) {
+								break;
+							}						
 						}
 					}
 
@@ -969,25 +1013,33 @@ int main() {
 			if (highestCurrentLength == 14 && portalCount < 1) {
 				portalCount++;
 
-				for (int e = 0; e == 0;) {
-					portalCoordinates[0][0] = (rand() % 21) + 2;
-					portalCoordinates[0][1] = (rand() % 21) + 2;
+				bool portalsFarEnoughApart = false;
+				while (!portalsFarEnoughApart) {
 
-					if (portalCoordinates[0][0] != snek1[0].snek_head[0] && portalCoordinates[0][1] != snek1[0].snek_head[1]) {
-						if (display[portalCoordinates[0][0]][portalCoordinates[0][1]] != '7' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'p') {
-							e = 1;
+					for (int e = 0; e == 0;) {
+						portalCoordinates[0][0] = (rand() % 21) + 2;
+						portalCoordinates[0][1] = (rand() % 21) + 2;
+
+						if (portalCoordinates[0][0] != snek1[0].snek_head[0] && portalCoordinates[0][1] != snek1[0].snek_head[1]) {
+							if (display[portalCoordinates[0][0]][portalCoordinates[0][1]] != '7' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && display[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'p') {
+								e = 1;
+							}
 						}
 					}
-				}
 
-				for (int e = 0; e == 0;) {
-					portalCoordinates[1][0] = (rand() % 21) + 2;
-					portalCoordinates[1][1] = (rand() % 21) + 2;
+					for (int e = 0; e == 0;) {
+						portalCoordinates[1][0] = (rand() % 21) + 2;
+						portalCoordinates[1][1] = (rand() % 21) + 2;
 
-					if (portalCoordinates[1][0] != snek1[0].snek_head[0] && portalCoordinates[1][1] != snek1[0].snek_head[1]) {
-						if (display[portalCoordinates[1][0]][portalCoordinates[1][1]] != '7' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'p') {
-							e = 1;
+						if (portalCoordinates[1][0] != snek1[0].snek_head[0] && portalCoordinates[1][1] != snek1[0].snek_head[1]) {
+							if (display[portalCoordinates[1][0]][portalCoordinates[1][1]] != '7' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && display[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'p') {
+								e = 1;
+							}
 						}
+					}
+
+					if (abs(portalCoordinates[0][0] - portalCoordinates[1][0]) + abs(portalCoordinates[0][1] - portalCoordinates[1][1]) > 14) {
+						portalsFarEnoughApart = true;
 					}
 				}
 
@@ -1047,6 +1099,10 @@ int main() {
 						}
 						else {									//..otherwise, play the default fruit eating sound
 							snakeFruitInstance->start();
+						}
+						if (i16thNote == 1) {
+							a808DrumInstance->start();
+							cymbalInstance->start();
 						}
 					}
 				}
@@ -1142,10 +1198,10 @@ int main() {
 				kickInstance->start();
 			}
 
-			if (highestCurrentLength > 19 && (i16thNote == 5 || i16thNote == 13)) {
+			if (gotNewFruit && (i16thNote == 5 || i16thNote == 13)) {
 				snare2Instance->start();
 			}
-			else if (highestCurrentLength < 20 && (i16thNote == 5 || i16thNote == 13)) {
+			else if (i16thNote == 5 || i16thNote == 13) {
 				snare1Instance->start();
 			}
 			//Update 16th note counter//
