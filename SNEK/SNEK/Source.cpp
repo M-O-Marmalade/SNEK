@@ -124,6 +124,7 @@ struct snek {
 	int potentialFruitSpot1;
 	int potentialFruitSpot2;
 	int potentialFruitSpot3;
+	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 };
 
 void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
@@ -678,9 +679,15 @@ int main() {
 
 				}
 
-				snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) && highestCurrentLength > 10;
-
-				snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0) && highestCurrentLength > 10;				
+				if (highestCurrentLength > 10) {
+					snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
+					snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0);
+				}
+				else {
+					snek1[0].action_keys = false;
+					snek1[1].action_keys = false;
+				}
+							
 
 				  //										 //
 				 // CHECK + SET DIRECTION [TICK RESOLUTION] //
@@ -800,49 +807,144 @@ int main() {
 				}
 			}
 
+			  //								//
+			 // STORE EACH SNEK'S SURROUNDINGS //
+			//								  //
+			for (int pt = 0; pt < playerCount; pt++) {
+
+				//North
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z') {
+					snek1[pt].surroundingObstacles[0] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[0] = true;
+				}
+
+				//North-East
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'z') {
+					snek1[pt].surroundingObstacles[1] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[1] = true;
+				}
+
+				//East
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z') {
+					snek1[pt].surroundingObstacles[2] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[2] = true;
+				}
+
+				//South-East
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'z') {
+					snek1[pt].surroundingObstacles[3] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[3] = true;
+				}
+
+				//South
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z') {
+					snek1[pt].surroundingObstacles[4] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[4] = true;
+				}
+
+				//South-West
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'z') {
+					snek1[pt].surroundingObstacles[5] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[5] = true;
+				}
+
+				//West
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z') {
+					snek1[pt].surroundingObstacles[6] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[6] = true;
+				}
+
+				//North-West
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'z') {
+					snek1[pt].surroundingObstacles[7] = false;
+				}
+				else {
+					snek1[pt].surroundingObstacles[7] = true;
+				}
+			}
+
 			  //				  //
 			 // ADD STYLE POINTS //
 			//					//
 			for (int pt = 0; pt < playerCount; pt++) {
-				//E
-				if (snek1[pt].direction_frame == 'e' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] + 2 < 25)) {
-					styleCounter++;
-					styleCounter++;
+				
+				//EAST//
+				if (snek1[pt].direction_frame == 'e') {
+
+					//if player jumps over an obstacle to the East, add two style points
+					if (snek1[pt].action_keys && snek1[pt].surroundingObstacles[2] && snek1[pt].snek_head[0] + 2 < 25) {
+						if (display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == '+') {							
+							styleCounter += 2;							
+						}
+					}
+
+					//if player goes in-between two obstacles to the North-East and South-East, add one style point
+					else if (snek1[pt].surroundingObstacles[1] && snek1[pt].surroundingObstacles[3] && !snek1[pt].surroundingObstacles[2] && snek1[pt].snek_head[0] + 1 < 25) {
+						styleCounter++;					
+					}
 				}
 
-				if (snek1[pt].direction_frame == 'e' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '+')) {
-					styleCounter++;
+				//WEST//
+				if (snek1[pt].direction_frame == 'w') {
+
+					//if player jumps over an obstacle to the West, add two style points
+					if (snek1[pt].action_keys && snek1[pt].surroundingObstacles[6] && snek1[pt].snek_head[0] - 2 > 0) {
+						if (display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == '+') {
+							styleCounter += 2;
+						}
+					}
+
+					//if player goes in-between two obstacles to the North-West and South-West, add one style point
+					else if (snek1[pt].surroundingObstacles[7] && snek1[pt].surroundingObstacles[5] && !snek1[pt].surroundingObstacles[6] && snek1[pt].snek_head[0] - 1 > 0) {
+						styleCounter++;
+					}
 				}
 
-				//W
-				if (snek1[pt].direction_frame == 'w' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] - 2 >= 0)) {
-					styleCounter++;
-					styleCounter++;
+				//NORTH//
+				if (snek1[pt].direction_frame == 'n') {
+
+					//if player jumps over an obstacle to the North, add two style points
+					if (snek1[pt].action_keys && snek1[pt].surroundingObstacles[0] && snek1[pt].snek_head[1] - 2 > 0) {
+						if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == '+') {
+							styleCounter += 2;
+						}
+					}
+
+					//if player goes in-between two obstacles to the North-West and North-East, add one style point
+					else if (snek1[pt].surroundingObstacles[7] && snek1[pt].surroundingObstacles[1] && !snek1[pt].surroundingObstacles[0] && snek1[pt].snek_head[1] - 1 > 0) {
+						styleCounter++;
+					}
 				}
 
-				if (snek1[pt].direction_frame == 'w' && ((display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '+')) {
-					styleCounter++;
-				}
+				//SOUTH//
+				if (snek1[pt].direction_frame == 's') {
 
-				//S
-				if (snek1[pt].direction_frame == 's' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == '+' && snek1[pt].snek_head[1] + 2 < 25)) {
-					styleCounter++;
-					styleCounter++;
-				}
+					//if player jumps over an obstacle to the South, add two style points
+					if (snek1[pt].action_keys && snek1[pt].surroundingObstacles[4] && snek1[pt].snek_head[1] + 2 < 25) {
+						if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == '+') {
+							styleCounter += 2;
+						}
+					}
 
-				if (snek1[pt].direction_frame == 's' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '+')) {
-					styleCounter++;
-				}
-
-				//N
-				if (snek1[pt].direction_frame == 'n' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == '+' && snek1[pt].snek_head[1] - 2 >= 0)) {
-					styleCounter++;
-					styleCounter++;
-				}
-
-				if (snek1[pt].direction_frame == 'n' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '+')) {
-					styleCounter++;
-				}
+					//if player goes in-between two obstacles to the South-West and South-East, add one style point
+					else if (snek1[pt].surroundingObstacles[5] && snek1[pt].surroundingObstacles[3] && !snek1[pt].surroundingObstacles[4] && snek1[pt].snek_head[1] + 1 < 25) {
+						styleCounter++;
+					}
+				}				
 			}
 					   			
 			  //			 //
@@ -999,9 +1101,10 @@ int main() {
 					 // SET NEW HIGH SCORE //
 					//					  //
 					if (snek1[pt].snek_length > highestCurrentLength) {		//update current highest length
-						highestCurrentLength++;
+						highestCurrentLength = snek1[pt].snek_length;
+
 						if (highestCurrentLength > highScore) {				//update high score
-							highScore++;
+							highScore = highestCurrentLength;
 						}
 					}
 				}
@@ -1099,11 +1202,7 @@ int main() {
 						}
 						else {									//..otherwise, play the default fruit eating sound
 							snakeFruitInstance->start();
-						}
-						if (i16thNote == 1) {
-							a808DrumInstance->start();
-							cymbalInstance->start();
-						}
+						}						
 					}
 				}
 
@@ -1149,36 +1248,28 @@ int main() {
 					break;
 				}
 			}	
+			//if nobody got any fruits, then check if either snake is using the action keys..
 			else if (snek1[0].action_keys || snek1[1].action_keys) {
 				snakeLungeInstance->setPitch(proximityToFruit);
 				snakeLungeInstance->start();
-				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
+				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
 				if (!actionKeyHeld) {
 					snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
 					actionKeyHeld = true;
 				}
 			}
+			//if nobody got a fruit, and nobody is holding any action keys, then..
 			else {
 
-				actionKeyHeld = false;
+				actionKeyHeld = false;		//nobody is holding any action keys anymore
 
 				snakeMoveInstance->setPitch(proximityToFruit);
 				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
 				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-
-				if (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED) {
+				
+				if (isScoreUnder11) {
 					snakeMoveInstance->start();
 				}
-
-				/*
-				else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
-					criticalInstance->setPitch(proximityToFruit);
-					criticalInstance->start();
-				}
-				else {
-					criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-				}
-				*/
 
 				snekMoveTimelinePosition += 200;
 				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
@@ -1187,28 +1278,26 @@ int main() {
 			}
 
 			//DRUMS//			
-			if (highestCurrentLength > 19 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {
-				kick2Instance->start();
+			if (gotNewFruit && i16thNote == 1) {
+				a808DrumInstance->start();
+				cymbalInstance->start();
 			}
-			else if (highestCurrentLength < 20 && (i16thNote == 1 || i16thNote == 11 || i16thNote == 16)) {
+			else if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
 				kickInstance->start();
 			}
-
-			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
-				kickInstance->start();
+			
+			if (i16thNote == 5 || i16thNote == 13) {
+				if (gotNewFruit) {
+					snare2Instance->start();
+				}
+				else {
+					snare1Instance->start();
+				}
 			}
 
-			if (gotNewFruit && (i16thNote == 5 || i16thNote == 13)) {
-				snare2Instance->start();
-			}
-			else if (i16thNote == 5 || i16thNote == 13) {
-				snare1Instance->start();
-			}
-			//Update 16th note counter//
-			if (i16thNote < 16) {
-				i16thNote++;
-			}
-			else {
+			//Update 16th note counter//			
+			i16thNote++;	
+			if (i16thNote == 17) {
 				i16thNote = 1;
 			}
 						
@@ -1580,6 +1669,49 @@ int main() {
 //int r = 4;					//used for counting the number of traps whose locations have been set
 //int actualTrapCount;
 //bool alternator1 = true;
+
+/*
+//E
+if (snek1[pt].direction_frame == 'e' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] + 2 < 25)) {
+	styleCounter++;
+	styleCounter++;
+}
+
+if (snek1[pt].direction_frame == 'e' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '+')) {
+	styleCounter++;
+}
+
+//W
+if (snek1[pt].direction_frame == 'w' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] - 2 >= 0)) {
+	styleCounter++;
+	styleCounter++;
+}
+
+if (snek1[pt].direction_frame == 'w' && ((display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '+')) {
+	styleCounter++;
+}
+
+//S
+if (snek1[pt].direction_frame == 's' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == '+' && snek1[pt].snek_head[1] + 2 < 25)) {
+	styleCounter++;
+	styleCounter++;
+}
+
+if (snek1[pt].direction_frame == 's' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '+')) {
+	styleCounter++;
+}
+
+//N
+if (snek1[pt].direction_frame == 'n' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == '+' && snek1[pt].snek_head[1] - 2 >= 0)) {
+	styleCounter++;
+	styleCounter++;
+}
+
+if (snek1[pt].direction_frame == 'n' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '+')) {
+	styleCounter++;
+}
+
+*/
 
 				/*else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
 					snakeLungeInstance->setPitch(proximityToFruit);		//(FMOD)
