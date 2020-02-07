@@ -813,7 +813,7 @@ int main() {
 			for (int pt = 0; pt < playerCount; pt++) {
 
 				//North
-				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z') {
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '+') {
 					snek1[pt].surroundingObstacles[0] = false;
 				}
 				else {
@@ -821,7 +821,7 @@ int main() {
 				}
 
 				//North-East
-				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'z') {
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '+') {
 					snek1[pt].surroundingObstacles[1] = false;
 				}
 				else {
@@ -829,7 +829,7 @@ int main() {
 				}
 
 				//East
-				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z') {
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '+') {
 					snek1[pt].surroundingObstacles[2] = false;
 				}
 				else {
@@ -837,7 +837,7 @@ int main() {
 				}
 
 				//South-East
-				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'z') {
+				if (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '+') {
 					snek1[pt].surroundingObstacles[3] = false;
 				}
 				else {
@@ -845,7 +845,7 @@ int main() {
 				}
 
 				//South
-				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z') {
+				if (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '+') {
 					snek1[pt].surroundingObstacles[4] = false;
 				}
 				else {
@@ -853,7 +853,7 @@ int main() {
 				}
 
 				//South-West
-				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'z') {
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '+') {
 					snek1[pt].surroundingObstacles[5] = false;
 				}
 				else {
@@ -861,7 +861,7 @@ int main() {
 				}
 
 				//West
-				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z') {
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '+') {
 					snek1[pt].surroundingObstacles[6] = false;
 				}
 				else {
@@ -869,7 +869,7 @@ int main() {
 				}
 
 				//North-West
-				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'z') {
+				if (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '+') {
 					snek1[pt].surroundingObstacles[7] = false;
 				}
 				else {
