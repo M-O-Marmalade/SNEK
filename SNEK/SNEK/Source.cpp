@@ -626,6 +626,7 @@ int main() {
 		snekMoveTimelinePositionMax = 200;
 		isScoreUnder11 = true;
 		snakeMoveReverbLevel = 0.0f;
+		i16thNote = 1;
 
 		badBossAngelInstance->start();
 		snare2Instance->setParameterByName("SnareReverb", 0.0f);
