@@ -249,6 +249,18 @@ int main() {
 
 	FMOD::Studio::EventInstance* cymbalInstance = NULL;
 	cymbalDescription->createInstance(&cymbalInstance);
+
+	FMOD::Studio::EventDescription* badBossAngelDescription = NULL;				//badBossAngel
+	system->getEvent("event:/badbossangel", &badBossAngelDescription);
+
+	FMOD::Studio::EventInstance* badBossAngelInstance = NULL;
+	badBossAngelDescription->createInstance(&badBossAngelInstance);
+
+	FMOD::Studio::EventDescription* triangleDescription = NULL;				//triangle
+	system->getEvent("event:/Triangle", &triangleDescription);
+
+	FMOD::Studio::EventInstance* triangleInstance = NULL;
+	triangleDescription->createInstance(&triangleInstance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -614,6 +626,9 @@ int main() {
 		snekMoveTimelinePositionMax = 200;
 		isScoreUnder11 = true;
 		snakeMoveReverbLevel = 0.0f;
+
+		badBossAngelInstance->start();
+		snare2Instance->setParameterByName("SnareReverb", 0.0f);
 			   
 		  //				   //
 		 // [GAME LOOP START] //
@@ -1191,6 +1206,8 @@ int main() {
 			 // AUDIO PROCESSING //
 			//					//		
 			if (gameLose) {					//play the death sound if the game is lost
+				badBossAngelInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+				a808DrumInstance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
 				deathInstance->start();
 			}
 
@@ -1199,6 +1216,9 @@ int main() {
 					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 						if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
+						}						
+						else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
+							triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
 						}
 						else {									//..otherwise, play the default fruit eating sound
 							snakeFruitInstance->start();
@@ -1210,41 +1230,49 @@ int main() {
 				case 11:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.125f;
+					snare2Instance->setParameterByName("SnareReverb", 0.2f);
 					break;
 
 				case 20:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.250f;
+					snare2Instance->setParameterByName("SnareReverb", 0.4f);
 					break;
 
 				case 30:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.375f;
+					snare2Instance->setParameterByName("SnareReverb", 0.5f);
 					break;
 
 				case 40:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.5f;
+					snare2Instance->setParameterByName("SnareReverb", 0.64f);
 					break;
 
 				case 50:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.625f;
+					snare2Instance->setParameterByName("SnareReverb", 0.72f);
 					break;
 
 				case 60:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.750f;
+					snare2Instance->setParameterByName("SnareReverb", 0.8f);
 					break;
 
 				case 70:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.875f;
+					snare2Instance->setParameterByName("SnareReverb", 0.9f);
 					break;
 
 				case 80:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 1.0f;
+					snare2Instance->setParameterByName("SnareReverb", 1.0f);
 					break;
 				}
 			}	
@@ -1258,6 +1286,8 @@ int main() {
 					actionKeyHeld = true;
 				}
 			}
+
+			
 			//if nobody got a fruit, and nobody is holding any action keys, then..
 			else {
 
@@ -1294,6 +1324,8 @@ int main() {
 					snare1Instance->start();
 				}
 			}
+
+			
 
 			//Update 16th note counter//			
 			i16thNote++;	
