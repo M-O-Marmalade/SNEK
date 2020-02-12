@@ -102,6 +102,8 @@ bool isScoreUnder11 = true;				//changes to false when highestCurrentLength pass
 float snakeMoveReverbLevel = 0.0f;		//reverb level for the snakeMoveInstance sound
 float proximityToFruit;					//stores the closest player's proximity to the current fruit				
 int i16thNote = 1;						//counts each frame and resets back to 1 after reaching 16 (it skips 17 and goes back to 1)
+bool chordsStartToggle = false;
+int currentChord = 0;
 
 //PLAYER-SPECIFIC STRUCTURE/VARIABLES
 struct snek {
@@ -214,7 +216,7 @@ int main() {
 	FMOD::Studio::EventInstance* criticalInstance = NULL;
 	criticalDescription->createInstance(&criticalInstance);
 
-	FMOD::Studio::EventDescription* kickDescription = NULL;				//Kick Drum
+	FMOD::Studio::EventDescription* kickDescription = NULL;					//Kick Drum
 	system->getEvent("event:/Kick", &kickDescription);
 
 	FMOD::Studio::EventInstance* kickInstance = NULL;
@@ -261,6 +263,12 @@ int main() {
 
 	FMOD::Studio::EventInstance* triangleInstance = NULL;
 	triangleDescription->createInstance(&triangleInstance);
+
+	FMOD::Studio::EventDescription* chordsDescription = NULL;				//chords
+	system->getEvent("event:/chords", &chordsDescription);
+
+	FMOD::Studio::EventInstance* chordsInstance = NULL;
+	chordsDescription->createInstance(&chordsInstance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -621,15 +629,15 @@ int main() {
 			screenString.replace(n, 1, L" ");
 		}
 
-		//Reset FMOD-Related Sound Variables//
+		//Reset FMOD-Related Audio/Sound Variables//
 		snekMoveTimelinePosition = 0;
 		snekMoveTimelinePositionMax = 200;
 		isScoreUnder11 = true;
 		snakeMoveReverbLevel = 0.0f;
 		i16thNote = 1;
-
 		badBossAngelInstance->start();
 		snare2Instance->setParameterByName("SnareReverb", 0.0f);
+		chordsStartToggle = false;
 			   
 		  //				   //
 		 // [GAME LOOP START] //
@@ -1217,6 +1225,7 @@ int main() {
 					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 						if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
+							badBossAngelInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 						}						
 						else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
 							triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
@@ -1232,24 +1241,28 @@ int main() {
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.125f;
 					snare2Instance->setParameterByName("SnareReverb", 0.2f);
+					chordsStartToggle = true;
 					break;
 
 				case 20:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.250f;
 					snare2Instance->setParameterByName("SnareReverb", 0.4f);
+					chordsInstance->setParameterByName("ArpVolume", 0.7f);
 					break;
 
 				case 30:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.375f;
 					snare2Instance->setParameterByName("SnareReverb", 0.5f);
+					chordsInstance->setParameterByName("ArpVolume", 0.9f);
 					break;
 
 				case 40:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.5f;
 					snare2Instance->setParameterByName("SnareReverb", 0.64f);
+					chordsInstance->setParameterByName("ArpVolume", 1.0f);
 					break;
 
 				case 50:
@@ -1308,6 +1321,8 @@ int main() {
 				}
 			}
 
+
+
 			//DRUMS//			
 			if (gotNewFruit && i16thNote == 1) {
 				a808DrumInstance->start();
@@ -1326,8 +1341,144 @@ int main() {
 				}
 			}
 
-			
+			//CHORDS//
+			if (chordsStartToggle) {
+				if (i16thNote == 1) {
+					switch (currentChord) {
+					case 0:
+						chordsInstance->start();
+						currentChord++;
+						break;
+					case 1:
+						chordsInstance->setTimelinePosition(2022);
+						currentChord++;
+						break;
+					case 2:
+						chordsInstance->setTimelinePosition(4045);
+						currentChord++;
+						break;
+					case 3:
+						chordsInstance->setTimelinePosition(6067);
+						currentChord = 0;
+						break;
+					}
+				}	
+				
+				if (i16thNote % 2 == 1) {
+					FMOD_STUDIO_PLAYBACK_STATE* chordsState = new FMOD_STUDIO_PLAYBACK_STATE;
+					chordsInstance->getPlaybackState(chordsState);
+					if (*chordsState = FMOD_STUDIO_PLAYBACK_SUSTAINING) {
+						chordsInstance->triggerCue();
+					}
 
+					switch (currentChord) {
+					case 1:
+						switch (i16thNote) {
+						case 3:
+							chordsInstance->setTimelinePosition(169);
+							break;
+						case 5:
+							chordsInstance->setTimelinePosition(337);
+							break;
+						case 7:
+							chordsInstance->setTimelinePosition(506);
+							break;
+						case 9:
+							chordsInstance->setTimelinePosition(674);
+							break;
+						case 11:
+							chordsInstance->setTimelinePosition(843);
+							break;
+						case 13:
+							chordsInstance->setTimelinePosition(1011);
+							break;
+						case 15:
+							chordsInstance->setTimelinePosition(1180);
+							break;
+						}
+						break;
+
+					case 2:
+						switch (i16thNote) {
+						case 3:
+							chordsInstance->setTimelinePosition(2191);
+							break;
+						case 5:
+							chordsInstance->setTimelinePosition(2360);
+							break;
+						case 7:
+							chordsInstance->setTimelinePosition(2528);
+							break;
+						case 9:
+							chordsInstance->setTimelinePosition(2697);
+							break;
+						case 11:
+							chordsInstance->setTimelinePosition(2865);
+							break;
+						case 13:
+							chordsInstance->setTimelinePosition(3034);
+							break;
+						case 15:
+							chordsInstance->setTimelinePosition(3202);
+							break;
+						}
+						break;
+
+					case 3:
+						switch (i16thNote) {
+						case 3:
+							chordsInstance->setTimelinePosition(4213);
+							break;
+						case 5:
+							chordsInstance->setTimelinePosition(4382);
+							break;
+						case 7:
+							chordsInstance->setTimelinePosition(4551);
+							break;
+						case 9:
+							chordsInstance->setTimelinePosition(4719);
+							break;
+						case 11:
+							chordsInstance->setTimelinePosition(4888);
+							break;
+						case 13:
+							chordsInstance->setTimelinePosition(5056);
+							break;
+						case 15:
+							chordsInstance->setTimelinePosition(5225);
+							break;
+						}
+						break;
+
+					case 0:
+						switch (i16thNote) {
+						case 3:
+							chordsInstance->setTimelinePosition(6236);
+							break;
+						case 5:
+							chordsInstance->setTimelinePosition(6404);
+							break;
+						case 7:
+							chordsInstance->setTimelinePosition(6573);
+							break;
+						case 9:
+							chordsInstance->setTimelinePosition(6742);
+							break;
+						case 11:
+							chordsInstance->setTimelinePosition(6910);
+							break;
+						case 13:
+							chordsInstance->setTimelinePosition(7079);
+							break;
+						case 15:
+							chordsInstance->setTimelinePosition(7247);
+							break;
+						}
+						break;
+					}					
+				}
+			}
+			
 			//Update 16th note counter//			
 			i16thNote++;	
 			if (i16thNote == 17) {
