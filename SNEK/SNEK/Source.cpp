@@ -269,6 +269,12 @@ int main() {
 
 	FMOD::Studio::EventInstance* chordsInstance = NULL;
 	chordsDescription->createInstance(&chordsInstance);
+
+	FMOD::Studio::EventDescription* arpDescription = NULL;				//arp
+	system->getEvent("event:/arp", &arpDescription);
+
+	FMOD::Studio::EventInstance* arpInstance = NULL;
+	arpDescription->createInstance(&arpInstance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -374,12 +380,15 @@ int main() {
 	for (int yt = 1440; yt < 1520; yt++) {
 		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 	}
-	for (int yt = 1600; yt < 1625; yt++) {
+	for (int yt = 1600; yt < 1638; yt++) {
 		attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
 	}
 	for (int yt = 1625; yt < 1651; yt++) {
-		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE;
+		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN;
 	}
+	attributes[1643] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	attributes[1644] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	attributes[1645] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 	for (int yt = 1651; yt < 1680; yt++) {
 		attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 	}
@@ -408,12 +417,47 @@ int main() {
 		screenString.replace((20 * 80) + 34, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
 		if (playerCount == 2) {
-			screenString.replace((20 * 80) + 51, 23, L"P1 Controls: Arrow Keys");
-			screenString.replace((20 * 80) + 8, 17, L"P2 Controls: WASD");
+			screenString.replace((14 * 80) + 24, 32, L"                                ");
+			screenString.replace((15 * 80) + 24, 32, L"                                ");
+			screenString.replace((16 * 80) + 24, 32, L"                                ");
+			screenString.replace((14 * 80) + 41, 26, L"--------------------------");
+			screenString.replace((15 * 80) + 41, 26, L"| P1: Arrow Keys + P-Key |");
+			screenString.replace((16 * 80) + 41, 26, L"--------------------------");
+			screenString.replace((14 * 80) + 15, 20, L"--------------------");
+			screenString.replace((15 * 80) + 15, 20, L"| P2: WASD + B-Key |");
+			screenString.replace((16 * 80) + 15, 20, L"--------------------");
+			
+			for (int yt = 14 * 80; yt < (14 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			}
+			for (int yt = 15 * 80; yt < (15 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			}
+			for (int yt = 16 * 80; yt < (16 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+			}
 		}
-		else {
-			screenString.replace((20 * 80) + 51, 23, L"                       ");
-			screenString.replace((20 * 80) + 8, 17, L"                 ");
+		else {			
+			screenString.replace((14 * 80) + 41, 26, L"                          ");
+			screenString.replace((15 * 80) + 41, 26, L"                          ");
+			screenString.replace((16 * 80) + 41, 26, L"                          ");
+			screenString.replace((14 * 80) + 15, 20, L"                    ");
+			screenString.replace((15 * 80) + 15, 20, L"                    ");
+			screenString.replace((16 * 80) + 15, 20, L"                    ");
+			screenString.replace((14 * 80) + 24, 32, L"--------------------------------");
+			screenString.replace((15 * 80) + 24, 32, L"| Controls: Arrow Keys + Z-Key |");
+			screenString.replace((16 * 80) + 24, 32, L"--------------------------------");
+
+			for (int yt = 14 * 80; yt < (14 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			}
+			for (int yt = 15 * 80; yt < (15 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			}
+			for (int yt = 16 * 80; yt < (16 * 80) + 35; yt++) {
+				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+			}
+
 		}
 
 		screenString.replace((22 * 80) + 33, 14, L"Citrus Studios");		//draw studio name each frame
@@ -438,7 +482,8 @@ int main() {
 		}				
 
 		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);	//display the char[] buffer
-					
+		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+
 		startScreenFrameCount++;
 
 		this_thread::sleep_for(7ms);
@@ -637,6 +682,7 @@ int main() {
 		i16thNote = 1;
 		badBossAngelInstance->start();
 		snare2Instance->setParameterByName("SnareReverb", 0.0f);
+		arpInstance->setParameterByName("ArpVolume", 0.0f);
 		chordsStartToggle = false;
 			   
 		  //				   //
@@ -704,8 +750,14 @@ int main() {
 				}
 
 				if (highestCurrentLength > 10) {
-					snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
-					snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Q"[0]))) != 0);
+					if (playerCount == 1) {
+						snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
+					}
+					else {
+						snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("P"[0]))) != 0);
+						snek1[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("V"[0]))) != 0);
+					}
+					
 				}
 				else {
 					snek1[0].action_keys = false;
@@ -1111,7 +1163,7 @@ int main() {
 							}
 
 							//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
-							if (proximityToFruitTemp == snek1[pt].potentialFruitSpot1 || proximityToFruitTemp == snek1[pt].potentialFruitSpot2 || proximityToFruitTemp == snek1[pt].potentialFruitSpot3) {
+							if (proximityToFruitTemp % 16 == snek1[pt].potentialFruitSpot1 || proximityToFruitTemp % 16 == snek1[pt].potentialFruitSpot2 || proximityToFruitTemp % 16 == snek1[pt].potentialFruitSpot3) {
 								break;
 							}						
 						}
@@ -1225,7 +1277,6 @@ int main() {
 					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 						if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
-							badBossAngelInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 						}						
 						else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
 							triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
@@ -1237,56 +1288,67 @@ int main() {
 				}
 
 				switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
+				case 1:
+					badBossAngelInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					chordsStartToggle = true;
+					break;
+				case 7:
+					arpInstance->setParameterByName("ArpVolume", 0.09);
+					break;
 				case 11:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.125f;
 					snare2Instance->setParameterByName("SnareReverb", 0.2f);
-					chordsStartToggle = true;
+					arpInstance->setParameterByName("ArpVolume", 0.14);
 					break;
 
 				case 20:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.250f;
 					snare2Instance->setParameterByName("SnareReverb", 0.4f);
-					chordsInstance->setParameterByName("ArpVolume", 0.7f);
+					arpInstance->setParameterByName("ArpVolume", 0.17f);
 					break;
 
 				case 30:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.375f;
 					snare2Instance->setParameterByName("SnareReverb", 0.5f);
-					chordsInstance->setParameterByName("ArpVolume", 0.9f);
+					arpInstance->setParameterByName("ArpVolume", 0.2f);
 					break;
 
 				case 40:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.5f;
 					snare2Instance->setParameterByName("SnareReverb", 0.64f);
-					chordsInstance->setParameterByName("ArpVolume", 1.0f);
+					arpInstance->setParameterByName("ArpVolume", 0.3f);
 					break;
 
 				case 50:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.625f;
 					snare2Instance->setParameterByName("SnareReverb", 0.72f);
+					arpInstance->setParameterByName("ArpVolume", 0.45f);
 					break;
 
 				case 60:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.750f;
 					snare2Instance->setParameterByName("SnareReverb", 0.8f);
+					arpInstance->setParameterByName("ArpVolume", 0.6f);
 					break;
 
 				case 70:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.875f;
 					snare2Instance->setParameterByName("SnareReverb", 0.9f);
+					arpInstance->setParameterByName("ArpVolume", 0.8f);
 					break;
 
 				case 80:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 1.0f;
 					snare2Instance->setParameterByName("SnareReverb", 1.0f);
+					arpInstance->setParameterByName("ArpVolume", 0.9f);
 					break;
 				}
 			}	
@@ -1328,7 +1390,7 @@ int main() {
 				a808DrumInstance->start();
 				cymbalInstance->start();
 			}
-			else if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
+			if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
 				kickInstance->start();
 			}
 			
@@ -1350,133 +1412,140 @@ int main() {
 						currentChord++;
 						break;
 					case 1:
-						chordsInstance->setTimelinePosition(2022);
+						chordsInstance->setTimelinePosition(2023);
 						currentChord++;
 						break;
 					case 2:
-						chordsInstance->setTimelinePosition(4045);
+						chordsInstance->setTimelinePosition(4046);
 						currentChord++;
 						break;
 					case 3:
-						chordsInstance->setTimelinePosition(6067);
+						chordsInstance->setTimelinePosition(6068);
 						currentChord = 0;
 						break;
 					}
-				}	
-				
-				if (i16thNote % 2 == 1) {
-					FMOD_STUDIO_PLAYBACK_STATE* chordsState = new FMOD_STUDIO_PLAYBACK_STATE;
-					chordsInstance->getPlaybackState(chordsState);
-					if (*chordsState = FMOD_STUDIO_PLAYBACK_SUSTAINING) {
-						chordsInstance->triggerCue();
-					}
+				}					
+			
 
-					switch (currentChord) {
+				//ARP//
+				switch (currentChord) {
+				case 1:
+					switch (i16thNote) {
 					case 1:
-						switch (i16thNote) {
-						case 3:
-							chordsInstance->setTimelinePosition(169);
-							break;
-						case 5:
-							chordsInstance->setTimelinePosition(337);
-							break;
-						case 7:
-							chordsInstance->setTimelinePosition(506);
-							break;
-						case 9:
-							chordsInstance->setTimelinePosition(674);
-							break;
-						case 11:
-							chordsInstance->setTimelinePosition(843);
-							break;
-						case 13:
-							chordsInstance->setTimelinePosition(1011);
-							break;
-						case 15:
-							chordsInstance->setTimelinePosition(1180);
-							break;
-						}
+						arpInstance->start();
 						break;
-
-					case 2:
-						switch (i16thNote) {
-						case 3:
-							chordsInstance->setTimelinePosition(2191);
-							break;
-						case 5:
-							chordsInstance->setTimelinePosition(2360);
-							break;
-						case 7:
-							chordsInstance->setTimelinePosition(2528);
-							break;
-						case 9:
-							chordsInstance->setTimelinePosition(2697);
-							break;
-						case 11:
-							chordsInstance->setTimelinePosition(2865);
-							break;
-						case 13:
-							chordsInstance->setTimelinePosition(3034);
-							break;
-						case 15:
-							chordsInstance->setTimelinePosition(3202);
-							break;
-						}
-						break;
-
 					case 3:
-						switch (i16thNote) {
-						case 3:
-							chordsInstance->setTimelinePosition(4213);
-							break;
-						case 5:
-							chordsInstance->setTimelinePosition(4382);
-							break;
-						case 7:
-							chordsInstance->setTimelinePosition(4551);
-							break;
-						case 9:
-							chordsInstance->setTimelinePosition(4719);
-							break;
-						case 11:
-							chordsInstance->setTimelinePosition(4888);
-							break;
-						case 13:
-							chordsInstance->setTimelinePosition(5056);
-							break;
-						case 15:
-							chordsInstance->setTimelinePosition(5225);
-							break;
-						}
+						arpInstance->setTimelinePosition(170);
 						break;
+					case 5:
+						arpInstance->setTimelinePosition(338);
+						break;
+					case 7:
+						arpInstance->setTimelinePosition(507);
+						break;
+					case 9:
+						arpInstance->setTimelinePosition(675);
+						break;
+					case 11:
+						arpInstance->setTimelinePosition(844);
+						break;
+					case 13:
+						arpInstance->setTimelinePosition(1012);
+						break;
+					case 15:
+						arpInstance->setTimelinePosition(1181);
+						break;
+					}
+					break;
 
-					case 0:
-						switch (i16thNote) {
-						case 3:
-							chordsInstance->setTimelinePosition(6236);
-							break;
-						case 5:
-							chordsInstance->setTimelinePosition(6404);
-							break;
-						case 7:
-							chordsInstance->setTimelinePosition(6573);
-							break;
-						case 9:
-							chordsInstance->setTimelinePosition(6742);
-							break;
-						case 11:
-							chordsInstance->setTimelinePosition(6910);
-							break;
-						case 13:
-							chordsInstance->setTimelinePosition(7079);
-							break;
-						case 15:
-							chordsInstance->setTimelinePosition(7247);
-							break;
-						}
+				case 2:
+					switch (i16thNote) {
+					case 1:
+						arpInstance->setTimelinePosition(2023);
 						break;
-					}					
-				}
+					case 3:
+						arpInstance->setTimelinePosition(2192);
+						break;
+					case 5:
+						arpInstance->setTimelinePosition(2361);
+						break;
+					case 7:
+						arpInstance->setTimelinePosition(2529);
+						break;
+					case 9:
+						arpInstance->setTimelinePosition(2698);
+						break;
+					case 11:
+						arpInstance->setTimelinePosition(2866);
+						break;
+					case 13:
+						arpInstance->setTimelinePosition(3035);
+						break;
+					case 15:
+						arpInstance->setTimelinePosition(3203);
+						break;				
+					}
+					break;
+
+				case 3:
+					switch (i16thNote) {
+					case 1:
+						arpInstance->setTimelinePosition(4046);
+						break;
+					case 3:
+						arpInstance->setTimelinePosition(4214);
+						break;
+					case 5:
+						arpInstance->setTimelinePosition(4383);
+						break;
+					case 7:
+						arpInstance->setTimelinePosition(4552);
+						break;
+					case 9:
+						arpInstance->setTimelinePosition(4720);
+						break;
+					case 11:
+						arpInstance->setTimelinePosition(4889);
+						break;
+					case 13:
+						arpInstance->setTimelinePosition(5057);
+						break;
+					case 15:
+						arpInstance->setTimelinePosition(5226);
+						break;					
+					}
+					break;
+
+				case 0:
+					switch (i16thNote) {
+					case 1:
+						arpInstance->setTimelinePosition(6068);
+						break;
+					case 3:
+						arpInstance->setTimelinePosition(6237);
+						break;
+					case 5:
+						arpInstance->setTimelinePosition(6405);
+						break;
+					case 7:
+						arpInstance->setTimelinePosition(6574);
+						break;
+					case 9:
+						arpInstance->setTimelinePosition(6743);
+						break;
+					case 11:
+						arpInstance->setTimelinePosition(6911);
+						break;
+					case 13:
+						arpInstance->setTimelinePosition(7080);
+						break;
+					case 15:
+						arpInstance->setTimelinePosition(7248);
+						break;					
+					}
+					break;
+				}					
+			
 			}
 			
 			//Update 16th note counter//			
