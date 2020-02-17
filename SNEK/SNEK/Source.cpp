@@ -82,6 +82,8 @@ int highestCurrentLength = 0;	//highest length out of all current players/sneks
 int portalCount = 0;			//amount of portals on the map
 int portalCoordinates[6][2];	//coordinates of the current portals on the map
 bool gotNewFruit = false;
+int oldHighScore;
+bool gotNewHighScore = false;
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -104,6 +106,7 @@ float proximityToFruit;					//stores the closest player's proximity to the curre
 int i16thNote = 1;						//counts each frame and resets back to 1 after reaching 16 (it skips 17 and goes back to 1)
 bool chordsStartToggle = false;
 int currentChord = 0;
+bool hiHatToggle = false;
 
 //PLAYER-SPECIFIC STRUCTURE/VARIABLES
 struct snek {
@@ -157,124 +160,142 @@ int main() {
 	 // LOADING/PREPARING AUDIO EVENTS //
 	//							      //
 	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen) (FMOD)
-	system->getEvent("event:/SplashJingle", &splashJingleDescription);
+	system->getEvent("event:/Menu+Songs/SplashJingle", &splashJingleDescription);
 
 	FMOD::Studio::EventInstance* splashJingleInstance = NULL;
 	splashJingleDescription->createInstance(&splashJingleInstance);
 
-	FMOD::Studio::EventDescription* aNewChipDescription = NULL;				//ANewChip
-	system->getEvent("event:/ANewChip", &aNewChipDescription);
+	FMOD::Studio::EventDescription* aNewChipDescription = NULL;				//ANewChip (start screen song)
+	system->getEvent("event:/Menu+Songs/ANewChip", &aNewChipDescription);
 
 	FMOD::Studio::EventInstance* aNewChipInstance = NULL;
 	aNewChipDescription->createInstance(&aNewChipInstance);
 
+	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton (game start sound effect)
+	system->getEvent("event:/Menu+Songs/StartButton", &startButtonDescription);
+
+	FMOD::Studio::EventInstance* startButtonInstance = NULL;
+	startButtonDescription->createInstance(&startButtonInstance);
+
+	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss (game over song)
+	system->getEvent("event:/Menu+Songs/FancyBoss", &fancyBossDescription);
+
+	FMOD::Studio::EventInstance* fancyBossInstance = NULL;
+	fancyBossDescription->createInstance(&fancyBossInstance);
+
+	FMOD::Studio::EventDescription* exitGameDescription = NULL;				//Exit Game (Citrus Studios splash screen) (FMOD)
+	system->getEvent("event:/Menu+Songs/ExitGame", &exitGameDescription);
+
+	FMOD::Studio::EventInstance* exitGameInstance = NULL;
+	exitGameDescription->createInstance(&exitGameInstance);
+
 	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;			//SnakeFruit (pickup fruit sound effect)
-	system->getEvent("event:/SnakeFruit", &snakeFruitDescription);
+	system->getEvent("event:/Instruments+FX/SnakeFruit", &snakeFruitDescription);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance = NULL;
 	snakeFruitDescription->createInstance(&snakeFruitInstance);
 
 	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;			//SnakeFruit11 (snake eyes score sound)
-	system->getEvent("event:/SnakeFruit11", &snakeFruitDescription11);
+	system->getEvent("event:/Instruments+FX/SnakeFruit11", &snakeFruitDescription11);
 
 	FMOD::Studio::EventInstance* snakeFruitInstance11 = NULL;
 	snakeFruitDescription11->createInstance(&snakeFruitInstance11);
 
 	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;			//SnakeMove (movement sound effect)
-	system->getEvent("event:/SnakeMove", &snakeMoveDescription);
+	system->getEvent("event:/Instruments+FX/SnakeMove", &snakeMoveDescription);
 
 	FMOD::Studio::EventInstance* snakeMoveInstance = NULL;
-	snakeMoveDescription->createInstance(&snakeMoveInstance);
-
-	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton (game start sound effect)
-	system->getEvent("event:/StartButton", &startButtonDescription);
-
-	FMOD::Studio::EventInstance* startButtonInstance = NULL;
-	startButtonDescription->createInstance(&startButtonInstance);
-	
-	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss (game over song)
-	system->getEvent("event:/FancyBoss", &fancyBossDescription);
-
-	FMOD::Studio::EventInstance* fancyBossInstance = NULL;
-	fancyBossDescription->createInstance(&fancyBossInstance);
+	snakeMoveDescription->createInstance(&snakeMoveInstance);	
 
 	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;			//SnakeLunge (lunge sound effect)
-	system->getEvent("event:/SnakeLunge", &snakeLungeDescription);
+	system->getEvent("event:/Instruments+FX/SnakeLunge", &snakeLungeDescription);
 
 	FMOD::Studio::EventInstance* snakeLungeInstance = NULL;
 	snakeLungeDescription->createInstance(&snakeLungeInstance);
 	
 	FMOD::Studio::EventDescription* deathDescription = NULL;				//Death (death collision sound)
-	system->getEvent("event:/Death", &deathDescription);
+	system->getEvent("event:/Instruments+FX/Death", &deathDescription);
 
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
 
 	FMOD::Studio::EventDescription* criticalDescription = NULL;				//Critical (snake only has a head sound)
-	system->getEvent("event:/Critical", &criticalDescription);
+	system->getEvent("event:/Instruments+FX/Critical", &criticalDescription);
 
 	FMOD::Studio::EventInstance* criticalInstance = NULL;
 	criticalDescription->createInstance(&criticalInstance);
 
 	FMOD::Studio::EventDescription* kickDescription = NULL;					//Kick Drum
-	system->getEvent("event:/Kick", &kickDescription);
+	system->getEvent("event:/Instruments+FX/Kick", &kickDescription);
 
 	FMOD::Studio::EventInstance* kickInstance = NULL;
 	kickDescription->createInstance(&kickInstance);
 
 	FMOD::Studio::EventDescription* kick2Description = NULL;				//Kick Drum 2
-	system->getEvent("event:/Kick2", &kick2Description);
+	system->getEvent("event:/Instruments+FX/Kick2", &kick2Description);
 
 	FMOD::Studio::EventInstance* kick2Instance = NULL;
 	kick2Description->createInstance(&kick2Instance);
 
 	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
-	system->getEvent("event:/Snare1", &snare1Description);
+	system->getEvent("event:/Instruments+FX/Snare1", &snare1Description);
 
 	FMOD::Studio::EventInstance* snare1Instance = NULL;
 	snare1Description->createInstance(&snare1Instance);
 
 	FMOD::Studio::EventDescription* snare2Description = NULL;				//Snare Drum 2
-	system->getEvent("event:/Snare2", &snare2Description);
+	system->getEvent("event:/Instruments+FX/Snare2", &snare2Description);
 
 	FMOD::Studio::EventInstance* snare2Instance = NULL;
 	snare2Description->createInstance(&snare2Instance);
 
 	FMOD::Studio::EventDescription* a808DrumDescription = NULL;				//808 Drum
-	system->getEvent("event:/808Drum", &a808DrumDescription);
+	system->getEvent("event:/Instruments+FX/808Drum", &a808DrumDescription);
 
 	FMOD::Studio::EventInstance* a808DrumInstance = NULL;
 	a808DrumDescription->createInstance(&a808DrumInstance);
 
 	FMOD::Studio::EventDescription* cymbalDescription = NULL;				//Cymbal
-	system->getEvent("event:/Cymbal", &cymbalDescription);
+	system->getEvent("event:/Instruments+FX/Cymbal", &cymbalDescription);
 
 	FMOD::Studio::EventInstance* cymbalInstance = NULL;
 	cymbalDescription->createInstance(&cymbalInstance);
 
 	FMOD::Studio::EventDescription* badBossAngelDescription = NULL;				//badBossAngel
-	system->getEvent("event:/badbossangel", &badBossAngelDescription);
+	system->getEvent("event:/Instruments+FX/badbossangel", &badBossAngelDescription);
 
 	FMOD::Studio::EventInstance* badBossAngelInstance = NULL;
 	badBossAngelDescription->createInstance(&badBossAngelInstance);
 
 	FMOD::Studio::EventDescription* triangleDescription = NULL;				//triangle
-	system->getEvent("event:/Triangle", &triangleDescription);
+	system->getEvent("event:/Instruments+FX/Triangle", &triangleDescription);
 
 	FMOD::Studio::EventInstance* triangleInstance = NULL;
 	triangleDescription->createInstance(&triangleInstance);
 
 	FMOD::Studio::EventDescription* chordsDescription = NULL;				//chords
-	system->getEvent("event:/chords", &chordsDescription);
+	system->getEvent("event:/Instruments+FX/chords", &chordsDescription);
 
 	FMOD::Studio::EventInstance* chordsInstance = NULL;
 	chordsDescription->createInstance(&chordsInstance);
 
 	FMOD::Studio::EventDescription* arpDescription = NULL;				//arp
-	system->getEvent("event:/arp", &arpDescription);
+	system->getEvent("event:/Instruments+FX/arp", &arpDescription);
 
 	FMOD::Studio::EventInstance* arpInstance = NULL;
 	arpDescription->createInstance(&arpInstance);
+
+	FMOD::Studio::EventDescription* closedHiHatDescription = NULL;				//closedHiHat
+	system->getEvent("event:/Instruments+FX/ClosedHiHat", &closedHiHatDescription);
+
+	FMOD::Studio::EventInstance* closedHiHatInstance = NULL;
+	closedHiHatDescription->createInstance(&closedHiHatInstance);
+
+	FMOD::Studio::EventDescription* newHighScoreDescription = NULL;				//newHighScore
+	system->getEvent("event:/Instruments+FX/newHighScore", &newHighScoreDescription);
+
+	FMOD::Studio::EventInstance* newHighScoreInstance = NULL;
+	newHighScoreDescription->createInstance(&newHighScoreInstance);
 	
 	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
 	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
@@ -468,6 +489,8 @@ int main() {
 				startScreenToggle = false;
 				screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
+				snakeFruitInstance->setPitch(1.0f);
+				snakeFruitInstance->setVolume(0.7f);
 				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button (FMOD)
 				system->update();
 				break;
@@ -489,18 +512,26 @@ int main() {
 		this_thread::sleep_for(7ms);
 
 		for (int o = 0; o < 4; o++) {
-			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
-						
+			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;						
 		}
+
 		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
 			playerCount++;
+			snakeFruitInstance->setPitch(1.77f);
+			snakeFruitInstance->setVolume(1.0f);
+			snakeFruitInstance->start();
+			system->update();
 			holdKey = true;
 		}
 		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
 			playerCount--;
+			snakeFruitInstance->setPitch(0.64f);
+			snakeFruitInstance->setVolume(1.0f);
+			snakeFruitInstance->start();
+			system->update();
 			holdKey = true;
 		}
-		if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
+		else if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
 			holdKey = false;
 		}
 		
@@ -618,6 +649,7 @@ int main() {
 	else {
 		highScore = 0;
 	}
+	
 
 	do {
 		  //						  //
@@ -637,9 +669,10 @@ int main() {
 			snek1[1].direction_frame = 's';
 		}
 					
-		gameLose = false;	//reset game lose condition
-		frameRate = 100;	//reset the framerate
-		currentFrame = 0;	//reset the frame counter
+		gameLose = false;			//reset game lose condition
+		oldHighScore = highScore;	//update the old high score based on previous game's high score
+		frameRate = 100;			//reset the framerate
+		currentFrame = 0;			//reset the frame counter
 
 		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
 			snek1[p].snek_length = 0;
@@ -681,9 +714,14 @@ int main() {
 		snakeMoveReverbLevel = 0.0f;
 		i16thNote = 1;
 		badBossAngelInstance->start();
+		snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
 		snare2Instance->setParameterByName("SnareReverb", 0.0f);
 		arpInstance->setParameterByName("ArpVolume", 0.0f);
+		snakeFruitInstance->setPitch(1.0f);
+		snakeFruitInstance->setVolume(1.0f);
 		chordsStartToggle = false;
+		hiHatToggle = false;
+		gotNewHighScore = false;
 			   
 		  //				   //
 		 // [GAME LOOP START] //
@@ -1120,6 +1158,7 @@ int main() {
 			 // DETECT IF PLAYER HAS HIT FRUIT //
 			//								  //
 			gotNewFruit = false;
+			gotNewHighScore = false;
 
 			for (int pt = 0; pt < playerCount; pt++) {
 
@@ -1181,6 +1220,10 @@ int main() {
 
 						if (highestCurrentLength > highScore) {				//update high score
 							highScore = highestCurrentLength;
+
+							if (highScore == oldHighScore + 1) {
+								gotNewHighScore = true;
+							}
 						}
 					}
 				}
@@ -1275,7 +1318,10 @@ int main() {
 			if (gotNewFruit) {				//if someone gets a new fruit..
 				for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
 					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
-						if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
+						if (gotNewHighScore) {
+							newHighScoreInstance->start();
+						}						
+						else if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
 						}						
 						else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
@@ -1300,6 +1346,8 @@ int main() {
 					snakeMoveReverbLevel = 0.125f;
 					snare2Instance->setParameterByName("SnareReverb", 0.2f);
 					arpInstance->setParameterByName("ArpVolume", 0.14);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
+					hiHatToggle = true;
 					break;
 
 				case 20:
@@ -1307,6 +1355,7 @@ int main() {
 					snakeMoveReverbLevel = 0.250f;
 					snare2Instance->setParameterByName("SnareReverb", 0.4f);
 					arpInstance->setParameterByName("ArpVolume", 0.17f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
 					break;
 
 				case 30:
@@ -1314,6 +1363,7 @@ int main() {
 					snakeMoveReverbLevel = 0.375f;
 					snare2Instance->setParameterByName("SnareReverb", 0.5f);
 					arpInstance->setParameterByName("ArpVolume", 0.2f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
 					break;
 
 				case 40:
@@ -1321,6 +1371,7 @@ int main() {
 					snakeMoveReverbLevel = 0.5f;
 					snare2Instance->setParameterByName("SnareReverb", 0.64f);
 					arpInstance->setParameterByName("ArpVolume", 0.3f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.7f);
 					break;
 
 				case 50:
@@ -1328,6 +1379,7 @@ int main() {
 					snakeMoveReverbLevel = 0.625f;
 					snare2Instance->setParameterByName("SnareReverb", 0.72f);
 					arpInstance->setParameterByName("ArpVolume", 0.45f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
 					break;
 
 				case 60:
@@ -1335,6 +1387,7 @@ int main() {
 					snakeMoveReverbLevel = 0.750f;
 					snare2Instance->setParameterByName("SnareReverb", 0.8f);
 					arpInstance->setParameterByName("ArpVolume", 0.6f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
 					break;
 
 				case 70:
@@ -1342,6 +1395,7 @@ int main() {
 					snakeMoveReverbLevel = 0.875f;
 					snare2Instance->setParameterByName("SnareReverb", 0.9f);
 					arpInstance->setParameterByName("ArpVolume", 0.8f);
+					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.0f);
 					break;
 
 				case 80:
@@ -1402,7 +1456,17 @@ int main() {
 					snare1Instance->start();
 				}
 			}
-
+			if (hiHatToggle) {
+				if (i16thNote % 2 == 1) {					
+					closedHiHatInstance->start();
+					closedHiHatInstance->setVolume(0.4f);
+				}
+				else {					
+					closedHiHatInstance->start();
+					closedHiHatInstance->setVolume(0.1f);
+				}
+			}
+			
 			//CHORDS//
 			if (chordsStartToggle) {
 				if (i16thNote == 1) {
@@ -1862,16 +1926,21 @@ int main() {
 
 				for (int o = 0; o < 4; o++) {
 					arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
-
 				}
 
 				if (arrowKeys[2] && playerCount < 2 && !holdKey) {
-					playerCount++;
+					playerCount++; 
+					snakeFruitInstance->setPitch(1.77f);
+					snakeFruitInstance->start();
+					system->update();
 					holdKey = true;
 				}
 
 				else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
 					playerCount--;
+					snakeFruitInstance->setPitch(0.64f);
+					snakeFruitInstance->start();
+					system->update();
 					holdKey = true;
 				}
 
@@ -1888,6 +1957,7 @@ int main() {
 					playAgain = true;
 					
 					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
+					snakeFruitInstance->setPitch(1.0f);
 					snakeFruitInstance->start();
 					system->update();
 				}
@@ -1899,7 +1969,10 @@ int main() {
 					playAgain = false;
 
 					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
+					exitGameInstance->start();
+
 					system->update();
+					this_thread::sleep_for(2671ms);
 				}
 
 				this_thread::sleep_for(10ms);
