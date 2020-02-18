@@ -1339,13 +1339,13 @@ int main() {
 					chordsStartToggle = true;
 					break;
 				case 7:
-					arpInstance->setParameterByName("ArpVolume", 0.09);
+					arpInstance->setParameterByName("ArpVolume", 0.09f);
 					break;
 				case 11:
 					snekMoveTimelinePositionMax += 200;
 					snakeMoveReverbLevel = 0.125f;
 					snare2Instance->setParameterByName("SnareReverb", 0.2f);
-					arpInstance->setParameterByName("ArpVolume", 0.14);
+					arpInstance->setParameterByName("ArpVolume", 0.14f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
 					hiHatToggle = true;
 					break;
