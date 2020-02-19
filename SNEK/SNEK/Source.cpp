@@ -1,4 +1,4 @@
-//	 __    _    _              _  __   ____
+﻿//	 __    _    _              _  __   ____
 //	/ /   | \  | |     /\     | |/ /  |  __|
 //	\ \   |  \ | |    /  \    | | /   | |__
 //	 \ \  | | \| |   / /\ \   |   \   |  __|
@@ -84,6 +84,7 @@ int portalCoordinates[6][2];	//coordinates of the current portals on the map
 bool gotNewFruit = false;
 int oldHighScore;
 bool gotNewHighScore = false;
+wstring keyboard = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ!♀♂ ←↓";
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -107,6 +108,7 @@ int i16thNote = 1;						//counts each frame and resets back to 1 after reaching 
 bool chordsStartToggle = false;
 int currentChord = 0;
 bool hiHatToggle = false;
+bool gotNewHighScoreSoundPlay;
 
 //PLAYER-SPECIFIC STRUCTURE/VARIABLES
 struct snek {
@@ -722,6 +724,7 @@ int main() {
 		chordsStartToggle = false;
 		hiHatToggle = false;
 		gotNewHighScore = false;
+		gotNewHighScoreSoundPlay = false;
 			   
 		  //				   //
 		 // [GAME LOOP START] //
@@ -1158,7 +1161,6 @@ int main() {
 			 // DETECT IF PLAYER HAS HIT FRUIT //
 			//								  //
 			gotNewFruit = false;
-			gotNewHighScore = false;
 
 			for (int pt = 0; pt < playerCount; pt++) {
 
@@ -1223,6 +1225,7 @@ int main() {
 
 							if (highScore == oldHighScore + 1) {
 								gotNewHighScore = true;
+								gotNewHighScoreSoundPlay = true;
 							}
 						}
 					}
@@ -1318,8 +1321,9 @@ int main() {
 			if (gotNewFruit) {				//if someone gets a new fruit..
 				for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
 					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
-						if (gotNewHighScore) {
+						if (gotNewHighScoreSoundPlay) {
 							newHighScoreInstance->start();
+							gotNewHighScoreSoundPlay = false;
 						}						
 						else if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
@@ -1881,6 +1885,116 @@ int main() {
 		  //				  //
 		 // GAME OVER SCREEN //
 		//					//
+
+		if (gotNewHighScore) {
+			bool nameEntry = true;
+			int currentSelChar = 0;
+			bool holdNameEntryLeft = false;
+			bool holdNameEntryRight = false;
+			bool holdNameEntryUp = false;
+			bool holdNameEntryDown = false;
+			bool holdNameEntryZ = false;
+			wstring highScoreName;
+
+			screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
+
+			for (int y = 0; y < 32; y++) {
+				if (y < 8) {
+					screenString[40 + (13 * 80) + (y * 2)] = keyboard[y];
+				}
+				else if (y < 16) {
+					screenString[24 + (15 * 80) + (y * 2)] = keyboard[y];
+				}
+				else if (y < 24) {
+					screenString[8 + (17 * 80) + (y * 2)] = keyboard[y];
+				}
+				else {
+					screenString[-8 + (19 * 80) + (y * 2)] = keyboard[y];
+				}
+				
+			}
+			while (nameEntry) {	
+
+				for (int k = 0; k < 4; k++) {	//player 1
+					snek1[0].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
+				}
+				snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
+				
+				if (!holdNameEntryLeft && snek1[0].directional_keys[0]) {
+					if (currentSelChar - 1 > -1) {
+						currentSelChar--;
+					}
+					holdNameEntryLeft = true;
+				}
+				else if (!snek1[0].directional_keys[0]) {
+					holdNameEntryLeft = false;
+				}
+
+				if (!holdNameEntryRight && snek1[0].directional_keys[2]) {
+					if (currentSelChar + 1 < 32) {
+						currentSelChar++;
+					}
+					holdNameEntryRight = true;
+				}
+				else if (!snek1[0].directional_keys[2]) {
+					holdNameEntryRight = false;
+				}
+
+				if (!holdNameEntryUp && snek1[0].directional_keys[1]) {
+					if (currentSelChar - 8 > -1) {
+						currentSelChar -= 8;
+					}
+					holdNameEntryUp = true;
+				}
+				else if (!snek1[0].directional_keys[1]) {
+					holdNameEntryUp = false;
+				}
+
+				if (!holdNameEntryDown && snek1[0].directional_keys[3]) {
+					if (currentSelChar + 8 < 32) {
+						currentSelChar += 8;
+					}						
+					holdNameEntryDown = true;
+				}
+				else if (!snek1[0].directional_keys[3]) {
+					holdNameEntryDown = false;
+				}				
+
+				if (!holdNameEntryZ && snek1[0].action_keys) {
+					//highScoreName.append(keyboard[currentSelChar]);
+					highScoreName.append(L"X");
+					holdNameEntryZ = true;
+				}
+				else if (!snek1[0].action_keys) {
+					holdNameEntryZ = false;
+				}
+
+				screenString.replace((19 * 80) + 64, highScoreName.length(), highScoreName);
+							   				 			  
+
+				for (int p = 0; p < 80 * 25; p++) {
+					attributes[p] = FOREGROUND_GREEN;
+				}
+
+				if (currentSelChar < 8) {
+					attributes[40 + (13 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+				}
+				else if (currentSelChar < 16) {
+					attributes[24 + (15 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+				}
+				else if (currentSelChar < 24) {
+					attributes[8 + (17 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+				}
+				else {
+					attributes[-8 + (19 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+				}
+
+				WriteConsoleOutputCharacterW(hConsole, screenString.c_str(), nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+				WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+				//this_thread::sleep_for(100ms);
+			}
+			
+		}
 
 		  //						  //
 		 // WRITE HIGH SCORE TO FILE //
