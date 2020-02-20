@@ -1746,13 +1746,13 @@ int main() {
 
 				}
 
-				else if (t == 17 && q == 25 && playerCount == 1) {
+				/*else if (t == 17 && q == 25 && playerCount == 1) {
 					screenString.replace(8 + q + (80 * t), 33, L"use arrow keys ^ v < > to control");
 				}					
 
 				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 1) {
 					screenString.replace(14 + q + (80 * t), 18, L"use Z key to lunge");
-				}
+				}*/
 								
 			}
 
@@ -1886,6 +1886,7 @@ int main() {
 		 // GAME OVER SCREEN //
 		//					//
 
+		//if a player got a new high score...
 		if (gotNewHighScore) {
 			bool nameEntry = true;
 			int currentSelChar = 0;
@@ -1896,8 +1897,9 @@ int main() {
 			bool holdNameEntryZ = false;
 			wstring highScoreName;
 
-			screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
+			screenString.replace((80 * 9) + 32, 32, L"NEW HIGH SCORE! ENTER YOUR NAME:");
 
+			//..display the keyboard..
 			for (int y = 0; y < 32; y++) {
 				if (y < 8) {
 					screenString[40 + (13 * 80) + (y * 2)] = keyboard[y];
@@ -1910,72 +1912,100 @@ int main() {
 				}
 				else {
 					screenString[-8 + (19 * 80) + (y * 2)] = keyboard[y];
-				}
-				
+				}				
 			}
+
+			//..and let them enter their name..
 			while (nameEntry) {	
 
-				for (int k = 0; k < 4; k++) {	//player 1
+				//CHECK INPUT//
+				for (int k = 0; k < 4; k++) {
 					snek1[0].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
 				}
 				snek1[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
 				
+				//APPLY INPUT//
+
+				//..if they press the left arrow key..
 				if (!holdNameEntryLeft && snek1[0].directional_keys[0]) {
 					if (currentSelChar - 1 > -1) {
 						currentSelChar--;
 					}
 					holdNameEntryLeft = true;
 				}
+				//..if they release the left arrow key..
 				else if (!snek1[0].directional_keys[0]) {
 					holdNameEntryLeft = false;
 				}
 
+				//..if they press the right arrow key..
 				if (!holdNameEntryRight && snek1[0].directional_keys[2]) {
 					if (currentSelChar + 1 < 32) {
 						currentSelChar++;
 					}
 					holdNameEntryRight = true;
 				}
+				//..if they release the right arrow key..
 				else if (!snek1[0].directional_keys[2]) {
 					holdNameEntryRight = false;
 				}
 
+				//..if they press the up arrow key..
 				if (!holdNameEntryUp && snek1[0].directional_keys[1]) {
 					if (currentSelChar - 8 > -1) {
 						currentSelChar -= 8;
 					}
 					holdNameEntryUp = true;
 				}
+				//..if they release the up arrow key..
 				else if (!snek1[0].directional_keys[1]) {
 					holdNameEntryUp = false;
 				}
 
+				//..if they press the down arrow key..
 				if (!holdNameEntryDown && snek1[0].directional_keys[3]) {
 					if (currentSelChar + 8 < 32) {
 						currentSelChar += 8;
 					}						
 					holdNameEntryDown = true;
 				}
+				//..if they release the down arrow key..
 				else if (!snek1[0].directional_keys[3]) {
 					holdNameEntryDown = false;
 				}				
 
-				if (!holdNameEntryZ && snek1[0].action_keys) {
-					//highScoreName.append(keyboard[currentSelChar]);
-					highScoreName.append(L"X");
+				//..if they press the Z key..
+				if (!holdNameEntryZ && snek1[0].action_keys) {					
+					if (currentSelChar < 30) {
+						highScoreName.append(1, keyboard[currentSelChar]);
+					}
+					else if (currentSelChar == 30) {
+						highScoreName.resize(highScoreName.size() - 1);
+					}
+					else {
+						nameEntry = false;
+					}
+					
 					holdNameEntryZ = true;
 				}
+				//..if they release the Z key..
 				else if (!snek1[0].action_keys) {
 					holdNameEntryZ = false;
 				}
 
+				//display their name as they type it
 				screenString.replace((19 * 80) + 64, highScoreName.length(), highScoreName);
+				screenString.replace((19 * 80) + 64 + highScoreName.length(), 1, L" ");			//delete any extra characters from backspace/delete inputs
 							   				 			  
 
-				for (int p = 0; p < 80 * 25; p++) {
-					attributes[p] = FOREGROUND_GREEN;
+				//color the whole right side of the screen green
+				for (int p = 0; p < 25; p++) {
+					for (int t = 26; t < 80; t++) {
+						attributes[(p * 80) + t] = FOREGROUND_GREEN;
+					}					
 				}
 
+				//invert the color of the currently selected keyboard character
 				if (currentSelChar < 8) {
 					attributes[40 + (13 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
 				}
@@ -1989,22 +2019,37 @@ int main() {
 					attributes[-8 + (19 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
 				}
 
-				WriteConsoleOutputCharacterW(hConsole, screenString.c_str(), nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+				//DISPLAY THE SCREEN//
+				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
 				WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
-				//this_thread::sleep_for(100ms);
 			}
-			
+
+			  //						  //
+			 // WRITE HIGH SCORE TO FILE //
+			//							//
+			ofstream scoreFileWrite;
+			scoreFileWrite.open("ScoreFile", ios::trunc);
+			scoreFileWrite << to_string(highScore) << endl << highScoreName.c_str();
+			scoreFileWrite.close();			
+		}			
+
+		screenString.replace(40 + (13 * 80), 39, L"                                       ");
+		screenString.replace(40 + (14 * 80), 39, L"                                       ");
+		screenString.replace(40 + (15 * 80), 39, L"                                       ");
+		screenString.replace(40 + (16 * 80), 39, L"                                       ");
+		screenString.replace(40 + (17 * 80), 39, L"                                       ");
+		screenString.replace(40 + (18 * 80), 39, L"                                       ");
+		screenString.replace(40 + (19 * 80), 39, L"                                       ");
+		screenString.replace(40 + (20 * 80), 39, L"                                       ");
+
+		//color the whole right side of the screen green
+		for (int p = 0; p < 25; p++) {
+			for (int t = 26; t < 80; t++) {
+				attributes[(p * 80) + t] = FOREGROUND_GREEN;
+			}
 		}
-
-		  //						  //
-		 // WRITE HIGH SCORE TO FILE //
-		//							//
-		ofstream scoreFileWrite;
-		scoreFileWrite.open("ScoreFile", ios::trunc);
-		scoreFileWrite << to_string(highScore);
-		scoreFileWrite.close();
-
-		Sleep(1347);
+				
+		Sleep(100);
 		
 		if (playerCount == 2) {
 			if (snek1[0].justDied) {
@@ -2028,7 +2073,8 @@ int main() {
 			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
 			screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, & dwBytesWritten);
+			WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, & dwBytesWritten);
 
 			bool gameOverMessage = true;
 
