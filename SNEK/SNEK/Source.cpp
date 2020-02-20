@@ -60,6 +60,7 @@
 #include <thread>
 #include <chrono>
 #include <fstream>
+#include <codecvt>
 #include <fmod.hpp>
 #include <fmod_studio.hpp>
 
@@ -84,7 +85,12 @@ int portalCoordinates[6][2];	//coordinates of the current portals on the map
 bool gotNewFruit = false;
 int oldHighScore;
 bool gotNewHighScore = false;
-wstring keyboard = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ!♀♂ ←↓";
+wstring keyboard = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ.-_ ←↓";
+wstring highScoreName;
+wstring highScoreNameFromFileWide;
+string highScoreNameFromFileNarrow;
+wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+bool wasPreviousHighScoreFound;
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -643,13 +649,28 @@ int main() {
 	ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile");
 	if (scoreFileRead.is_open()) {
+		
 		string highScoreFromFile;
 		getline(scoreFileRead, highScoreFromFile);
-		highScore = stoi(highScoreFromFile);
+		if (highScoreFromFile.length() != 0) {
+			highScore = stoi(highScoreFromFile);
+		}
+		else {
+			highScore = 0;
+		}
+
+		getline(scoreFileRead, highScoreNameFromFileNarrow);				
+		highScoreNameFromFileWide = converter.from_bytes(highScoreNameFromFileNarrow);
+		highScoreName = highScoreNameFromFileWide;
+
 		scoreFileRead.close();
+
+		wasPreviousHighScoreFound = true;
+
 	}
 	else {
 		highScore = 0;
+		highScoreName = L" ";
 	}
 	
 
@@ -1777,6 +1798,14 @@ int main() {
 				screenString[portalCoordinates[yt][0] + (80 * portalCoordinates[yt][1])] = 'O';
 			}
 
+			if (wasPreviousHighScoreFound) {
+				screenString.replace(64 + (80 * 6), 13, L"-------------");
+				screenString.replace(63 + (80 * 7), 2, L"| ");
+				screenString.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length(), highScoreName);
+				screenString.replace(76 + (80 * 7), 2, L" |");
+				screenString.replace(64 + (80 * 8), 13, L"-------------");
+			}			
+
 			if (playerCount == 2 && currentFrame == 1) {
 
 				screenString.replace(10 * 80 + 14, 8, L"Player 1");
@@ -1895,9 +1924,12 @@ int main() {
 			bool holdNameEntryUp = false;
 			bool holdNameEntryDown = false;
 			bool holdNameEntryZ = false;
-			wstring highScoreName;
+			highScoreName.resize(0);
+
+			
 
 			screenString.replace((80 * 9) + 32, 32, L"NEW HIGH SCORE! ENTER YOUR NAME:");
+			screenString.replace(65 + (80 * 7), 11, L"           ");
 
 			//..display the keyboard..
 			for (int y = 0; y < 32; y++) {
@@ -1976,13 +2008,18 @@ int main() {
 
 				//..if they press the Z key..
 				if (!holdNameEntryZ && snek1[0].action_keys) {					
-					if (currentSelChar < 30) {
+					if (currentSelChar < 29 && highScoreName.length() < 11) {
+						highScoreName.append(1, keyboard[currentSelChar]);
+					}
+					else if (currentSelChar == 29 && highScoreName.length() < 11 && highScoreName.length() != 0) {
 						highScoreName.append(1, keyboard[currentSelChar]);
 					}
 					else if (currentSelChar == 30) {
-						highScoreName.resize(highScoreName.size() - 1);
+						if (highScoreName.size() > 0) {
+							highScoreName.resize(highScoreName.size() - 1);
+						}						
 					}
-					else {
+					else if (currentSelChar == 31) {
 						nameEntry = false;
 					}
 					
@@ -1993,9 +2030,25 @@ int main() {
 					holdNameEntryZ = false;
 				}
 
+
+				//erase name display
+				screenString.replace(65 + (80 * 7), 11, L"           ");
+
+
 				//display their name as they type it
-				screenString.replace((19 * 80) + 64, highScoreName.length(), highScoreName);
-				screenString.replace((19 * 80) + 64 + highScoreName.length(), 1, L" ");			//delete any extra characters from backspace/delete inputs
+				screenString.replace(64 + (80 * 6), 13, L"-------------");
+				screenString.replace(63 + (80 * 7), 2, L"| ");
+
+				if (highScoreName.length() == 11) {
+					screenString.replace(65 + (80 * 7), highScoreName.length(), highScoreName);
+				}
+				else {
+					screenString.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length() + 1, highScoreName + L" ");
+				}				
+
+				screenString.replace(76 + (80 * 7), 2, L" |");
+				screenString.replace(64 + (80 * 8), 13, L"-------------");
+				//screenString.replace((7 * 80) + 64 + highScoreName.length(), 1, L" ");			//delete any extra characters from backspace/delete inputs
 							   				 			  
 
 				//color the whole right side of the screen green
@@ -2029,10 +2082,13 @@ int main() {
 			//							//
 			ofstream scoreFileWrite;
 			scoreFileWrite.open("ScoreFile", ios::trunc);
-			scoreFileWrite << to_string(highScore) << endl << highScoreName.c_str();
-			scoreFileWrite.close();			
+			scoreFileWrite << to_string(highScore) << endl << converter.to_bytes(highScoreName);
+			scoreFileWrite.close();	
+
+			wasPreviousHighScoreFound = true;
 		}			
 
+		screenString.replace((80 * 9) + 32, 32, L"           HIGH SCORE SAVED!    ");
 		screenString.replace(40 + (13 * 80), 39, L"                                       ");
 		screenString.replace(40 + (14 * 80), 39, L"                                       ");
 		screenString.replace(40 + (15 * 80), 39, L"                                       ");
@@ -2041,6 +2097,7 @@ int main() {
 		screenString.replace(40 + (18 * 80), 39, L"                                       ");
 		screenString.replace(40 + (19 * 80), 39, L"                                       ");
 		screenString.replace(40 + (20 * 80), 39, L"                                       ");
+
 
 		//color the whole right side of the screen green
 		for (int p = 0; p < 25; p++) {
