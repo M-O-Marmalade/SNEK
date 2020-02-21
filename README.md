@@ -6,6 +6,5 @@ To play the game, download the entire repository (.zip file), then extract all c
 
 TO-DO
 =====
-+ allow players who got a new high score to type in their name
 + allow multiplayer game to continue once a player dies
 + learn how to use FMOD Studio sustain points correctly/clean up arp/chord programming
