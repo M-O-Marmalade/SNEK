@@ -745,6 +745,7 @@ int main() {
 		snakeFruitInstance->setVolume(1.0f);
 		chordsInstance->setParameterByName("ChordsSelection", 0.0f);
 		chordsInstance->setParameterByName("ChordsReverb", 0.0f);
+		chordsInstance->setVolume(1.0f);
 		chordsStartToggle = false;
 		hiHatToggle = false;
 		gotNewHighScore = false;
