@@ -740,8 +740,11 @@ int main() {
 		snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
 		snare2Instance->setParameterByName("SnareReverb", 0.0f);
 		arpInstance->setParameterByName("ArpVolume", 0.0f);
+		triangleInstance->setParameterByName("TriangleDecay", 1.0f);
 		snakeFruitInstance->setPitch(1.0f);
 		snakeFruitInstance->setVolume(1.0f);
+		chordsInstance->setParameterByName("ChordsSelection", 0.0f);
+		chordsInstance->setParameterByName("ChordsReverb", 0.0f);
 		chordsStartToggle = false;
 		hiHatToggle = false;
 		gotNewHighScore = false;
@@ -1365,6 +1368,7 @@ int main() {
 					break;
 				case 7:
 					arpInstance->setParameterByName("ArpVolume", 0.09f);
+					chordsInstance->setParameterByName("ChordsReverb", 0.7f);
 					break;
 				case 11:
 					snekMoveTimelinePositionMax += 200;
@@ -1372,6 +1376,8 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.2f);
 					arpInstance->setParameterByName("ArpVolume", 0.14f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.9f);
+					chordsInstance->setParameterByName("ChordsReverb", 1.0f);
 					hiHatToggle = true;
 					break;
 
@@ -1381,6 +1387,7 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.4f);
 					arpInstance->setParameterByName("ArpVolume", 0.17f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.8f);
 					break;
 
 				case 30:
@@ -1389,6 +1396,10 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.5f);
 					arpInstance->setParameterByName("ArpVolume", 0.2f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.5f);
+					chordsInstance->setParameterByName("ChordsSelection", 0.1f);
+					chordsInstance->setParameterByName("ChordsReverb", 1.0f);
+					chordsInstance->setVolume(0.4f);
 					break;
 
 				case 40:
@@ -1397,6 +1408,9 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.64f);
 					arpInstance->setParameterByName("ArpVolume", 0.3f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.7f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.25f);
+					chordsInstance->setParameterByName("ChordsReverb", 0.7f);
+					chordsInstance->setVolume(0.6f);
 					break;
 
 				case 50:
@@ -1405,6 +1419,10 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.72f);
 					arpInstance->setParameterByName("ArpVolume", 0.45f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.15f);
+					chordsInstance->setParameterByName("ChordsSelection", 0.2f);
+					chordsInstance->setParameterByName("ChordsReverb", 0.3f);
+					chordsInstance->setVolume(0.6f);
 					break;
 
 				case 60:
@@ -1413,6 +1431,9 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.8f);
 					arpInstance->setParameterByName("ArpVolume", 0.6f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.1f);
+					chordsInstance->setParameterByName("ChordsReverb", 0.0f);
+					chordsInstance->setVolume(0.8f);
 					break;
 
 				case 70:
@@ -1421,6 +1442,8 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 0.9f);
 					arpInstance->setParameterByName("ArpVolume", 0.8f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.0f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+					chordsInstance->setVolume(0.9f);
 					break;
 
 				case 80:
@@ -1428,6 +1451,8 @@ int main() {
 					snakeMoveReverbLevel = 1.0f;
 					snare2Instance->setParameterByName("SnareReverb", 1.0f);
 					arpInstance->setParameterByName("ArpVolume", 0.9f);
+					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+					chordsInstance->setVolume(1.0f);
 					break;
 				}
 			}	
@@ -1492,7 +1517,7 @@ int main() {
 				}
 			}
 			
-			//CHORDS//
+			//CHORDS//			
 			if (chordsStartToggle) {
 				if (i16thNote == 1) {
 					switch (currentChord) {
@@ -1906,7 +1931,7 @@ int main() {
 						
 			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
-			Sleep(3000);
+			this_thread::sleep_for(3000ms);
 			
 			system->update(); //update FMOD system			
 		}
@@ -1914,6 +1939,11 @@ int main() {
 		  //				  //
 		 // GAME OVER SCREEN //
 		//					//
+
+		chordsInstance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+		system->update(); //update FMOD system	
+
+		this_thread::sleep_for(700ms);
 
 		//if a player got a new high score...
 		if (gotNewHighScore) {
@@ -1962,6 +1992,8 @@ int main() {
 				if (!holdNameEntryLeft && snek1[0].directional_keys[0]) {
 					if (currentSelChar - 1 > -1) {
 						currentSelChar--;
+						snakeFruitInstance->setPitch(2.0f);
+						snakeFruitInstance->start();
 					}
 					holdNameEntryLeft = true;
 				}
@@ -1974,6 +2006,8 @@ int main() {
 				if (!holdNameEntryRight && snek1[0].directional_keys[2]) {
 					if (currentSelChar + 1 < 32) {
 						currentSelChar++;
+						snakeFruitInstance->setPitch(2.0f);
+						snakeFruitInstance->start();
 					}
 					holdNameEntryRight = true;
 				}
@@ -1986,6 +2020,8 @@ int main() {
 				if (!holdNameEntryUp && snek1[0].directional_keys[1]) {
 					if (currentSelChar - 8 > -1) {
 						currentSelChar -= 8;
+						snakeFruitInstance->setPitch(2.0f);
+						snakeFruitInstance->start();
 					}
 					holdNameEntryUp = true;
 				}
@@ -1998,6 +2034,8 @@ int main() {
 				if (!holdNameEntryDown && snek1[0].directional_keys[3]) {
 					if (currentSelChar + 8 < 32) {
 						currentSelChar += 8;
+						snakeFruitInstance->setPitch(2.0f);
+						snakeFruitInstance->start();
 					}						
 					holdNameEntryDown = true;
 				}
@@ -2010,17 +2048,24 @@ int main() {
 				if (!holdNameEntryZ && snek1[0].action_keys) {					
 					if (currentSelChar < 29 && highScoreName.length() < 11) {
 						highScoreName.append(1, keyboard[currentSelChar]);
+						snakeFruitInstance->setPitch(1.0f);
+						snakeFruitInstance->start();
 					}
 					else if (currentSelChar == 29 && highScoreName.length() < 11 && highScoreName.length() != 0) {
 						highScoreName.append(1, keyboard[currentSelChar]);
+						snakeFruitInstance->setPitch(1.0f);
+						snakeFruitInstance->start();
 					}
 					else if (currentSelChar == 30) {
 						if (highScoreName.size() > 0) {
 							highScoreName.resize(highScoreName.size() - 1);
+							snakeFruitInstance->setPitch(0.3f);
+							snakeFruitInstance->start();
 						}						
 					}
 					else if (currentSelChar == 31) {
 						nameEntry = false;
+						snakeFruitInstance11->start();
 					}
 					
 					holdNameEntryZ = true;
@@ -2075,6 +2120,8 @@ int main() {
 				//DISPLAY THE SCREEN//
 				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
 				WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+
+				system->update(); //update FMOD system	
 			}
 
 			  //						  //
@@ -2086,9 +2133,10 @@ int main() {
 			scoreFileWrite.close();	
 
 			wasPreviousHighScoreFound = true;
+			screenString.replace((80 * 9) + 32, 32, L"           HIGH SCORE SAVED!    ");
 		}			
 
-		screenString.replace((80 * 9) + 32, 32, L"           HIGH SCORE SAVED!    ");
+		
 		screenString.replace(40 + (13 * 80), 39, L"                                       ");
 		screenString.replace(40 + (14 * 80), 39, L"                                       ");
 		screenString.replace(40 + (15 * 80), 39, L"                                       ");
