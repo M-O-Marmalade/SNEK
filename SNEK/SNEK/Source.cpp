@@ -747,6 +747,7 @@ int main() {
 		chordsInstance->setParameterByName("ChordsReverb", 0.0f);
 		chordsInstance->setVolume(1.0f);
 		chordsStartToggle = false;
+		currentChord = 0;
 		hiHatToggle = false;
 		gotNewHighScore = false;
 		gotNewHighScoreSoundPlay = false;
