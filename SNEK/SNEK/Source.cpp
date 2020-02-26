@@ -100,9 +100,12 @@ bool actionKeyHeld = false;		//indicates whether any one player is holding an ac
 //DISPLAY VARIABLES
 int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
-int currentTick = 0;			//keeps track of how many ticks have passed
+//int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
+chrono::duration<double> fps;
+chrono::high_resolution_clock::time_point frameTime;
+chrono::high_resolution_clock::time_point tickTime;
 
 //SOUND VARIABLES (FMOD)
 int snekMoveTimelinePosition = 0;		//snakeMoveInstance timeline position
@@ -694,7 +697,7 @@ int main() {
 					
 		gameLose = false;			//reset game lose condition
 		oldHighScore = highScore;	//update the old high score based on previous game's high score
-		frameRate = 100;			//reset the framerate
+		fps = 700ms;				//reset the framerate
 		currentFrame = 0;			//reset the frame counter
 
 		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
@@ -752,48 +755,52 @@ int main() {
 		gotNewHighScore = false;
 		gotNewHighScoreSoundPlay = false;
 			   
+
+		frameTime = chrono::high_resolution_clock::now();
+
+
 		  //				   //
 		 // [GAME LOOP START] //
 		//				     //
-		while (gameLose == false) {			
+		while (gameLose == false) {
 
 			  //			   //
 			 // SET FRAMERATE //
 			//				 //
-			if (gotNewFruit = true) {
+			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					frameRate = 32;
+					fps = 200ms;
 					break;
 				case 7:
-					frameRate = 27;
+					fps = 170ms;
 					break;
 				case 11:
-					frameRate = 22;
+					fps = 150ms;
 					break;
 				case 20:
-					frameRate = 18;
+					fps = 120ms;
 					break;
 				case 30:
-					frameRate = 16;
+					fps = 100ms;
 					break;
 				case 40:
-					frameRate = 14;
+					fps = 90ms;
 					break;
 				case 50:
-					frameRate = 13;
+					fps = 80ms;
 					break;
 				case 60:
-					frameRate = 12;
+					fps = 70ms;
 					break;
 				case 70:
-					frameRate = 11;
+					fps = 60ms;
 					break;
 				case 80:
-					frameRate = 10;
+					fps = 55ms;
 					break;
 				case 90:
-					frameRate = 9;
+					fps = 50ms;
 					break;
 				}
 			}
@@ -801,7 +808,7 @@ int main() {
 			  //			//
 			 // TICK CLOCK //
 			//			  //
-			for (int q = 0; q < frameRate; q++) {
+			while (tickTime < frameTime + fps) {
 				
 				  //				   //
 				 // READ PLAYER INPUT //
@@ -854,14 +861,13 @@ int main() {
 						snek1[pt].direction_tick = 's';
 					}
 
-				}					
-				
-				this_thread::sleep_for(7ms);
+				}
 
-				currentTick++;	
-				
-			}
-			
+				tickTime = chrono::high_resolution_clock::now();
+				//currentTick++;					
+			}		
+
+			frameTime = chrono::high_resolution_clock::now();
 			currentFrame++;	
 
 			  //				 //
