@@ -6,18 +6,28 @@
 //	/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
+  ///////////////////////
+ // PROGRAM STRUCTURE //
+///////////////////////
+/*
+
+| Audio/Graphics Init | Splash Screen | Start Screen | Pre-New Game Setup | Read Input | Game Logic | Audio Processing | Graphics Display | Name Entry | Try Again Screen |
+|=================================STARTUP=================================|===========================GAME LOOP===========================|===========GAME OVER===========|
+
+*/
+
   /////////////////////
  // PROJECT OUTLINE //
 /////////////////////
 // Includes/Namespaces
-// Variable Declarations
+// Global Variables
 // Audio System Setup (FMOD Studio)
 // Loading/Preparing Audio Events
 // Display Setup
-// Splash Screen Animation
-// Start Screen
-// Read High Score From File
-// Pre-New Game Perparation
+// [Splash Screen Animation]
+// [Start Screen]
+// Read High Score File
+// [New Game Perparation]
 // [Game Loop Start]
 // Set Framerate
 // Tick Clock
@@ -27,11 +37,12 @@
 // Move Body Segments
 // Check + Set Direction [Frame Resolution]
 // Place Snek Body Into Display Array
+// Store Each Snek's Surroundings
 // Add Style Points
+// Update Style High Score
 // Move Player
 // Detect if Player Has Hit Map Edge
 // Detect if Player Has Hit Themselves
-// Update Style High Score
 // Calculate Proximity to the Fruit
 // Detect if Player Has Hit Fruit
 // Set New High Score
@@ -46,7 +57,9 @@
 // Color Player 1 Green
 // Color Player 2 Red
 // Game Over Screen
+// Name Entry
 // Write High Score To File
+// "Try Again?" Screen
 
   //					 //
  // INCLUDES/NAMESPACES //
@@ -54,7 +67,6 @@
 #include <Windows.h>
 #include <Wincon.h>
 #include <cstdlib>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <thread>
@@ -66,9 +78,9 @@
 
 using namespace std;
 
-  //					   //
- // VARIABLE DECLARATIONS //
-//						 //
+  //				  //
+ // GLOBAL VARIABLES //
+//					//
 
 //LOGIC VARIABLES
 char display[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
@@ -100,7 +112,6 @@ bool actionKeyHeld = false;		//indicates whether any one player is holding an ac
 //DISPLAY VARIABLES
 int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
-//int currentTick = 0;			//keeps track of how many ticks have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 chrono::duration<double> fps;
@@ -307,12 +318,6 @@ int main() {
 
 	FMOD::Studio::EventInstance* newHighScoreInstance = NULL;
 	newHighScoreDescription->createInstance(&newHighScoreInstance);
-	
-	/*FMOD::Studio::EventDescription* proximitySoundDescription = NULL;
-	system->getEvent("event:/ProximitySound", &proximitySoundDescription);
-
-	FMOD::Studio::EventInstance* proximitySoundInstance = NULL;
-	proximitySoundDescription->createInstance(&proximitySoundInstance);*/
 
 	  //			   //
 	 // DISPLAY SETUP //
@@ -334,23 +339,13 @@ int main() {
 	cursorInfo.bVisible = false;	
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
 
-	/*DWORD fontSize = 0;
-	GetConsoleFontSize(hConsole, fontSize);
-		
-	SMALL_RECT *screenWindowCoordinates = new SMALL_RECT;
-	screenWindowCoordinates->Top = 15;
-	screenWindowCoordinates->Left = 0;
-	screenWindowCoordinates->Bottom = 0;
-	screenWindowCoordinates->Right = 79;
-	SetConsoleWindowInfo(hConsole, true, screenWindowCoordinates);
-	*/
-							
-	splashJingleInstance->start();	//Begin Splash Screen (FMOD)
-	system->update();
-
 	  //						 //
 	 // SPLASH SCREEN ANIMATION //
 	//						   //
+
+	splashJingleInstance->start();	//Begin Splash Screen (FMOD)
+	system->update();
+
 	bool animation = true;
 	int u = 0;
 	int charToOverwrite = 992;	
@@ -385,8 +380,7 @@ int main() {
 		if (charToOverwrite == 1006) {
 			animation = false;
 			this_thread::sleep_for(222ms);
-		}
-		
+		}		
 	}
 
 	  //			  //
@@ -432,12 +426,6 @@ int main() {
 
 	bool holdKey = false;
 	while (startScreen) {
-
-		/*for (int u = 0; u < nScreenHeight * nScreenWidth; u++) {	//clear display each frame
-
-			screenString[u] = char(32);
-
-		}*/
 
 		screenString.replace((7 * 80) + 20, 38,   L"__    _    _              _  __   ____");		//draw logo each frame
 		screenString.replace((8 * 80) + 19, 40,  L"/ /   | \\  | |     /\\     | |/ /  |  __|");
@@ -669,7 +657,6 @@ int main() {
 		scoreFileRead.close();
 
 		wasPreviousHighScoreFound = true;
-
 	}
 	else {
 		highScore = 0;
@@ -678,9 +665,10 @@ int main() {
 	
 
 	do {
-		  //						  //
-		 // PRE-NEW GAME PREPARATION //
-		//						    //	
+		  //					  //
+		 // NEW GAME PREPARATION //
+		//					    //
+
 		snek snek1[2];
 
 		snek1[0].snek_head[0] = (24 / (playerCount + 1)) * playerCount + (playerCount - 1);
@@ -753,11 +741,9 @@ int main() {
 		currentChord = 0;
 		hiHatToggle = false;
 		gotNewHighScore = false;
-		gotNewHighScoreSoundPlay = false;
-			   
+		gotNewHighScoreSoundPlay = false;			   
 
-		frameTime = chrono::high_resolution_clock::now();
-
+		frameTime = chrono::high_resolution_clock::now();	//record start time of first frame of the game loop
 
 		  //				   //
 		 // [GAME LOOP START] //
@@ -770,10 +756,10 @@ int main() {
 			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					fps = 200ms;
+					fps = 230ms;
 					break;
 				case 7:
-					fps = 170ms;
+					fps = 180ms;
 					break;
 				case 11:
 					fps = 150ms;
@@ -864,11 +850,10 @@ int main() {
 				}
 
 				tickTime = chrono::high_resolution_clock::now();
-				//currentTick++;					
 			}		
 
-			frameTime = chrono::high_resolution_clock::now();
-			currentFrame++;	
+			currentFrame++;
+			frameTime = chrono::high_resolution_clock::now();			
 
 			  //				 //
 			 // REFRESH DISPLAY //
@@ -952,7 +937,6 @@ int main() {
 
 				for (int r = snek1[pt].snek_length - 1; r >= 0; r--) {
 					display[snek1[pt].snek_body[r][0]][snek1[pt].snek_body[r][1]] = '7';
-
 				}
 			}
 
@@ -1095,6 +1079,13 @@ int main() {
 					}
 				}				
 			}
+
+			  //						 //
+			 // UPDATE STYLE HIGH SCORE //
+			//						   //
+			if (styleCounter > styleHighScore && !gameLose) {
+				styleHighScore++;
+			}
 					   			
 			  //			 //
 			 // MOVE PLAYER //
@@ -1166,13 +1157,6 @@ int main() {
 					snek1[pt].justDied = true;
 					gameLose = true;
 				}
-			}
-
-			  //						 //
-			 // UPDATE STYLE HIGH SCORE //
-			//						   //
-			if (styleCounter > styleHighScore && !gameLose) {
-				styleHighScore++;
 			}
 
 			  //								  //
@@ -1314,19 +1298,6 @@ int main() {
 					}
 				}
 			}
-			/*
-			enter 0		//some random maths for portal traversal
-			exit 1
-
-			(0 + 1) % 2
-
-
-			enter 1
-			exit 0
-
-			(1 + 1) % 2
-			
-			*/
 
 			  //								 //
 			 // PLACE PLAYER INTO DISPLAY ARRAY //
@@ -1674,7 +1645,10 @@ int main() {
 			i16thNote++;	
 			if (i16thNote == 17) {
 				i16thNote = 1;
-			}
+			}			
+
+			result = system->update(); //update FMOD system			
+
 						
 			  //			 //
 			 // DRAW SCREEN //	
@@ -1798,16 +1772,7 @@ int main() {
 
 					screenString.replace(33 + styleCounterString.length() + q + (80 * t), highStyleString.length(), highStyleString);
 
-				}
-
-				/*else if (t == 17 && q == 25 && playerCount == 1) {
-					screenString.replace(8 + q + (80 * t), 33, L"use arrow keys ^ v < > to control");
-				}					
-
-				else if (t == 21 && q == 25 && highestCurrentLength > 10 && playerCount == 1) {
-					screenString.replace(14 + q + (80 * t), 18, L"use Z key to lunge");
-				}*/
-								
+				}								
 			}
 
 			for (int pt = 0; pt < playerCount; pt++) {
@@ -1932,16 +1897,13 @@ int main() {
 						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 					}
 				}
-			}
-			
+			}			
 			
 			WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 						
 			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
 			this_thread::sleep_for(3000ms);
-			
-			system->update(); //update FMOD system			
 		}
 
 		  //				  //
@@ -1952,6 +1914,10 @@ int main() {
 		system->update(); //update FMOD system	
 
 		this_thread::sleep_for(700ms);
+
+		  //			//
+		 // NAME ENTRY //
+		//			  //
 
 		//if a player got a new high score...
 		if (gotNewHighScore) {
@@ -2144,7 +2110,10 @@ int main() {
 			screenString.replace((80 * 9) + 32, 32, L"           HIGH SCORE SAVED!    ");
 		}			
 
-		
+		  //					 //
+		 // "TRY AGAIN?" SCREEN //
+		//					   //
+
 		screenString.replace(40 + (13 * 80), 39, L"                                       ");
 		screenString.replace(40 + (14 * 80), 39, L"                                       ");
 		screenString.replace(40 + (15 * 80), 39, L"                                       ");
@@ -2257,7 +2226,6 @@ int main() {
 	return 0;
 
 }
-
 
   //		  //
  // JUNKYARD //
