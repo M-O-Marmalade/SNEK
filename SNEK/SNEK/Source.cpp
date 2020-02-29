@@ -2223,6 +2223,8 @@ int main() {
 
 	while (playAgain);
 
+	system->release();
+
 	return 0;
 
 }
