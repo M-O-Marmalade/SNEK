@@ -16,6 +16,9 @@
 
 */
 
+//time/tick/framerate calculations are done in microseconds (0.000001 second, or 1e-6 second).
+//BPM to us (beats-per-minute to microseconds) conversions are done as 60,000,000us/xBPM.
+
   /////////////////////
  // PROJECT OUTLINE //
 /////////////////////
@@ -114,9 +117,9 @@ int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
-chrono::duration<double> fps;
-chrono::high_resolution_clock::time_point frameTime;
-chrono::high_resolution_clock::time_point tickTime;
+chrono::microseconds fps;
+chrono::steady_clock::time_point frameTime;
+chrono::steady_clock::time_point tickTime;
 
 //SOUND VARIABLES (FMOD)
 int snekMoveTimelinePosition = 0;		//snakeMoveInstance timeline position
@@ -685,7 +688,7 @@ int main() {
 					
 		gameLose = false;			//reset game lose condition
 		oldHighScore = highScore;	//update the old high score based on previous game's high score
-		fps = 700ms;				//reset the framerate
+		fps = 700000us;				//reset the framerate
 		currentFrame = 0;			//reset the frame counter
 
 		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
@@ -743,7 +746,7 @@ int main() {
 		gotNewHighScore = false;
 		gotNewHighScoreSoundPlay = false;			   
 
-		frameTime = chrono::high_resolution_clock::now();	//record start time of first frame of the game loop
+		frameTime = chrono::steady_clock::now();	//record start time of first frame of the game loop
 
 		  //				   //
 		 // [GAME LOOP START] //
@@ -756,37 +759,37 @@ int main() {
 			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					fps = 230ms;
+					fps = 180000us;
 					break;
 				case 7:
-					fps = 180ms;
+					fps = 160000us;
 					break;
 				case 11:
-					fps = 150ms;
+					fps = 140000us;
 					break;
 				case 20:
-					fps = 120ms;
+					fps = 120000us;
 					break;
 				case 30:
-					fps = 100ms;
+					fps = 100000us;
 					break;
 				case 40:
-					fps = 90ms;
+					fps = 90000us;
 					break;
 				case 50:
-					fps = 80ms;
+					fps = 80000us;
 					break;
 				case 60:
-					fps = 70ms;
+					fps = 70000us;
 					break;
 				case 70:
-					fps = 60ms;
+					fps = 60000us;
 					break;
 				case 80:
-					fps = 55ms;
+					fps = 55000us;
 					break;
 				case 90:
-					fps = 50ms;
+					fps = 50000us;
 					break;
 				}
 			}
@@ -794,7 +797,7 @@ int main() {
 			  //			//
 			 // TICK CLOCK //
 			//			  //
-			while (tickTime < frameTime + fps) {
+			while (chrono::steady_clock::now() < frameTime + fps) {
 				
 				  //				   //
 				 // READ PLAYER INPUT //
@@ -846,14 +849,11 @@ int main() {
 					else if (snek1[pt].directional_keys[3] && snek1[pt].holdS == false && snek1[pt].direction_frame != 'n') {
 						snek1[pt].direction_tick = 's';
 					}
-
 				}
-
-				tickTime = chrono::high_resolution_clock::now();
 			}		
 
 			currentFrame++;
-			frameTime = chrono::high_resolution_clock::now();			
+			frameTime += fps;
 
 			  //				 //
 			 // REFRESH DISPLAY //
