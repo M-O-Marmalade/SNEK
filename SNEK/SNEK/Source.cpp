@@ -106,6 +106,7 @@ wstring highScoreNameFromFileWide;
 string highScoreNameFromFileNarrow;
 wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
 bool wasPreviousHighScoreFound;
+vector<double> bpmValues = { 62.5f, 75.75f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -117,7 +118,7 @@ int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
-chrono::microseconds fps;
+chrono::duration<long double, nano> fps;
 chrono::steady_clock::time_point frameTime;
 chrono::steady_clock::time_point tickTime;
 
@@ -129,9 +130,14 @@ float snakeMoveReverbLevel = 0.0f;		//reverb level for the snakeMoveInstance sou
 float proximityToFruit;					//stores the closest player's proximity to the current fruit				
 int i16thNote = 1;						//counts each frame and resets back to 1 after reaching 16 (it skips 17 and goes back to 1)
 bool chordsStartToggle = false;
-int currentChord = 0;
+int currentChord;
 bool hiHatToggle = false;
 bool gotNewHighScoreSoundPlay;
+int currentChordBPM;
+int switchChordsCounter;
+bool switchChords;
+bool hasFirstSwitchHappened;
+bool waitUntilNextDownbeatish;
 
 //PLAYER-SPECIFIC STRUCTURE/VARIABLES
 struct snek {
@@ -321,6 +327,47 @@ int main() {
 
 	FMOD::Studio::EventInstance* newHighScoreInstance = NULL;
 	newHighScoreDescription->createInstance(&newHighScoreInstance);
+
+
+	vector<FMOD::Studio::EventDescription*> chordsDescriptions;					//chords
+	vector<FMOD::Studio::EventInstance*> chordsInstances;
+
+	chordsDescriptions.resize(11);
+	chordsInstances.resize(11);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords1", &chordsDescriptions[0]);	
+	chordsDescriptions[0]->createInstance(&chordsInstances[0]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords2", &chordsDescriptions[1]);
+	chordsDescriptions[1]->createInstance(&chordsInstances[1]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords3", &chordsDescriptions[2]);
+	chordsDescriptions[2]->createInstance(&chordsInstances[2]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords4", &chordsDescriptions[3]);
+	chordsDescriptions[3]->createInstance(&chordsInstances[3]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords5", &chordsDescriptions[4]);
+	chordsDescriptions[4]->createInstance(&chordsInstances[4]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords6", &chordsDescriptions[5]);
+	chordsDescriptions[5]->createInstance(&chordsInstances[5]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords7", &chordsDescriptions[6]);
+	chordsDescriptions[6]->createInstance(&chordsInstances[6]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords8", &chordsDescriptions[7]);
+	chordsDescriptions[7]->createInstance(&chordsInstances[7]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords9", &chordsDescriptions[8]);
+	chordsDescriptions[8]->createInstance(&chordsInstances[8]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords10", &chordsDescriptions[9]);
+	chordsDescriptions[9]->createInstance(&chordsInstances[9]);
+
+	system->getEvent("event:/Instruments+FX/Chords/chords11", &chordsDescriptions[10]);
+	chordsDescriptions[10]->createInstance(&chordsInstances[10]);
+	
 
 	  //			   //
 	 // DISPLAY SETUP //
@@ -688,7 +735,7 @@ int main() {
 					
 		gameLose = false;			//reset game lose condition
 		oldHighScore = highScore;	//update the old high score based on previous game's high score
-		fps = 700000us;				//reset the framerate
+		fps = chrono::duration<long double, nano>(15000000000 / 21.43f);				//reset the framerate
 		currentFrame = 0;			//reset the frame counter
 
 		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
@@ -737,14 +784,19 @@ int main() {
 		triangleInstance->setParameterByName("TriangleDecay", 1.0f);
 		snakeFruitInstance->setPitch(1.0f);
 		snakeFruitInstance->setVolume(1.0f);
-		chordsInstance->setParameterByName("ChordsSelection", 0.0f);
-		chordsInstance->setParameterByName("ChordsReverb", 0.0f);
-		chordsInstance->setVolume(1.0f);
+		result = system->setParameterByName("ChordsSelection", 0.0f);
+		result = system->setParameterByName("ChordsReverb", 0.0f);
+		//result = system->setVolume(1.0f);
 		chordsStartToggle = false;
-		currentChord = 0;
+		currentChord = 4;
 		hiHatToggle = false;
 		gotNewHighScore = false;
-		gotNewHighScoreSoundPlay = false;			   
+		gotNewHighScoreSoundPlay = false;	
+		switchChords = false;
+		switchChordsCounter = 0;
+		hasFirstSwitchHappened = false;
+		currentChordBPM = 100;
+		waitUntilNextDownbeatish = false;
 
 		frameTime = chrono::steady_clock::now();	//record start time of first frame of the game loop
 
@@ -759,37 +811,37 @@ int main() {
 			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					fps = 180000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[0]);
 					break;
 				case 7:
-					fps = 160000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[1]);
 					break;
 				case 11:
-					fps = 140000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[2]);
 					break;
 				case 20:
-					fps = 120000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[3]);
 					break;
 				case 30:
-					fps = 100000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[4]);
 					break;
 				case 40:
-					fps = 90000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[5]);
 					break;
 				case 50:
-					fps = 80000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[6]);
 					break;
 				case 60:
-					fps = 70000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[7]);
 					break;
 				case 70:
-					fps = 60000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[8]);
 					break;
 				case 80:
-					fps = 55000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[9]);
 					break;
 				case 90:
-					fps = 50000us;
+					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[10]);
 					break;
 				}
 			}
@@ -853,7 +905,7 @@ int main() {
 			}		
 
 			currentFrame++;
-			frameTime += fps;
+			frameTime += chrono::duration_cast<chrono::nanoseconds>(fps);
 
 			  //				 //
 			 // REFRESH DISPLAY //
@@ -1344,10 +1396,19 @@ int main() {
 				case 1:
 					badBossAngelInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 					chordsStartToggle = true;
+					currentChordBPM = 0;
+					if (switchChordsCounter == 0) {
+						switchChordsCounter = 1;
+					}					
 					break;
 				case 7:
 					arpInstance->setParameterByName("ArpVolume", 0.09f);
-					chordsInstance->setParameterByName("ChordsReverb", 0.7f);
+					result = system->setParameterByName("ChordsReverb", 0.7f);
+					currentChordBPM = 1;
+					if (switchChordsCounter == 1) {
+						switchChords = true;
+						switchChordsCounter = 7;
+					}
 					break;
 				case 11:
 					snekMoveTimelinePositionMax += 200;
@@ -1356,8 +1417,13 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.14f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.9f);
-					chordsInstance->setParameterByName("ChordsReverb", 1.0f);
+					result = system->setParameterByName("ChordsReverb", 1.0f);
 					hiHatToggle = true;
+					currentChordBPM = 2;
+					if (switchChordsCounter == 7) {
+						switchChords = true;
+						switchChordsCounter = 11;
+					}
 					break;
 
 				case 20:
@@ -1367,6 +1433,11 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.17f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.8f);
+					currentChordBPM = 3;
+					if (switchChordsCounter == 11) {
+						switchChords = true;
+						switchChordsCounter = 20;
+					}
 					break;
 
 				case 30:
@@ -1376,9 +1447,14 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.2f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.5f);
-					chordsInstance->setParameterByName("ChordsSelection", 0.1f);
-					chordsInstance->setParameterByName("ChordsReverb", 1.0f);
-					chordsInstance->setVolume(0.4f);
+					//chordsInstance->setParameterByName("ChordsSelection", 0.1f);
+					result = system->setParameterByName("ChordsReverb", 1.0f);
+					//chordsInstance->setVolume(0.4f);
+					currentChordBPM = 4;
+					if (switchChordsCounter == 20) {
+						switchChords = true;
+						switchChordsCounter = 30;
+					}
 					break;
 
 				case 40:
@@ -1388,8 +1464,13 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.3f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.7f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.25f);
-					chordsInstance->setParameterByName("ChordsReverb", 0.7f);
-					chordsInstance->setVolume(0.6f);
+					result = system->setParameterByName("ChordsReverb", 0.7f);
+					//chordsInstance->setVolume(0.6f);
+					currentChordBPM = 5;
+					if (switchChordsCounter == 30) {
+						switchChords = true;
+						switchChordsCounter = 40;
+					}
 					break;
 
 				case 50:
@@ -1399,9 +1480,14 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.45f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.15f);
-					chordsInstance->setParameterByName("ChordsSelection", 0.2f);
-					chordsInstance->setParameterByName("ChordsReverb", 0.3f);
-					chordsInstance->setVolume(0.6f);
+					//chordsInstance->setParameterByName("ChordsSelection", 0.2f);
+					result = system->setParameterByName("ChordsReverb", 0.3f);
+					//chordsInstance->setVolume(0.6f);
+					currentChordBPM = 6;
+					if (switchChordsCounter == 40) {
+						switchChords = true;
+						switchChordsCounter = 50;
+					}
 					break;
 
 				case 60:
@@ -1411,8 +1497,13 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.6f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.1f);
-					chordsInstance->setParameterByName("ChordsReverb", 0.0f);
-					chordsInstance->setVolume(0.8f);
+					result = system->setParameterByName("ChordsReverb", 0.0f);
+					//chordsInstance->setVolume(0.8f);
+					currentChordBPM = 7;
+					if (switchChordsCounter == 50) {
+						switchChords = true;
+						switchChordsCounter = 60;
+					}
 					break;
 
 				case 70:
@@ -1422,7 +1513,12 @@ int main() {
 					arpInstance->setParameterByName("ArpVolume", 0.8f);
 					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.0f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
-					chordsInstance->setVolume(0.9f);
+					//chordsInstance->setVolume(0.9f);
+					currentChordBPM = 8;
+					if (switchChordsCounter == 60) {
+						switchChords = true;
+						switchChordsCounter = 70;
+					}
 					break;
 
 				case 80:
@@ -1431,7 +1527,20 @@ int main() {
 					snare2Instance->setParameterByName("SnareReverb", 1.0f);
 					arpInstance->setParameterByName("ArpVolume", 0.9f);
 					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
-					chordsInstance->setVolume(1.0f);
+					//chordsInstance->setVolume(1.0f);
+					currentChordBPM = 9;
+					if (switchChordsCounter == 70) {
+						switchChords = true;
+						switchChordsCounter = 80;
+					}
+					break;
+
+				case 90:
+					currentChordBPM = 10;
+					if (switchChordsCounter == 80) {
+						switchChords = true;
+						switchChordsCounter = 90;
+					}
 					break;
 				}
 			}	
@@ -1500,25 +1609,51 @@ int main() {
 			if (chordsStartToggle) {
 				if (i16thNote == 1) {
 					switch (currentChord) {
-					case 0:
-						chordsInstance->start();
-						currentChord++;
-						break;
 					case 1:
-						chordsInstance->setTimelinePosition(2023);
 						currentChord++;
 						break;
 					case 2:
-						chordsInstance->setTimelinePosition(4046);
 						currentChord++;
 						break;
 					case 3:
-						chordsInstance->setTimelinePosition(6068);
-						currentChord = 0;
+						currentChord++;
+						break;
+					case 4:
+						currentChord = 1;
 						break;
 					}
-				}					
-			
+				}								
+					
+				if (hasFirstSwitchHappened == false && currentChordBPM == 0) {
+					if (i16thNote == 1) {
+						chordsInstances[0]->start();
+						hasFirstSwitchHappened = true;
+					}
+				}
+
+
+				if (switchChords == true) {
+					if (currentChordBPM > 0) {
+						int oldPlaybackPosition;
+						int newPlaybackPosition;
+						chordsInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
+						chordsInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+
+						newPlaybackPosition = (oldPlaybackPosition/(60000.0f/bpmValues[currentChordBPM - 1])) * (60000.0f/bpmValues[currentChordBPM]);
+
+						chordsInstances[currentChordBPM]->start();
+						chordsInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
+
+						waitUntilNextDownbeatish = true;
+					}
+				}		
+
+				switchChords = false;
+
+				if (currentChord == 1 && i16thNote == 1 && waitUntilNextDownbeatish) {
+					chordsInstances[currentChordBPM]->start();
+					waitUntilNextDownbeatish = false;
+				}
 
 				//ARP//
 				switch (currentChord) {
@@ -1609,7 +1744,7 @@ int main() {
 					}
 					break;
 
-				case 0:
+				case 4:
 					switch (i16thNote) {
 					case 1:
 						arpInstance->setTimelinePosition(6068);
@@ -1910,7 +2045,7 @@ int main() {
 		 // GAME OVER SCREEN //
 		//					//
 
-		chordsInstance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+		chordsInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
 		system->update(); //update FMOD system	
 
 		this_thread::sleep_for(700ms);
