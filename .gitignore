@@ -5,6 +5,7 @@ ScoreFile
 FMOD BUILD FOLDER.lnk
 AUDIO EXPORTISH.lnk
 FMODCOPY.bat
+*.lnk
 
 *Browse.VC.db
 
@@ -266,5 +267,3 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-/SNEK.exe - Debug.lnk
-/SNEK.exe - Release.lnk
