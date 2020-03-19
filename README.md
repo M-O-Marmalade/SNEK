@@ -1,4 +1,4 @@
-# SNEK
+# SNEK test
 
 A clone of the classic game; Snake. Compatible with Windows 7 and up.
 
