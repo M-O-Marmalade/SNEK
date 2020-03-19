@@ -175,7 +175,7 @@ int main() {
 	FMOD_RESULT result;																	//create an FMOD Result
 	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
 	result = FMOD::Studio::System::create(&system);										//create the Studio System object using the pointer
-	result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
+	result = system->initialize(256, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
 
 
 	FMOD::Studio::Bank* masterBank = NULL;																
@@ -1645,6 +1645,7 @@ int main() {
 				}
 
 				if (switchChordsCounter > 6 && currentChordBPM > 0) {
+
 					/*if (hasFirstSwitchHappened == false && currentChordBPM == 0) {
 						if (i16thNote == 1) {
 							bpmInstances[0]->start();
@@ -1666,8 +1667,7 @@ int main() {
 
 							waitUntilNextDownbeatish = true;
 						}
-					}*/
-					
+					}*/					
 					
 					if (switchChords == true) {
 						int oldPlaybackPosition;
