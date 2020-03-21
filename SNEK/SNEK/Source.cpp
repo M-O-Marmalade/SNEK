@@ -16,8 +16,13 @@
 
 */
 
+//The game is time-synced to a specific BPM (beats-per-minute) at all times, as the game is very music focused
+
 //time/tick/framerate calculations are done in nanoseconds (0.000000001 second, or 1e-9 second).
-//BPM to ns (beats-per-minute to nanoseconds) conversions are done as 60,000,000ns/xBPM.
+//BPM to ns (beats-per-minute to nanoseconds) conversions are done as 60,000,000,000ns/xBPM.
+
+//audio timeline (FMOD Studio) calculations are done in milliseconds (0.001 second, or 1e-3 second).
+//BPM to ms (beats-per-minute to milliseconds) conversions are done as 60,000ms/xBPM.
 
   /////////////////////
  // PROJECT OUTLINE //
@@ -250,30 +255,6 @@ int main() {
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
 
-	FMOD::Studio::EventDescription* criticalDescription = NULL;				//Critical (snake only has a head sound)
-	system->getEvent("event:/Instruments+FX/Critical", &criticalDescription);
-
-	FMOD::Studio::EventInstance* criticalInstance = NULL;
-	criticalDescription->createInstance(&criticalInstance);
-
-	FMOD::Studio::EventDescription* kickDescription = NULL;					//Kick Drum
-	system->getEvent("event:/Instruments+FX/Kick", &kickDescription);
-
-	FMOD::Studio::EventInstance* kickInstance = NULL;
-	kickDescription->createInstance(&kickInstance);
-
-	FMOD::Studio::EventDescription* kick2Description = NULL;				//Kick Drum 2
-	system->getEvent("event:/Instruments+FX/Kick2", &kick2Description);
-
-	FMOD::Studio::EventInstance* kick2Instance = NULL;
-	kick2Description->createInstance(&kick2Instance);
-
-	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
-	system->getEvent("event:/Instruments+FX/Snare1", &snare1Description);
-
-	FMOD::Studio::EventInstance* snare1Instance = NULL;
-	snare1Description->createInstance(&snare1Instance);
-
 	FMOD::Studio::EventDescription* snare2Description = NULL;				//Snare Drum 2
 	system->getEvent("event:/Instruments+FX/Snare2", &snare2Description);
 
@@ -292,35 +273,17 @@ int main() {
 	FMOD::Studio::EventInstance* cymbalInstance = NULL;
 	cymbalDescription->createInstance(&cymbalInstance);
 
-	/*FMOD::Studio::EventDescription* badBossAngelDescription = NULL;				//badBossAngel
-	system->getEvent("event:/Instruments+FX/badbossangel", &badBossAngelDescription);
-
-	FMOD::Studio::EventInstance* badBossAngelInstance = NULL;
-	badBossAngelDescription->createInstance(&badBossAngelInstance);*/
-
-	FMOD::Studio::EventDescription* triangleDescription = NULL;				//triangle
+	FMOD::Studio::EventDescription* triangleDescription = NULL;					//triangle
 	system->getEvent("event:/Instruments+FX/Triangle", &triangleDescription);
 
 	FMOD::Studio::EventInstance* triangleInstance = NULL;
 	triangleDescription->createInstance(&triangleInstance);
 
-	FMOD::Studio::EventDescription* chordsDescription = NULL;				//chords
-	system->getEvent("event:/Instruments+FX/chords", &chordsDescription);
-
-	FMOD::Studio::EventInstance* chordsInstance = NULL;
-	chordsDescription->createInstance(&chordsInstance);
-
-	FMOD::Studio::EventDescription* arpDescription = NULL;				//arp
+	FMOD::Studio::EventDescription* arpDescription = NULL;						//arp
 	system->getEvent("event:/Instruments+FX/arp", &arpDescription);
 
 	FMOD::Studio::EventInstance* arpInstance = NULL;
 	arpDescription->createInstance(&arpInstance);
-
-	FMOD::Studio::EventDescription* closedHiHatDescription = NULL;				//closedHiHat
-	system->getEvent("event:/Instruments+FX/ClosedHiHat", &closedHiHatDescription);
-
-	FMOD::Studio::EventInstance* closedHiHatInstance = NULL;
-	closedHiHatDescription->createInstance(&closedHiHatInstance);
 
 	FMOD::Studio::EventDescription* newHighScoreDescription = NULL;				//newHighScore
 	system->getEvent("event:/Instruments+FX/newHighScore", &newHighScoreDescription);
@@ -391,6 +354,9 @@ int main() {
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = false;	
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
+
+	SetConsoleDisplayMode(hConsole, CONSOLE_WINDOWED_MODE, NULL);
+
 
 	  //						 //
 	 // SPLASH SCREEN ANIMATION //
@@ -786,7 +752,7 @@ int main() {
 		arpInstance->setParameterByName("ArpVolume", 0.0f);
 		triangleInstance->setParameterByName("TriangleDecay", 1.0f);
 		snakeFruitInstance->setPitch(1.0f);
-		snakeFruitInstance->setVolume(1.0f);
+		snakeFruitInstance->setVolume(0.7f);
 		result = system->setParameterByName("ChordsSelection", 0.0f);
 		result = system->setParameterByName("ChordsReverb", 0.0f);
 		//result = system->setVolume(1.0f);
@@ -1592,32 +1558,6 @@ int main() {
 				}
 			}			
 			
-			/*if (highestCurrentLength < 1 || highestCurrentLength > 6) {
-				if (i16thNote == 1 || i16thNote == 11 || i16thNote == 16) {
-					kickInstance->start();
-				}
-
-				if (i16thNote == 5 || i16thNote == 13) {
-					if (gotNewFruit) {
-						snare2Instance->start();
-					}
-					else {
-						snare1Instance->start();
-					}
-				}
-			}*/
-
-			/*if (hiHatToggle && highestCurrentLength > 6) {
-				if (i16thNote % 2 == 1) {					
-					closedHiHatInstance->start();
-					closedHiHatInstance->setVolume(0.4f);
-				}
-				else {					
-					closedHiHatInstance->start();
-					closedHiHatInstance->setVolume(0.1f);
-				}
-			}*/
-			
 			//CHORDS//			
 			if (chordsStartToggle) {
 				if (i16thNote == 1) {
@@ -1644,30 +1584,7 @@ int main() {
 					hasFirstSwitchHappened = true;					
 				}
 
-				if (switchChordsCounter > 6 && currentChordBPM > 0) {
-
-					/*if (hasFirstSwitchHappened == false && currentChordBPM == 0) {
-						if (i16thNote == 1) {
-							bpmInstances[0]->start();
-							hasFirstSwitchHappened = true;
-						}
-					}*/
-
-					/*if (switchChords == true && highestCurrentLength == 7) {
-						if (currentChordBPM > 0) {
-							int oldPlaybackPosition;
-							int newPlaybackPosition;
-							bpmInstances[1]->getTimelinePosition(&oldPlaybackPosition);
-							bpmInstances[1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
-
-							newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
-
-							bpmInstances[currentChordBPM]->start();
-							bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
-
-							waitUntilNextDownbeatish = true;
-						}
-					}*/					
+				if (switchChordsCounter > 6 && currentChordBPM > 0) {			
 					
 					if (switchChords == true) {
 						int oldPlaybackPosition;
@@ -2097,6 +2014,7 @@ int main() {
 			bool holdNameEntryDown = false;
 			bool holdNameEntryZ = false;
 			highScoreName.resize(0);
+			snakeFruitInstance->setVolume(1.0f);
 
 			
 
