@@ -111,7 +111,7 @@ wstring highScoreNameFromFileWide;
 string highScoreNameFromFileNarrow;
 wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
 bool wasPreviousHighScoreFound;
-vector<double> bpmValues = { 54.5f, 62.5f, 75.5f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
+vector<double> bpmValues = { 54.0f, 77.0f, 91.0f, 107.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f, 200.0f };
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -298,37 +298,37 @@ int main() {
 	bpmDescriptions.resize(12);
 	bpmInstances.resize(12);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm54_5", &bpmDescriptions[0]);	
+	system->getEvent("event:/Instruments+FX/BPMs/bpm54", &bpmDescriptions[0]);	
 	bpmDescriptions[0]->createInstance(&bpmInstances[0]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm62_5", &bpmDescriptions[1]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm77", &bpmDescriptions[1]);
 	bpmDescriptions[1]->createInstance(&bpmInstances[1]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm75_5", &bpmDescriptions[2]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm91", &bpmDescriptions[2]);
 	bpmDescriptions[2]->createInstance(&bpmInstances[2]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm89", &bpmDescriptions[3]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm107", &bpmDescriptions[3]);
 	bpmDescriptions[3]->createInstance(&bpmInstances[3]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm100", &bpmDescriptions[4]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm127", &bpmDescriptions[4]);
 	bpmDescriptions[4]->createInstance(&bpmInstances[4]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm127", &bpmDescriptions[5]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm137", &bpmDescriptions[5]);
 	bpmDescriptions[5]->createInstance(&bpmInstances[5]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm137", &bpmDescriptions[6]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm152", &bpmDescriptions[6]);
 	bpmDescriptions[6]->createInstance(&bpmInstances[6]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm152", &bpmDescriptions[7]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm164", &bpmDescriptions[7]);
 	bpmDescriptions[7]->createInstance(&bpmInstances[7]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm164", &bpmDescriptions[8]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm172", &bpmDescriptions[8]);
 	bpmDescriptions[8]->createInstance(&bpmInstances[8]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm172", &bpmDescriptions[9]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm181", &bpmDescriptions[9]);
 	bpmDescriptions[9]->createInstance(&bpmInstances[9]);
 
-	system->getEvent("event:/Instruments+FX/BPMs/bpm181", &bpmDescriptions[10]);
+	system->getEvent("event:/Instruments+FX/BPMs/bpm200", &bpmDescriptions[10]);
 	bpmDescriptions[10]->createInstance(&bpmInstances[10]);
 
 	system->getEvent("event:/Instruments+FX/BPMs/bpm200", &bpmDescriptions[11]);
@@ -764,7 +764,7 @@ int main() {
 		switchChords = false;
 		switchChordsCounter = 0;
 		hasFirstSwitchHappened = false;
-		currentChordBPM = 100;
+		currentChordBPM = 0;
 		waitUntilNextDownbeatish = false;
 
 		frameTime = chrono::steady_clock::now();	//record start time of first frame of the game loop
@@ -1363,7 +1363,7 @@ int main() {
 
 				switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
 				case 1:
-					bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 					chordsStartToggle = true;
 					currentChordBPM = 1;
 					if (switchChordsCounter == 0) {
@@ -1522,7 +1522,7 @@ int main() {
 
 			//if nobody has gotten a point yet...
 			else if (highestCurrentLength == 0) {
-				bpmInstances[0]->setParameterByName("CriticalSoundPitch", proximityToFruit);
+				bpmInstances[0]->setParameterByName("HeartRateDryLevel", proximityToFruit);
 			}
 			
 			//if nobody got a fruit, and nobody is holding any action keys, then..
@@ -1530,17 +1530,20 @@ int main() {
 
 				actionKeyHeld = false;		//nobody is holding any action keys anymore
 
-				snakeMoveInstance->setPitch(proximityToFruit);
-				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-				
-				if (isScoreUnder11) {
-					snakeMoveInstance->start();
-				}
+				if (highestCurrentLength > 29) {
+					snakeMoveInstance->setVolume(1.0f);
+					snakeMoveInstance->setPitch(proximityToFruit);
+					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
 
-				snekMoveTimelinePosition += 200;
-				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-					snekMoveTimelinePosition = 0;
+					if (isScoreUnder11) {
+						snakeMoveInstance->start();
+					}
+
+					snekMoveTimelinePosition += 200;
+					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+						snekMoveTimelinePosition = 0;
+					}
 				}				
 			}
 
@@ -1606,7 +1609,7 @@ int main() {
 				}
 
 				//ARP//
-				switch (currentChord) {
+				/*switch (currentChord) {
 				case 1:
 					switch (i16thNote) {
 					case 1:
@@ -1722,7 +1725,7 @@ int main() {
 						break;					
 					}
 					break;
-				}					
+				}	*/				
 			
 			}
 			
