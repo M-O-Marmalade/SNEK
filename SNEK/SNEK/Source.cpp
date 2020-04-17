@@ -86,6 +86,13 @@
 
 using namespace std;
 
+  //				 //
+ // DEBUG VARIABLES //
+//				   //
+
+bool simpleSound = false;
+bool liveUpdate = false;
+
   //				  //
  // GLOBAL VARIABLES //
 //					//
@@ -180,7 +187,14 @@ int main() {
 	FMOD_RESULT result;																	//create an FMOD Result
 	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
 	result = FMOD::Studio::System::create(&system);										//create the Studio System object using the pointer
-	result = system->initialize(256, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
+	
+	if (liveUpdate) {
+		result = system->initialize(256, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback/live update
+	}
+	else {
+		result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
+	}
+	
 
 
 	FMOD::Studio::Bank* masterBank = NULL;																
@@ -255,11 +269,11 @@ int main() {
 	FMOD::Studio::EventInstance* deathInstance = NULL;
 	deathDescription->createInstance(&deathInstance);
 
-	FMOD::Studio::EventDescription* snare2Description = NULL;				//Snare Drum 2
-	system->getEvent("event:/Instruments+FX/Snare2", &snare2Description);
+	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
+	system->getEvent("event:/Instruments+FX/Snare1", &snare1Description);
 
-	FMOD::Studio::EventInstance* snare2Instance = NULL;
-	snare2Description->createInstance(&snare2Instance);
+	FMOD::Studio::EventInstance* snare1Instance = NULL;
+	snare1Description->createInstance(&snare1Instance);
 
 	FMOD::Studio::EventDescription* a808DrumDescription = NULL;				//808 Drum
 	system->getEvent("event:/Instruments+FX/808Drum", &a808DrumDescription);
@@ -272,6 +286,12 @@ int main() {
 
 	FMOD::Studio::EventInstance* cymbalInstance = NULL;
 	cymbalDescription->createInstance(&cymbalInstance);
+
+	FMOD::Studio::EventDescription* kickTightDescription = NULL;				//KickTight
+	system->getEvent("event:/Instruments+FX/KickTight", &kickTightDescription);
+
+	FMOD::Studio::EventInstance* kickTightInstance = NULL;
+	kickTightDescription->createInstance(&kickTightInstance);
 
 	FMOD::Studio::EventDescription* triangleDescription = NULL;					//triangle
 	system->getEvent("event:/Instruments+FX/Triangle", &triangleDescription);
@@ -367,7 +387,7 @@ int main() {
 
 	bool animation = true;
 	int u = 0;
-	int charToOverwrite = 994;	
+	int charToOverwrite = 996;	
 
 	while (animation) {			//Draw Splash Screen
 
@@ -379,7 +399,7 @@ int main() {
 
 		this_thread::sleep_for(77ms);
 
-		if (charToOverwrite == 1006) {
+		if (charToOverwrite == 1005) {
 			animation = false;
 			this_thread::sleep_for(222ms);
 		}
@@ -499,7 +519,7 @@ int main() {
 
 		}
 
-		screenString.replace((22 * 80) + 33, 14, L"Citrus Studios");		//draw studio name each frame
+		screenString.replace((22 * 80) + 35, 9, L"Citrus 64");		//draw studio name each frame
 
 		if (startScreenFrameCount == 111) {
 			switch (startScreenToggle) {
@@ -746,9 +766,11 @@ int main() {
 		isScoreUnder11 = true;
 		snakeMoveReverbLevel = 0.0f;
 		i16thNote = 1;
-		bpmInstances[0]->start();
+		if (!simpleSound) {
+			bpmInstances[0]->start();
+		}		
 		snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
-		snare2Instance->setParameterByName("SnareReverb", 0.0f);
+		snare1Instance->setParameterByName("SnareReverb", 0.0f);
 		arpInstance->setParameterByName("ArpVolume", 0.0f);
 		triangleInstance->setParameterByName("TriangleDecay", 1.0f);
 		snakeFruitInstance->setPitch(1.0f);
@@ -764,7 +786,7 @@ int main() {
 		switchChords = false;
 		switchChordsCounter = 0;
 		hasFirstSwitchHappened = false;
-		currentChordBPM = 100;
+		currentChordBPM = 0;
 		waitUntilNextDownbeatish = false;
 
 		frameTime = chrono::steady_clock::now();	//record start time of first frame of the game loop
@@ -1336,404 +1358,400 @@ int main() {
 			  //				  //
 			 // AUDIO PROCESSING //
 			//					//		
-			if (gameLose) {					//play the death sound if the game is lost
-				bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-				a808DrumInstance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
-				deathInstance->start();
-			}
-
-			if (gotNewFruit) {				//if someone gets a new fruit..
-				for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
-					if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
-						if (gotNewHighScoreSoundPlay) {
-							newHighScoreInstance->start();
-							gotNewHighScoreSoundPlay = false;
-						}						
-						else if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
-							snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
-						}						
-						else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
-							triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
-						}
-						else if (gotNewFruit && (i16thNote % 2 == 0 || i16thNote == 9)) {	//..otherwise, play the default fruit eating sound
-							snakeFruitInstance->start();
-						}						
-					}
-				}
-
-				switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
-				case 1:
-					bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-					chordsStartToggle = true;
-					currentChordBPM = 1;
-					if (switchChordsCounter == 0) {
-						switchChordsCounter = 1;
-					}					
-					break;
-
-				case 7:
-					arpInstance->setParameterByName("ArpVolume", 0.09f);
-					result = system->setParameterByName("ChordsReverb", 0.7f);
-					currentChordBPM = 2;
-					if (switchChordsCounter == 1) {
-						switchChords = true;
-						switchChordsCounter = 7;
-					}
-					break;
-
-				case 11:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.125f;
-					snare2Instance->setParameterByName("SnareReverb", 0.2f);
-					arpInstance->setParameterByName("ArpVolume", 0.14f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.9f);
-					result = system->setParameterByName("ChordsReverb", 1.0f);
-					hiHatToggle = true;
-					currentChordBPM = 3;
-					if (switchChordsCounter == 7) {
-						switchChords = true;
-						switchChordsCounter = 11;
-					}
-					break;
-
-				case 20:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.250f;
-					snare2Instance->setParameterByName("SnareReverb", 0.4f);
-					arpInstance->setParameterByName("ArpVolume", 0.17f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.8f);
-					currentChordBPM = 4;
-					if (switchChordsCounter == 11) {
-						switchChords = true;
-						switchChordsCounter = 20;
-					}
-					break;
-
-				case 30:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.375f;
-					snare2Instance->setParameterByName("SnareReverb", 0.5f);
-					arpInstance->setParameterByName("ArpVolume", 0.2f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.5f);
-					result = system->setParameterByName("ChordsReverb", 1.0f);
-					currentChordBPM = 5;
-					if (switchChordsCounter == 20) {
-						switchChords = true;
-						switchChordsCounter = 30;
-					}
-					break;
-
-				case 40:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.5f;
-					snare2Instance->setParameterByName("SnareReverb", 0.64f);
-					arpInstance->setParameterByName("ArpVolume", 0.3f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.25f);
-					result = system->setParameterByName("ChordsReverb", 0.7f);
-					currentChordBPM = 6;
-					if (switchChordsCounter == 30) {
-						switchChords = true;
-						switchChordsCounter = 40;
-					}
-					break;
-
-				case 50:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.625f;
-					snare2Instance->setParameterByName("SnareReverb", 0.72f);
-					arpInstance->setParameterByName("ArpVolume", 0.45f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.15f);
-					result = system->setParameterByName("ChordsReverb", 0.3f);
-					currentChordBPM = 7;
-					if (switchChordsCounter == 40) {
-						switchChords = true;
-						switchChordsCounter = 50;
-					}
-					break;
-
-				case 60:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.750f;
-					snare2Instance->setParameterByName("SnareReverb", 0.8f);
-					arpInstance->setParameterByName("ArpVolume", 0.45f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.1f);
-					result = system->setParameterByName("ChordsReverb", 0.0f);
-					currentChordBPM = 8;
-					if (switchChordsCounter == 50) {
-						switchChords = true;
-						switchChordsCounter = 60;
-					}
-					break;
-
-				case 70:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 0.875f;
-					snare2Instance->setParameterByName("SnareReverb", 0.4f);
-					arpInstance->setParameterByName("ArpVolume", 0.35f);
-					snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.6f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
-					currentChordBPM = 9;
-					if (switchChordsCounter == 60) {
-						switchChords = true;
-						switchChordsCounter = 70;
-					}
-					break;
-
-				case 80:
-					snekMoveTimelinePositionMax += 200;
-					snakeMoveReverbLevel = 1.0f;
-					snare2Instance->setParameterByName("SnareReverb", 0.2f);
-					arpInstance->setParameterByName("ArpVolume", 0.20f);
-					triangleInstance->setParameterByName("TriangleDecay", 0.05f);
-					currentChordBPM = 10;
-					if (switchChordsCounter == 70) {
-						switchChords = true;
-						switchChordsCounter = 80;
-					}
-					break;
-
-				case 90:
-					currentChordBPM = 11;
-					arpInstance->setParameterByName("ArpVolume", 0.0f);
-					snare2Instance->setParameterByName("SnareReverb", 0.0f);
-					if (switchChordsCounter == 80) {
-						switchChords = true;
-						switchChordsCounter = 90;
-					}
-					break;
-				}
-			}	
-			//if nobody got any fruits, then check if either snake is using the action keys..
-			else if (snek1[0].action_keys || snek1[1].action_keys) {
-				snakeLungeInstance->setPitch(proximityToFruit);
-				snakeLungeInstance->start();
-				snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
-				if (!actionKeyHeld) {
-					snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
-					actionKeyHeld = true;
-				}
-			}
-
-			//if nobody has gotten a point yet...
-			else if (highestCurrentLength == 0) {
-				bpmInstances[0]->setParameterByName("CriticalSoundPitch", proximityToFruit);
-			}
 			
-			//if nobody got a fruit, and nobody is holding any action keys, then..
+			if (simpleSound) {
+				snakeMoveInstance->start();
+			}
+
 			else {
-
-				actionKeyHeld = false;		//nobody is holding any action keys anymore
-
-				snakeMoveInstance->setPitch(proximityToFruit);
-				snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-				snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-				
-				if (isScoreUnder11) {
-					snakeMoveInstance->start();
+				if (gameLose) {					//play the death sound if the game is lost
+					bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					deathInstance->start();
 				}
 
-				snekMoveTimelinePosition += 200;
-				if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-					snekMoveTimelinePosition = 0;
+				if (gotNewFruit) {				//if someone gets a new fruit..
+					for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
+						if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
+							if (gotNewHighScoreSoundPlay) {
+								newHighScoreInstance->start();
+								gotNewHighScoreSoundPlay = false;
+							}
+							else if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
+								snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
+							}
+							else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
+								triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
+							}
+							else if (i16thNote == 5 || i16thNote == 13) {
+								snare1Instance->start();			//if they got a fruit on an offbeat, play triangle sound
+							}
+							else if (i16thNote == 1) {
+								kickTightInstance->start();
+								triangleInstance->start();
+								snakeFruitInstance->start();
+							}
+							else {	//..otherwise, play the default fruit eating sound
+								snakeFruitInstance->start();
+							}
+						}
+					}
+
+					switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
+					case 1:
+						bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+						chordsStartToggle = true;
+						currentChordBPM = 1;
+						if (switchChordsCounter == 0) {
+							switchChordsCounter = 1;
+						}
+						break;
+
+					case 7:
+						arpInstance->setParameterByName("ArpVolume", 0.09f);
+						result = system->setParameterByName("ChordsReverb", 0.7f);
+						currentChordBPM = 2;
+						if (switchChordsCounter == 1) {
+							switchChords = true;
+							switchChordsCounter = 7;
+						}
+						break;
+
+					case 11:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.125f;
+						snare1Instance->setParameterByName("SnareReverb", 0.2f);
+						arpInstance->setParameterByName("ArpVolume", 0.14f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.9f);
+						result = system->setParameterByName("ChordsReverb", 1.0f);
+						hiHatToggle = true;
+						currentChordBPM = 3;
+						if (switchChordsCounter == 7) {
+							switchChords = true;
+							switchChordsCounter = 11;
+						}
+						break;
+
+					case 20:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.250f;
+						snare1Instance->setParameterByName("SnareReverb", 0.4f);
+						arpInstance->setParameterByName("ArpVolume", 0.17f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.8f);
+						currentChordBPM = 4;
+						if (switchChordsCounter == 11) {
+							switchChords = true;
+							switchChordsCounter = 20;
+						}
+						break;
+
+					case 30:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.375f;
+						snare1Instance->setParameterByName("SnareReverb", 0.5f);
+						arpInstance->setParameterByName("ArpVolume", 0.2f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.5f);
+						result = system->setParameterByName("ChordsReverb", 1.0f);
+						currentChordBPM = 5;
+						if (switchChordsCounter == 20) {
+							switchChords = true;
+							switchChordsCounter = 30;
+						}
+						break;
+
+					case 40:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.5f;
+						snare1Instance->setParameterByName("SnareReverb", 0.64f);
+						arpInstance->setParameterByName("ArpVolume", 0.3f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.25f);
+						result = system->setParameterByName("ChordsReverb", 0.7f);
+						currentChordBPM = 6;
+						if (switchChordsCounter == 30) {
+							switchChords = true;
+							switchChordsCounter = 40;
+						}
+						break;
+
+					case 50:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.625f;
+						snare1Instance->setParameterByName("SnareReverb", 0.72f);
+						arpInstance->setParameterByName("ArpVolume", 0.45f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.15f);
+						result = system->setParameterByName("ChordsReverb", 0.3f);
+						currentChordBPM = 7;
+						if (switchChordsCounter == 40) {
+							switchChords = true;
+							switchChordsCounter = 50;
+						}
+						break;
+
+					case 60:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.750f;
+						snare1Instance->setParameterByName("SnareReverb", 0.8f);
+						arpInstance->setParameterByName("ArpVolume", 0.45f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.1f);
+						result = system->setParameterByName("ChordsReverb", 0.0f);
+						currentChordBPM = 8;
+						if (switchChordsCounter == 50) {
+							switchChords = true;
+							switchChordsCounter = 60;
+						}
+						break;
+
+					case 70:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 0.875f;
+						snare1Instance->setParameterByName("SnareReverb", 0.4f);
+						arpInstance->setParameterByName("ArpVolume", 0.35f);
+						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.6f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+						currentChordBPM = 9;
+						if (switchChordsCounter == 60) {
+							switchChords = true;
+							switchChordsCounter = 70;
+						}
+						break;
+
+					case 80:
+						snekMoveTimelinePositionMax += 200;
+						snakeMoveReverbLevel = 1.0f;
+						snare1Instance->setParameterByName("SnareReverb", 0.2f);
+						arpInstance->setParameterByName("ArpVolume", 0.20f);
+						triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+						currentChordBPM = 10;
+						if (switchChordsCounter == 70) {
+							switchChords = true;
+							switchChordsCounter = 80;
+						}
+						break;
+
+					case 90:
+						currentChordBPM = 11;
+						arpInstance->setParameterByName("ArpVolume", 0.0f);
+						snare1Instance->setParameterByName("SnareReverb", 0.0f);
+						if (switchChordsCounter == 80) {
+							switchChords = true;
+							switchChordsCounter = 90;
+						}
+						break;
+					}
+				}
+				//if nobody got any fruits, then check if either snake is using the action keys..
+				else if (snek1[0].action_keys || snek1[1].action_keys) {
+					snakeLungeInstance->setPitch(proximityToFruit);
+					snakeLungeInstance->start();
+					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
+					if (!actionKeyHeld) {
+						snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
+						actionKeyHeld = true;
+					}
 				}				
-			}
 
+				//if nobody got a fruit, and nobody is holding any action keys, then..
+				else {
 
+					if (highestCurrentLength == 0) {
+						bpmInstances[0]->setParameterByName("HeartRateDryLevel", proximityToFruit);
+					}
 
-			//DRUMS//
-			if (gotNewFruit && i16thNote == 1) {
-				a808DrumInstance->start();
-				cymbalInstance->start();
-			}
+					actionKeyHeld = false;		//nobody is holding any action keys anymore
 
-			if (i16thNote == 5 || i16thNote == 13) {
-				if (gotNewFruit) {
-					snare2Instance->start();
+					snakeMoveInstance->setPitch(proximityToFruit);
+					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
+					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);										
+					snakeMoveInstance->start();
+					
+
+					snekMoveTimelinePosition += 200;
+					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+						snekMoveTimelinePosition = 0;
+					}
 				}
-			}			
-			
-			//CHORDS//			
-			if (chordsStartToggle) {
-				if (i16thNote == 1) {
+
+				//CHORDS//			
+				if (chordsStartToggle) {
+					if (i16thNote == 1) {
+						switch (currentChord) {
+						case 1:
+							currentChord++;
+							break;
+						case 2:
+							currentChord++;
+							break;
+						case 3:
+							currentChord++;
+							break;
+						case 4:
+							currentChord = 1;
+							break;
+						}
+					}
+
+					if (!hasFirstSwitchHappened && currentChordBPM == 1) {
+						bpmInstances[1]->start();
+						i16thNote = 1;
+						currentChord = 1;
+						hasFirstSwitchHappened = true;
+					}
+
+					if (switchChordsCounter > 6 && currentChordBPM > 0) {
+
+						if (switchChords == true) {
+							int oldPlaybackPosition;
+							int newPlaybackPosition;
+							bpmInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
+							bpmInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+
+							newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
+
+							bpmInstances[currentChordBPM]->start();
+							bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
+						}
+
+						switchChords = false;
+					}
+
+					if (currentChord == 1 && i16thNote == 1) {
+						bpmInstances[currentChordBPM]->setTimelinePosition(0);
+					}
+
+					//ARP//
 					switch (currentChord) {
 					case 1:
-						currentChord++;
+						switch (i16thNote) {
+						case 1:
+							arpInstance->start();
+							break;
+						case 3:
+							arpInstance->setTimelinePosition(170);
+							break;
+						case 5:
+							arpInstance->setTimelinePosition(338);
+							break;
+						case 7:
+							arpInstance->setTimelinePosition(507);
+							break;
+						case 9:
+							arpInstance->setTimelinePosition(675);
+							break;
+						case 11:
+							arpInstance->setTimelinePosition(844);
+							break;
+						case 13:
+							arpInstance->setTimelinePosition(1012);
+							break;
+						case 15:
+							arpInstance->setTimelinePosition(1181);
+							break;
+						}
 						break;
+
 					case 2:
-						currentChord++;
+						switch (i16thNote) {
+						case 1:
+							arpInstance->setTimelinePosition(2023);
+							break;
+						case 3:
+							arpInstance->setTimelinePosition(2192);
+							break;
+						case 5:
+							arpInstance->setTimelinePosition(2361);
+							break;
+						case 7:
+							arpInstance->setTimelinePosition(2529);
+							break;
+						case 9:
+							arpInstance->setTimelinePosition(2698);
+							break;
+						case 11:
+							arpInstance->setTimelinePosition(2866);
+							break;
+						case 13:
+							arpInstance->setTimelinePosition(3035);
+							break;
+						case 15:
+							arpInstance->setTimelinePosition(3203);
+							break;
+						}
 						break;
+
 					case 3:
-						currentChord++;
+						switch (i16thNote) {
+						case 1:
+							arpInstance->setTimelinePosition(4046);
+							break;
+						case 3:
+							arpInstance->setTimelinePosition(4214);
+							break;
+						case 5:
+							arpInstance->setTimelinePosition(4383);
+							break;
+						case 7:
+							arpInstance->setTimelinePosition(4552);
+							break;
+						case 9:
+							arpInstance->setTimelinePosition(4720);
+							break;
+						case 11:
+							arpInstance->setTimelinePosition(4889);
+							break;
+						case 13:
+							arpInstance->setTimelinePosition(5057);
+							break;
+						case 15:
+							arpInstance->setTimelinePosition(5226);
+							break;
+						}
 						break;
+
 					case 4:
-						currentChord = 1;
+						switch (i16thNote) {
+						case 1:
+							arpInstance->setTimelinePosition(6068);
+							break;
+						case 3:
+							arpInstance->setTimelinePosition(6237);
+							break;
+						case 5:
+							arpInstance->setTimelinePosition(6405);
+							break;
+						case 7:
+							arpInstance->setTimelinePosition(6574);
+							break;
+						case 9:
+							arpInstance->setTimelinePosition(6743);
+							break;
+						case 11:
+							arpInstance->setTimelinePosition(6911);
+							break;
+						case 13:
+							arpInstance->setTimelinePosition(7080);
+							break;
+						case 15:
+							arpInstance->setTimelinePosition(7248);
+							break;
+						}
 						break;
 					}
-				}								
-								
-				if (!hasFirstSwitchHappened && currentChordBPM == 1) {					
-					bpmInstances[1]->start();
+
+				}
+
+				//Update 16th note counter//			
+				i16thNote++;
+				if (i16thNote == 17) {
 					i16thNote = 1;
-					currentChord = 1;
-					hasFirstSwitchHappened = true;					
 				}
-
-				if (switchChordsCounter > 6 && currentChordBPM > 0) {			
-					
-					if (switchChords == true) {
-						int oldPlaybackPosition;
-						int newPlaybackPosition;
-						bpmInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
-						bpmInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
-
-						newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
-
-						bpmInstances[currentChordBPM]->start();
-						bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
-					}
-
-					switchChords = false;					
-				}
-
-				if (currentChord == 1 && i16thNote == 1) {
-					bpmInstances[currentChordBPM]->setTimelinePosition(0);
-				}
-
-				//ARP//
-				switch (currentChord) {
-				case 1:
-					switch (i16thNote) {
-					case 1:
-						arpInstance->start();
-						break;
-					case 3:
-						arpInstance->setTimelinePosition(170);
-						break;
-					case 5:
-						arpInstance->setTimelinePosition(338);
-						break;
-					case 7:
-						arpInstance->setTimelinePosition(507);
-						break;
-					case 9:
-						arpInstance->setTimelinePosition(675);
-						break;
-					case 11:
-						arpInstance->setTimelinePosition(844);
-						break;
-					case 13:
-						arpInstance->setTimelinePosition(1012);
-						break;
-					case 15:
-						arpInstance->setTimelinePosition(1181);
-						break;
-					}
-					break;
-
-				case 2:
-					switch (i16thNote) {
-					case 1:
-						arpInstance->setTimelinePosition(2023);
-						break;
-					case 3:
-						arpInstance->setTimelinePosition(2192);
-						break;
-					case 5:
-						arpInstance->setTimelinePosition(2361);
-						break;
-					case 7:
-						arpInstance->setTimelinePosition(2529);
-						break;
-					case 9:
-						arpInstance->setTimelinePosition(2698);
-						break;
-					case 11:
-						arpInstance->setTimelinePosition(2866);
-						break;
-					case 13:
-						arpInstance->setTimelinePosition(3035);
-						break;
-					case 15:
-						arpInstance->setTimelinePosition(3203);
-						break;				
-					}
-					break;
-
-				case 3:
-					switch (i16thNote) {
-					case 1:
-						arpInstance->setTimelinePosition(4046);
-						break;
-					case 3:
-						arpInstance->setTimelinePosition(4214);
-						break;
-					case 5:
-						arpInstance->setTimelinePosition(4383);
-						break;
-					case 7:
-						arpInstance->setTimelinePosition(4552);
-						break;
-					case 9:
-						arpInstance->setTimelinePosition(4720);
-						break;
-					case 11:
-						arpInstance->setTimelinePosition(4889);
-						break;
-					case 13:
-						arpInstance->setTimelinePosition(5057);
-						break;
-					case 15:
-						arpInstance->setTimelinePosition(5226);
-						break;					
-					}
-					break;
-
-				case 4:
-					switch (i16thNote) {
-					case 1:
-						arpInstance->setTimelinePosition(6068);
-						break;
-					case 3:
-						arpInstance->setTimelinePosition(6237);
-						break;
-					case 5:
-						arpInstance->setTimelinePosition(6405);
-						break;
-					case 7:
-						arpInstance->setTimelinePosition(6574);
-						break;
-					case 9:
-						arpInstance->setTimelinePosition(6743);
-						break;
-					case 11:
-						arpInstance->setTimelinePosition(6911);
-						break;
-					case 13:
-						arpInstance->setTimelinePosition(7080);
-						break;
-					case 15:
-						arpInstance->setTimelinePosition(7248);
-						break;					
-					}
-					break;
-				}					
-			
 			}
 			
-			//Update 16th note counter//			
-			i16thNote++;	
-			if (i16thNote == 17) {
-				i16thNote = 1;
-			}			
-
-			result = system->update(); //update FMOD system			
-
+			result = system->update(); //update FMOD system	
 						
 			  //			 //
 			 // DRAW SCREEN //	
