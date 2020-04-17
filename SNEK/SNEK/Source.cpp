@@ -1879,20 +1879,26 @@ int main() {
 			}
 
 			for (int pt = 0; pt < playerCount; pt++) {
-				switch (snek1[pt].direction_frame) {
-				case 'n':
-					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '^';
-					break;
-				case 's':
-					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'v';
-					break;
-				case 'e':
-					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '>';
-					break;
-				case 'w':
-					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '<';
-					break;
+				
+				if (snek1[pt].justDied) {
+					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'X';
 				}
+				else {
+					switch (snek1[pt].direction_frame) {
+					case 'n':
+						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '^';
+						break;
+					case 's':
+						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'v';
+						break;
+					case 'e':
+						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '>';
+						break;
+					case 'w':
+						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '<';
+						break;
+					}
+				}				
 			}
 
 			for (int yt = 0; yt < portalCount*2; yt++) {				
