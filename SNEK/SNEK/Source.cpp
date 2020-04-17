@@ -759,16 +759,16 @@ int main() {
 			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					fps = 180000us;
+					fps = 240000us;
 					break;
 				case 7:
-					fps = 160000us;
+					fps = 190000us;
 					break;
 				case 11:
-					fps = 140000us;
+					fps = 160000us;
 					break;
 				case 20:
-					fps = 120000us;
+					fps = 130000us;
 					break;
 				case 30:
 					fps = 100000us;
