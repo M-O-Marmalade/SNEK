@@ -1,14 +1,11 @@
 # SNEK
-<p align="center">
 A clone of the classic game; Snake. Compatible with Windows 7 and up.
-</p>
 
 HOW TO PLAY
 ===========
 To play the game:
 1. Download the entire repository (click the green "Clone or Download" button above, and select "Download ZIP")
-2. Extract all contents of "SNEK-master\SNEK\Release" using something like WinRAR 
-  - Keep all contents and subdirectories of the "Release" folder just as they are)
+2. Extract all contents of "SNEK-master\SNEK\Release" using something like WinRAR (keep all contents and subdirectories of the "Release" folder just as they are)
 3. Run "SNEK.exe", and enjoy!
 
 
