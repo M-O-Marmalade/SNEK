@@ -1,5 +1,5 @@
 # SNEK
-+ A clone of the classic game; Snake. This version includes beat-synced music, a "lunging" ability, and multiplayer! (sharing one keyboard)
++ A free clone of the classic game; Snake. Includes beat-synced music, a "lunging" ability, and multiplayer! (sharing one keyboard)
 + Compatible with Windows 7 and up!
 
 HOW TO DOWNLOAD/PLAY
