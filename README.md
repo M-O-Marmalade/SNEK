@@ -9,4 +9,4 @@ To play the game:
 2. Extract all contents of "SNEK-master\SNEK\Release" using something like WinRAR (keep all contents and subdirectories of the "Release" folder just as they are)
 3. Run "SNEK.exe", and enjoy!
 
-![SNEK Gameplay](https://static.wixstatic.com/media/dfc191_2b8c85309d6d4e989cf115a14c6ed5cb~mv2.png)
+![SNEK Gameplay](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc.PNG)
