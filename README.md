@@ -2,7 +2,7 @@
 + A clone of the classic game; Snake. Includes beat-synced music, a "lunge" ability, and multiplayer! (sharing one keyboard)
 + Compatible with Windows 7 and up!
 
-HOW TO DOWNLOAD/PLAY
+HOW TO DOWNLOAD + PLAY
 ===========
 To play the game:
 1. Download the entire repository (click the green "Clone or Download" button above, and select "Download ZIP")
