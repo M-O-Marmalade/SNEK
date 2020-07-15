@@ -90,6 +90,7 @@ using namespace std;
  // DEBUG VARIABLES //
 //				   //
 
+bool debugMenu = false;
 bool simpleSound = false;
 bool liveUpdate = false;
 
@@ -130,6 +131,7 @@ int frameRate = 10;				//frame rate setting
 int currentFrame = 0;			//keeps track of how many frames have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
+
 chrono::duration<long double, nano> fps;
 chrono::steady_clock::time_point frameTime;
 chrono::steady_clock::time_point tickTime;
@@ -358,6 +360,10 @@ int main() {
 	  //			   //
 	 // DISPLAY SETUP //
 	//			  	 //	
+
+	if (debugMenu) {
+		nScreenHeight += 20;
+	}
 
 	//create screen buffer//
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
@@ -1620,7 +1626,7 @@ int main() {
 					}
 
 					if (currentChord == 1 && i16thNote == 1) {
-						bpmInstances[currentChordBPM]->setTimelinePosition(0);
+						bpmInstances[currentChordBPM]->start();
 					}
 
 					//ARP//
