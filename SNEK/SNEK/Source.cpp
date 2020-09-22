@@ -802,6 +802,10 @@ int main() {
 		//				     //
 		while (gameLose == false) {
 
+			if (playerCount == 2 && currentFrame == 1) {
+				frameTime = chrono::steady_clock::now();
+			}
+
 			  //			   //
 			 // SET FRAMERATE //
 			//				 //
