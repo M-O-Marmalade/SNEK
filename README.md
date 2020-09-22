@@ -2,6 +2,10 @@
 + A clone of the classic game; Snake. Includes beat-synced music, a "lunge" ability, and multiplayer!
 + Compatible with Windows 7 and up!
 
+![SNEK Main Menu](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc%202.PNG)
+
+![SNEK Gameplay](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc.PNG)
+
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
 
@@ -9,14 +13,10 @@ To play the game:
 1. **Download** the [latest release](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
-- **Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors
-- **Windows 8/10:** follow settings further below if the game window is invisible but sound is working
+- (**Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors)
+- (**Invisible Window:** follow settings further below if the game window is invisible but sound is working)
 
-![SNEK Main Menu](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc%202.PNG)
-
-![SNEK Gameplay](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc.PNG)
-
-### FOR WINDOWS 10 (and possibly works for Windows 8)
+### INVISIBLE WINDOW FIX
 
 6. **Open Windows Command Prompt** by searching *"cmd"* in the Windows Search bar
 
