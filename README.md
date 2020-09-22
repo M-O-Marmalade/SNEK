@@ -11,6 +11,7 @@ To play the game:
 1. **Download** the [latest release](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
+- (**Windows 10:** follow the simple instructions below to play the game on Windows 10)
 - (**Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors)
 
 ### INVISIBLE WINDOW FIX
