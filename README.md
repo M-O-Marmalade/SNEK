@@ -4,8 +4,8 @@
 
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
-1. **Download** the entire repository (click the green "Clone" button above, and select "Download ZIP")
-2. **Extract** all contents of "SNEK-master\SNEK\Release" using something like WinRAR (keep all contents and subdirectories of the "Release" folder just as they are)
+1. **Download** the latest Release
+2. **Extract** all contents of the zip
 3. **Run** "SNEK.exe", and *enjoy!*
 
 ![SNEK Main Menu](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc%202.PNG)
