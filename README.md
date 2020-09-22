@@ -6,7 +6,7 @@
 To play the game:
 
 
-1. **Download** the [latest Release of SNEK](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
+1. **Download** the [latest release](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
 4. **Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is having trouble running
