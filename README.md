@@ -9,7 +9,7 @@ To play the game:
 1. **Download** the [latest release](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
-- **Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is having trouble running
+- **Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors
 - **Windows 8/10:** follow settings further below if the game window is invisible but sound is working
 
 ![SNEK Main Menu](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc%202.PNG)
