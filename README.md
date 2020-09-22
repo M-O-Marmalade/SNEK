@@ -2,9 +2,7 @@
 + A clone of the classic game; Snake. Includes beat-synced music, a "lunge" ability, and multiplayer!
 + Compatible with Windows 7 and up!
 
-![SNEK Main Menu](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc%202.PNG)
-
-![SNEK Gameplay](https://raw.githubusercontent.com/M-O-Marmalade/SNEK/master/Screenshots/snake%20sc.PNG)
+![SNEK GIF](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/snekgameplay.gif)
 
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
@@ -14,7 +12,6 @@ To play the game:
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
 - (**Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors)
-- (**Invisible Window:** follow settings further below if the game window is invisible but sound is working)
 
 ### INVISIBLE WINDOW FIX
 
