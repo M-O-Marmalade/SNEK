@@ -1,6 +1,6 @@
 # SNEK
 + A clone of the classic game; Snake. Includes beat-synced music, a "lunge" ability, and multiplayer! (sharing one keyboard)
-+ Compatible with Windows 7 (you may need to install the latest [x86 VC Redist](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) from Microsoft)
++ Compatible with Windows 7 (you may need to install the latest [x86 VC Redist](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) from Microsoft if you don't have it already)
 
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
