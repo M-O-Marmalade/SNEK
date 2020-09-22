@@ -1,5 +1,5 @@
 # SNEK
-+ A clone of the classic game; Snake. Includes beat-synced music, a "lunge" ability, and multiplayer!
++ A classic game; now with multiplayer, music, portals, and a "lunge" ability!
 + Compatible with Windows 7 and up!
 
 ![SNEK GIF](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/snekgameplay.gif)
