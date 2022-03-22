@@ -2,7 +2,7 @@
 + A classic game; now with multiplayer, music, portals, and a "lunge" ability!
 + Compatible with Windows 7 and up!
 
-![SNEK GIF](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/snekgameplay.gif)
+![SNEK GIF](Screenshots/snekgameplay.gif)
 
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
@@ -18,22 +18,22 @@ To play the game:
 
 6. **Open Windows Command Prompt** by searching *"cmd"* in the Windows Search bar
 
-![cmd](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/cmd.png)
+![cmd](Screenshots/cmd.png)
 
 7. **Right Click** the Command Prompt window's title bar and select *"Properties"*
 
-![Right Click Title Bar](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/rightclicksnek.png)
+![Right Click Title Bar](Screenshots/rightclicksnek.png)
 
 8. **Activate** Legacy Console mode in the *"Options"* tab, hit *"OK"* and close the Windows Console
 
-![Legacy Console Mode](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/legacymode.png)
+![Legacy Console Mode](Screenshots/legacymode.png)
 
 9. **Open SNEK.exe** and right-click the title bar of this window, then select *"Properties"*
 
-![SNEK.exe Right-Click](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/snekrightclick.png)
+![SNEK.exe Right-Click](Screenshots/snekrightclick.png)
 
 10. **Set** *"Screen Buffer Size"* and *"Window Size"* settings in the *"Layout"* tab to 80 Wide x 25 High
 
-![Set Size Layout](https://raw.githubusercontent.com/M-O-Marmalade/Pix/master/SNEK/layoutsize.png)
+![Set Size Layout](Screenshots/layoutsize.png)
 
 The game should now be working and displaying properly! :) You can play with the settings in the *"Font"* tab of the SNEK.exe properties to get a look/feel/size that you like :) Legacy Console mode applies to any/all Windows consoles you open from now on, so if for any reason you need to change that setting back in the future, try to keep in mind that you have it enabled!
