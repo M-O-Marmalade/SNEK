@@ -20,7 +20,7 @@ To play the game:
 
 ![Set default terminal application](Screenshots/SetConHostAsDefault.apng)
 
-2. **Open SNEK.exe again.** If the start screen shows correctly, you're done! Otherwise, right-click the title bar of the window, then select *"Properties"* (if the window is invisible, skip to the [Invisible Window Fix section](https://github.com/M-O-Marmalade/SNEK/edit/master/README.md#invisible-window-fix-windows-10) below)
+2. **Open SNEK.exe again.** If the start screen shows correctly, you're done! Otherwise, right-click the title bar of the window, then select *"Properties"* (if the window is invisible, skip to the [Invisible Window Fix section](https://github.com/M-O-Marmalade/SNEK#invisible-window-fix-windows-10) below)
 
 ![SNEK.exe Right-Click](Screenshots/snekrightclick.png)
 
