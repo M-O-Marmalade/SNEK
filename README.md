@@ -12,28 +12,36 @@ To play the game:
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
 - (**Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors)
-- (**Windows 10:** follow the simple instructions below to play the game on Windows 10)
+- (**If you have jumbled graphics, or you hear sounds but no window shows up, follow the appropriate steps below.**)
 
-### INVISIBLE WINDOW FIX (WINDOWS 10)
+### JUMBLED GRAPHICS FIX
 
-6. **Open Windows Command Prompt** by searching *"cmd"* in the Windows Search bar
+1. **Open SNEK.exe.** If you see tabs at the top, click the down-arrow to the right of the + and the current tab, then open Settings (if there are no tabs, skip to Step 2). Set the "Default terminal application" to "Windows Console Host". Then click "save", and close the window.
 
-![cmd](Screenshots/cmd.png)
+![Set default terminal application](Screenshots/SetConHostAsDefault.apng)
 
-7. **Right Click** the Command Prompt window's title bar and select *"Properties"*
-
-![Right Click Title Bar](Screenshots/rightclicksnek.png)
-
-8. **Activate** Legacy Console mode in the *"Options"* tab, hit *"OK"* and close the Windows Console
-
-![Legacy Console Mode](Screenshots/legacymode.png)
-
-9. **Open SNEK.exe** and right-click the title bar of this window, then select *"Properties"*
+2. **Open SNEK.exe again.** If the start screen shows correctly, you're done! Otherwise, right-click the title bar of the window, then select *"Properties"* (if the window is invisible, skip to the [Invisible Window Fix section](https://github.com/M-O-Marmalade/SNEK/edit/master/README.md#invisible-window-fix-windows-10) below)
 
 ![SNEK.exe Right-Click](Screenshots/snekrightclick.png)
 
-10. **Set** *"Screen Buffer Size"* and *"Window Size"* settings in the *"Layout"* tab to 80 Wide x 25 High
+2. **Set** *"Screen Buffer Size"* and *"Window Size"* settings in the *"Layout"* tab to 80 Wide x 25 High
 
 ![Set Size Layout](Screenshots/layoutsize.png)
 
-The game should now be working and displaying properly! :) You can play with the settings in the *"Font"* tab of the SNEK.exe properties to get a look/feel/size that you like :) Legacy Console mode applies to any/all Windows consoles you open from now on, so if for any reason you need to change that setting back in the future, try to keep in mind that you have it enabled!
+The game should now be working and displaying properly! :) You can play with the settings in the *"Font"* tab of the SNEK.exe properties to get a look/feel/size that you like :)
+
+### INVISIBLE WINDOW FIX (Windows 10)
+
+1. **Open Windows Command Prompt** by searching *"cmd"* in the Windows Search bar
+
+![cmd](Screenshots/cmd.png)
+
+2. **Right Click** the Command Prompt window's title bar and select *"Properties"*
+
+![Right Click Title Bar](Screenshots/rightclicksnek.png)
+
+3. **Activate** Legacy Console mode in the *"Options"* tab, hit *"OK"* and close the Windows Console (Legacy Console mode applies to any/all Windows consoles you open from now on, so try to keep in mind that you have it enabled!)
+
+![Legacy Console Mode](Screenshots/legacymode.png)
+
+The game window should now display when opening SNEK.exe! If the graphics are jumbled
