@@ -44,4 +44,4 @@ The game should now be working and displaying properly! :) You can play with the
 
 ![Legacy Console Mode](Screenshots/legacymode.png)
 
-The game window should now display when opening SNEK.exe! If the graphics are jumbled
+The game window should now display when opening SNEK.exe! If the graphics are jumbled, follow Step 2 of [JUMBLED GRAPHICS FIX](https://github.com/M-O-Marmalade/SNEK#jumbled-graphics-fix)
