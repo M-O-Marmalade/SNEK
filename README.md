@@ -1,8 +1,8 @@
 # SNEK
-+ A classic game; now with multiplayer, music, portals, and a "lunge" ability!
-+ Compatible with Windows 7 and up!
++ A classic game, enhanced with new features!
++ Tested and working on Windows 7 and up!
 
-![SNEK GIF](Screenshots/snekgameplay.gif)
+![SNEK GIF](Screenshots/snekgameplay.apng)
 
 ## HOW TO DOWNLOAD + PLAY
 To play the game:
