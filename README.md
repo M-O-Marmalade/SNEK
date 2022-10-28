@@ -1,6 +1,7 @@
 # SNEK
 + A classic game, enhanced with new features for the Windows Console!
-+ Tested and working on Windows 7 and up (higher Windows versions may require some tweaks to get running)!
++ Plug and play with Windows 7
++ Compatible with later Windows versions after some tweaking
 
 ![SNEK GIF](Screenshots/snekgameplay.apng)
 
