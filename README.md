@@ -6,14 +6,14 @@
 ![SNEK GIF](Screenshots/snekgameplay.apng)
 
 ## HOW TO DOWNLOAD + PLAY
-To play the game:
+To play the game on Windows 7:
 
 
 1. **Download** the [latest release](https://github.com/M-O-Marmalade/SNEK/releases/latest/download/SNEK.zip)
 2. **Extract** all contents of SNEK.zip
 3. **Run** "SNEK.exe", and *enjoy!*
 - (**Install** [x86 VC Redist](https://aka.ms/vs/16/release/vc_redist.x86.exe) from Microsoft if the game is giving "Can't find ____.dll" errors)
-- (**If you have jumbled graphics, or you hear sounds but no window shows up, follow the appropriate steps below.**)
+- (**If you have jumbled graphics, or you hear sounds but no window shows up, you're probably running a later version of Windows. In that case, you can follow the appropriate steps below to get the game running.**)
 
 ### JUMBLED GRAPHICS FIX
 
