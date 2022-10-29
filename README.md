@@ -1,7 +1,7 @@
 # SNEK
 + A classic game, enhanced with new features for the Windows Console!
 + Plug and play with Windows 7.
-+ Compatible with later Windows versions after some setup (the game uses the Windows Console API, which has been deprecated by default in recent Windows versions).
++ Compatible with later Windows versions after some setup (the game uses the Windows Console API, which is being phased out by default in recent versions of Windows).
 
 ![SNEK GIF](Screenshots/snekgameplay.apng)
 
