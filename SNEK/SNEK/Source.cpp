@@ -86,6 +86,9 @@
 
 using namespace std;
 
+#define ESC L"\x1b"
+#define CSI L"\x1b["
+
   //				 //
  // DEBUG VARIABLES //
 //				   //
@@ -132,6 +135,24 @@ int currentFrame = 0;			//keeps track of how many frames have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
+struct TextColor
+{
+	int r;
+	int g;
+	int b;
+};
+
+struct ColorPalette
+{
+	const int bright_cyan[3] = { 52, 226, 226 };
+	const int green[3] = { 78, 154, 6 };
+	const int bright_green[3] = { 138, 226, 52 };
+	const int red[3] = { 204, 0, 0 };
+	const int bright_red[3] = { 239, 41, 41 };
+	const int white[3] = { 255, 255, 255 };
+	const int black[3] = { 0, 0, 0 };
+};
+
 chrono::duration<long double, nano> fps;
 chrono::steady_clock::time_point frameTime;
 chrono::steady_clock::time_point tickTime;
@@ -177,8 +198,43 @@ struct snek {
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 };
 
-void SleepinnnThang() {					//framerate for animation that plays after pressing Z to start game
-	this_thread::sleep_for(33ms);
+bool EnableVTMode() {
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+
+	DWORD dwMode = 0;
+	if (!GetConsoleMode(hOut, &dwMode))
+	{
+		return false;
+	}
+
+	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(hOut, dwMode))
+	{
+		return false;
+	}
+	return true;
+}
+
+void drawGameScreen(HANDLE hConsole, wstring& screenString, vector<std::pair<vector<int>, vector<int>>>& attributes, DWORD& dwBytesWritten) {
+	for (short x = 0; x < nScreenWidth; x++) {
+		for (short y = 0; y < nScreenHeight; y++) {
+			wprintf(CSI L"%d;%dH", y, x);	// position the cursor
+			wprintf(CSI L"38;2;%d;%d;%dm",	// set foreground RGB color
+				    attributes[x + y * nScreenWidth].first[0],
+				    attributes[x + y * nScreenWidth].first[1],
+				    attributes[x + y * nScreenWidth].first[2]);
+			//wprintf(CSI L"48;2;%d;%d;%dm"); // set background RGB color
+			wprintf(L"%c" ,screenString[x + y * nScreenWidth]); // print the character
+
+			//WriteConsoleOutputAttribute(hConsole, &(attributes[x + y * nScreenWidth]), 1, { x,y }, &dwBytesWritten);
+			//WriteConsoleOutputCharacter(hConsole, (LPCWSTR) (&screenString + (x + y * nScreenWidth)), 1, {x,y}, &dwBytesWritten);
+		}
+	}
 }
 
 int main() {	
@@ -365,23 +421,26 @@ int main() {
 		nScreenHeight += 20;
 	}
 
-	//create screen buffer//
-	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-	SetConsoleActiveScreenBuffer(hConsole);
+	////create screen buffer//
+	//HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	//SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 
 	wstring screenString;								 //character array to be displayed to the screen	
 	screenString.resize(nScreenWidth * nScreenHeight);	//set size of screen char array/string//
 
-	vector<WORD> attributes(nScreenWidth * nScreenHeight, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);	//stores colors for display
+	vector<std::pair<vector<int>, vector<int>>> attributes(nScreenWidth * nScreenHeight, std::pair<vector<int>, vector<int>>({52, 226, 226}, {0, 0, 0}));	//stores colors for display
 		   	
-	//disable the cursor visibility//
+	////disable the cursor visibility//
 	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = false;	
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
 
-	SetConsoleDisplayMode(hConsole, CONSOLE_WINDOWED_MODE, NULL);
+	//SetConsoleDisplayMode(hConsole, CONSOLE_WINDOWED_MODE, NULL);
+
+	EnableVTMode();
 
 
 	  //						 //
@@ -400,8 +459,9 @@ int main() {
 		screenString[charToOverwrite] = L"Citrus 64"[u];
 		charToOverwrite++;
 		u++;
-		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
-		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+		/*WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);*/
 
 		this_thread::sleep_for(77ms);
 
@@ -443,7 +503,7 @@ int main() {
 
 	
 	for (int yt = 0; yt < 1040; yt++) {
-		attributes[yt] = FOREGROUND_GREEN;
+		attributes.first[yt] = ColorPalette.;
 	}
 	for (int yt = 0; yt < 960; yt++) {
 		attributes[yt + 1040] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
@@ -597,61 +657,61 @@ int main() {
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 					   
 			screenString.replace((18 * 80) + 31, 18, L"Press [Z++to start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press [+AR+o start");
 			
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press +TART+ start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press+START!+start");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pres+ START! +tart");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pre+  START!  +art");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pr+   START!   +rt");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"P+    START!    +t");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"+     START!     +");
 
 			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
 
-			SleepinnnThang();
+			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"-                -");
 
