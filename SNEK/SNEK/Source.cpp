@@ -74,6 +74,7 @@
 //					   //
 #include <Windows.h>
 #include <Wincon.h>
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -85,6 +86,10 @@
 #include <fmod_studio.hpp>
 
 using namespace std;
+
+  //                  //
+ // MACROS / DEFINES //
+//                  //
 
 #define ESC L"\x1b"
 #define CSI L"\x1b["
@@ -135,22 +140,31 @@ int currentFrame = 0;			//keeps track of how many frames have passed
 int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
 int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
-struct TextColor
-{
-	int r;
-	int g;
-	int b;
-};
-
 struct ColorPalette
 {
-	const int bright_cyan[3] = { 52, 226, 226 };
-	const int green[3] = { 78, 154, 6 };
-	const int bright_green[3] = { 138, 226, 52 };
-	const int red[3] = { 204, 0, 0 };
-	const int bright_red[3] = { 239, 41, 41 };
-	const int white[3] = { 255, 255, 255 };
-	const int black[3] = { 0, 0, 0 };
+	WORD logo = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD press_start = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD player_amount = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD player_1 = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	WORD player_2 = FOREGROUND_RED | FOREGROUND_INTENSITY;
+	WORD fruit = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD fruit_swallowed = FOREGROUND_RED | FOREGROUND_BLUE;
+	WORD portal = FOREGROUND_BLUE;
+	WORD keyboard = FOREGROUND_GREEN;
+	WORD keyboard_selected = BACKGROUND_GREEN;
+	WORD hud = FOREGROUND_GREEN;
+
+
+	WORD bright_cyan = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD green = FOREGROUND_GREEN;
+	WORD bright_green = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	WORD red = FOREGROUND_RED;
+	WORD bright_red = FOREGROUND_RED | FOREGROUND_INTENSITY;
+	WORD pink = FOREGROUND_RED | FOREGROUND_BLUE;
+	WORD bright_pink = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+	WORD grey = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+	WORD black = 0;
 };
 
 chrono::duration<long double, nano> fps;
@@ -220,19 +234,47 @@ bool EnableVTMode() {
 	return true;
 }
 
-void drawGameScreen(HANDLE hConsole, wstring& screenString, vector<std::pair<vector<int>, vector<int>>>& attributes, DWORD& dwBytesWritten) {
-	for (short x = 0; x < nScreenWidth; x++) {
-		for (short y = 0; y < nScreenHeight; y++) {
-			wprintf(CSI L"%d;%dH", y, x);	// position the cursor
-			wprintf(CSI L"38;2;%d;%d;%dm",	// set foreground RGB color
-				    attributes[x + y * nScreenWidth].first[0],
-				    attributes[x + y * nScreenWidth].first[1],
-				    attributes[x + y * nScreenWidth].first[2]);
-			//wprintf(CSI L"48;2;%d;%d;%dm"); // set background RGB color
-			wprintf(L"%c" ,screenString[x + y * nScreenWidth]); // print the character
+void drawGameScreen(HANDLE hConsole, wstring& screenString, vector<WORD>& attributes, DWORD& dwBytesWritten) {
+	const wchar_t* screenStringCStr = screenString.c_str();
+	for (short y = 0; y < nScreenHeight; y++) {
+		WriteConsoleOutputAttribute(hConsole, &attributes[y * nScreenWidth], nScreenWidth, {0,y}, &dwBytesWritten);
+		WriteConsoleOutputCharacter(hConsole, screenStringCStr + y * nScreenWidth, nScreenWidth, { 0,y }, &dwBytesWritten);
+		
+		// using VTS to draw the screen
+		//wprintf(CSI L"%d;%dH", y, x);	// position the cursor
+		//wprintf(CSI L"38;2;%d;%d;%dm",	// set foreground RGB color
+		//	    attributes[x + y * nScreenWidth].first[0],
+		//	    attributes[x + y * nScreenWidth].first[1],
+		//	    attributes[x + y * nScreenWidth].first[2]);
+		//wprintf(CSI L"48;2;%d;%d;%dm"); // set background RGB color
+		//wprintf(L"%c" ,screenString[x + y * nScreenWidth]); // print the character
+	}
+}
 
-			//WriteConsoleOutputAttribute(hConsole, &(attributes[x + y * nScreenWidth]), 1, { x,y }, &dwBytesWritten);
-			//WriteConsoleOutputCharacter(hConsole, (LPCWSTR) (&screenString + (x + y * nScreenWidth)), 1, {x,y}, &dwBytesWritten);
+void drawText(wstring stringToWrite, wstring& screenString, int x, int y) {
+	int i = 0, x1 = x, y1 = y;
+	while (i < stringToWrite.size() && x1 >= 0 && y1 >= 0 && x1 < nScreenWidth && y1 < nScreenHeight) {
+		if (stringToWrite[i] == L'\n') {
+			x1 = x;
+			y1++;
+		}
+		else {
+			screenString[x1 + y1 * nScreenWidth] = stringToWrite[i];
+		}
+		i++;
+	}
+}
+
+void drawColor(WORD colorToDraw, vector<WORD>& attributes, int left, int top, int right, int bottom) {
+	int x = max(left, 0), y = max(top, 0);
+	while (y <= bottom && y < nScreenHeight) {
+		attributes[x + y * nScreenWidth] = colorToDraw; // color foreground & background
+		if (x < right && x < nScreenWidth - 1) {
+			x++;
+		}
+		else {
+			x = left;
+			y++;
 		}
 	}
 }
@@ -242,9 +284,9 @@ int main() {
 	 //									 //
 	// AUDIO SYSTEM SETUP (FMOD Studio) //
    //								   //
-	FMOD_RESULT result;																	//create an FMOD Result
-	FMOD::Studio::System* system = NULL;												//create a pointer to a studio system object
-	result = FMOD::Studio::System::create(&system);										//create the Studio System object using the pointer
+	FMOD_RESULT result;									//create an FMOD Result
+	FMOD::Studio::System* system = NULL;				//create a pointer to a studio system object
+	result = FMOD::Studio::System::create(&system);		//create the Studio System object using the pointer
 	
 	if (liveUpdate) {
 		result = system->initialize(256, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback/live update
@@ -422,21 +464,35 @@ int main() {
 	}
 
 	////create screen buffer//
-	//HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	//SetConsoleActiveScreenBuffer(hConsole);
+	HANDLE origConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
 
-	wstring screenString;								 //character array to be displayed to the screen	
-	screenString.resize(nScreenWidth * nScreenHeight);	//set size of screen char array/string//
-
-	vector<std::pair<vector<int>, vector<int>>> attributes(nScreenWidth * nScreenHeight, std::pair<vector<int>, vector<int>>({52, 226, 226}, {0, 0, 0}));	//stores colors for display
+	wstring screenString(nScreenWidth * nScreenHeight, L' ');	//character array which represents the game screen
+	ColorPalette colorPalette;
+	vector<WORD> attributes(nScreenWidth * nScreenHeight, colorPalette.logo);	//stores colors for display
+	//vector<std::pair<vector<int>, vector<int>>> attributes(nScreenWidth * nScreenHeight, std::pair<vector<int>, vector<int>>({52, 226, 226}, {0, 0, 0}));	//stores colors for display
 		   	
 	////disable the cursor visibility//
 	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = false;	
 	SetConsoleCursorInfo(hConsole, &cursorInfo);
+
+	// disable mouse input
+	DWORD consoleMode;
+	GetConsoleMode(hConsole, &consoleMode);
+	consoleMode ^= ENABLE_MOUSE_INPUT;
+	SetConsoleMode(hConsole, consoleMode);
+
+	CONSOLE_SCREEN_BUFFER_INFO consoleBufferInfo;
+	GetConsoleScreenBufferInfo(hConsole, &consoleBufferInfo);
+	consoleBufferInfo.srWindow.Top = 0;
+	consoleBufferInfo.srWindow.Left = 0;
+	consoleBufferInfo.srWindow.Right = 80;
+	consoleBufferInfo.srWindow.Bottom = 25;
+	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));
 
 	//SetConsoleDisplayMode(hConsole, CONSOLE_WINDOWED_MODE, NULL);
 
@@ -460,8 +516,6 @@ int main() {
 		charToOverwrite++;
 		u++;
 		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-		/*WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
-		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);*/
 
 		this_thread::sleep_for(77ms);
 
@@ -478,7 +532,7 @@ int main() {
 		screenString[charToOverwrite] = char(32);
 		charToOverwrite++;
 		
-		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 		
 		this_thread::sleep_for(77ms);
 		
@@ -503,31 +557,31 @@ int main() {
 
 	
 	for (int yt = 0; yt < 1040; yt++) {
-		attributes.first[yt] = ColorPalette.;
+		attributes[yt] = colorPalette.hud;
 	}
 	for (int yt = 0; yt < 960; yt++) {
-		attributes[yt + 1040] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+		attributes[yt + 1040] = colorPalette.player_1;
 	}
 	for (int yt = 1440; yt < 1520; yt++) {
-		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+		attributes[yt] = colorPalette.press_start;
 	}
 	for (int yt = 1600; yt < 1638; yt++) {
-		attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+		attributes[yt] = colorPalette.player_2;
 	}
 	for (int yt = 1625; yt < 1651; yt++) {
-		attributes[yt] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN;
+		attributes[yt] = colorPalette.grey;
 	}
-	attributes[1643] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-	attributes[1644] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-	attributes[1645] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+	attributes[1643] = colorPalette.white;
+	attributes[1644] = colorPalette.white;
+	attributes[1645] = colorPalette.white;
 	for (int yt = 1651; yt < 1680; yt++) {
-		attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+		attributes[yt] = colorPalette.bright_green;
 	}
 	for (int yt = 1680; yt < 2000; yt++) {
-		attributes[yt] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+		attributes[yt] = colorPalette.logo;
 	}
 
-	WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+	drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 	bool holdKey = false;
 	while (startScreen) {
@@ -552,15 +606,7 @@ int main() {
 			screenString.replace((15 * 80) + 15, 20, L"| P2: WASD + B-Key |");
 			screenString.replace((16 * 80) + 15, 20, L"--------------------");
 			
-			for (int yt = 14 * 80; yt < (14 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			}
-			for (int yt = 15 * 80; yt < (15 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			}
-			for (int yt = 16 * 80; yt < (16 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_RED | FOREGROUND_INTENSITY;
-			}
+			drawColor(colorPalette.player_2, attributes, 0, 14, 35, 16);
 		}
 		else {			
 			screenString.replace((14 * 80) + 41, 26, L"                          ");
@@ -573,15 +619,7 @@ int main() {
 			screenString.replace((15 * 80) + 24, 32, L"| Controls: Arrow Keys + Z-Key |");
 			screenString.replace((16 * 80) + 24, 32, L"--------------------------------");
 
-			for (int yt = 14 * 80; yt < (14 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-			}
-			for (int yt = 15 * 80; yt < (15 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-			}
-			for (int yt = 16 * 80; yt < (16 * 80) + 35; yt++) {
-				attributes[yt] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-			}
+			drawColor(colorPalette.player_1, attributes, 0, 14, 35, 16);
 
 		}
 
@@ -608,8 +646,7 @@ int main() {
 			startScreenFrameCount = 0;
 		}				
 
-		WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);	//display the char[] buffer
-		WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 		startScreenFrameCount++;
 
@@ -655,85 +692,85 @@ int main() {
 
 			screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 					   
 			screenString.replace((18 * 80) + 31, 18, L"Press [Z++to start");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press [+AR+o start");
 			
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press +TART+ start");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Press+START!+start");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pres+ START! +tart");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pre+  START!  +art");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"Pr+   START!   +rt");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"P+    START!    +t");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"+     START!     +");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(33ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"-                -");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(177ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"-                -");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			this_thread::sleep_for(77ms);
 
 			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 		}
 	}	
 
@@ -1993,53 +2030,54 @@ int main() {
 			}
 			
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			  //				  //
 			 // COLOR THE SCREEN //
 			//				    //
 
 			//reset entire display color to green//
-			for (int yt = 0; yt < nScreenWidth * nScreenHeight; yt++) {		
+			drawColor(colorPalette.green, attributes, 0, 0, nScreenWidth - 1, nScreenHeight - 1);
+			/*for (int yt = 0; yt < nScreenWidth * nScreenHeight; yt++) {		
 				attributes[yt] = FOREGROUND_GREEN;
-			}
+			}*/
 
 			  //					  //
 			 // COLOR THE FRUIT PINK //
 			//						//
-			attributes[currentFruit[0] + (currentFruit[1] * 80)] = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;		
+			attributes[currentFruit[0] + (currentFruit[1] * 80)] = colorPalette.fruit;		
 
 			  //					  //
 			 // COLOR PLAYER 1 GREEN //
 			//						//			
 			
 			if (!snek1[0].justDied) {
-				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.player_1;
 
 				if (!snek1[0].justGotNewFruit) {
 					for (int l = 0; l < snek1[0].snek_length; l++) {
-						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
 					}
 					if (snek1[0].snekSwallowTimer <= snek1[0].snek_length) {
-						attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
 						snek1[0].snekSwallowTimer++;
 					}
 				}
 				else {
 					snek1[0].justGotNewFruit = false;
 					for (int l = 0; l < snek1[0].snek_length - 1; l++) {
-						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
 					}
 					if (snek1[0].snekSwallowTimer == 0) {
-						attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+						attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
 						snek1[0].snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY;
+				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.white;
 				for (int l = 0; l < snek1[0].snek_length - 1; l++) {
-					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY;
+					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.white;
 				}
 			}
 				
@@ -2048,37 +2086,37 @@ int main() {
 			//					  //
 			if (playerCount == 2) {
 				if (!snek1[1].justDied) {
-					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.player_2;
 
 					if (!snek1[1].justGotNewFruit) {
 						for (int l = 0; l < snek1[1].snek_length; l++) {
-							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
 						}
 						if (snek1[1].snekSwallowTimer <= snek1[1].snek_length) {
-							attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+							attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
 							snek1[1].snekSwallowTimer++;
 						}
 					}
 					else {
 						snek1[1].justGotNewFruit = false;
 						for (int l = 0; l < snek1[1].snek_length - 1; l++) {
-							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_INTENSITY;
+							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
 						}
 						if (snek1[1].snekSwallowTimer == 0) {
-							attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_BLUE | FOREGROUND_RED;
+							attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
 							snek1[1].snekSwallowTimer++;
 						}
 					}
 				}
 				else {
-					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.white;
 					for (int l = 0; l < snek1[1].snek_length - 1; l++) {
-						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.white;
 					}
 				}
 			}			
 			
-			WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 						
 			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
@@ -2253,27 +2291,26 @@ int main() {
 				//color the whole right side of the screen green
 				for (int p = 0; p < 25; p++) {
 					for (int t = 26; t < 80; t++) {
-						attributes[(p * 80) + t] = FOREGROUND_GREEN;
+						attributes[(p * 80) + t] = colorPalette.hud;
 					}					
 				}
 
 				//invert the color of the currently selected keyboard character
 				if (currentSelChar < 8) {
-					attributes[40 + (13 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+					attributes[40 + (13 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else if (currentSelChar < 16) {
-					attributes[24 + (15 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+					attributes[24 + (15 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else if (currentSelChar < 24) {
-					attributes[8 + (17 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+					attributes[8 + (17 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else {
-					attributes[-8 + (19 * 80) + (currentSelChar * 2)] = BACKGROUND_GREEN;
+					attributes[-8 + (19 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 
 				//DISPLAY THE SCREEN//
-				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
-				WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth* nScreenHeight, { 0,0 }, & dwBytesWritten);
+				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 				system->update(); //update FMOD system	
 			}
@@ -2307,7 +2344,7 @@ int main() {
 		//color the whole right side of the screen green
 		for (int p = 0; p < 25; p++) {
 			for (int t = 26; t < 80; t++) {
-				attributes[(p * 80) + t] = FOREGROUND_GREEN;
+				attributes[(p * 80) + t] = colorPalette.hud;
 			}
 		}
 				
@@ -2335,8 +2372,7 @@ int main() {
 			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
 			screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
-			WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, & dwBytesWritten);
-			WriteConsoleOutputAttribute(hConsole, &attributes[0], nScreenWidth * nScreenHeight, { 0,0 }, & dwBytesWritten);
+			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			bool gameOverMessage = true;
 
@@ -2372,7 +2408,7 @@ int main() {
 
 				screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
 
-				WriteConsoleOutputCharacter(hConsole, screenString.c_str(), nScreenWidth * nScreenHeight, { 0,0 }, &dwBytesWritten);
+				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 								
 				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 					gameOverMessage = false;
@@ -2404,6 +2440,8 @@ int main() {
 	while (playAgain);
 
 	system->release();
+
+	SetConsoleActiveScreenBuffer(origConsole);
 
 	return 0;
 
