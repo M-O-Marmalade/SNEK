@@ -73,19 +73,16 @@
  // INCLUDES/NAMESPACES //
 //					   //
 #include <Windows.h>
-#include <Wincon.h>
 #include <algorithm>
-#include <cstdlib>
-#include <string>
-#include <vector>
-#include <thread>
 #include <chrono>
-#include <fstream>
 #include <codecvt>
-#include <fmod.hpp>
-#include <fmod_studio.hpp>
+#include <fstream>
+#include <string>
+#include <thread>
+#include <vector>
 
-using namespace std;
+#include "AudioSystem.cpp"
+
 
   //                  //
  // MACROS / DEFINES //
@@ -93,14 +90,6 @@ using namespace std;
 
 #define ESC L"\x1b"
 #define CSI L"\x1b["
-
-  //				 //
- // DEBUG VARIABLES //
-//				   //
-
-bool debugMenu = false;
-bool simpleSound = false;
-bool liveUpdate = false;
 
   //				  //
  // GLOBAL VARIABLES //
@@ -121,13 +110,13 @@ int portalCoordinates[6][2];	//coordinates of the current portals on the map
 bool gotNewFruit = false;
 int oldHighScore;
 bool gotNewHighScore = false;
-wstring keyboard = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ.-_ ←↓";
-wstring highScoreName;
-wstring highScoreNameFromFileWide;
-string highScoreNameFromFileNarrow;
-wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+std::wstring keyboard = L"ABCDEFGHIJKLMNOPQRSTUVWXYZ.-_ ←↓";
+std::wstring highScoreName;
+std::wstring highScoreNameFromFileWide;
+std::string highScoreNameFromFileNarrow;
+std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 bool wasPreviousHighScoreFound;
-vector<double> bpmValues = { 54.5f, 62.5f, 75.5f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
+std::vector<double> bpmValues = { 54.5f, 62.5f, 75.5f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -167,11 +156,15 @@ struct ColorPalette
 	WORD black = 0;
 };
 
-chrono::duration<long double, nano> fps;
-chrono::steady_clock::time_point frameTime;
-chrono::steady_clock::time_point tickTime;
+std::chrono::duration<long double, std::nano> fps;
+std::chrono::steady_clock::time_point frameTime;
+std::chrono::steady_clock::time_point tickTime;
 
 //SOUND VARIABLES (FMOD)
+
+bool fmodLiveUpdate = false;
+bool simpleSound = false;
+
 int snekMoveTimelinePosition = 0;		//snakeMoveInstance timeline position
 int snekMoveTimelinePositionMax = 200;	//snakeMoveInstance timeline position max
 bool isScoreUnder11 = true;				//changes to false when highestCurrentLength passes 11
@@ -212,29 +205,7 @@ struct snek {
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 };
 
-bool EnableVTMode() {
-	// Set output mode to handle virtual terminal sequences
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut == INVALID_HANDLE_VALUE)
-	{
-		return false;
-	}
-
-	DWORD dwMode = 0;
-	if (!GetConsoleMode(hOut, &dwMode))
-	{
-		return false;
-	}
-
-	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	if (!SetConsoleMode(hOut, dwMode))
-	{
-		return false;
-	}
-	return true;
-}
-
-void drawGameScreen(HANDLE hConsole, wstring& screenString, vector<WORD>& attributes, DWORD& dwBytesWritten) {
+void drawGameScreen(HANDLE hConsole, std::wstring& screenString, std::vector<WORD>& attributes, DWORD& dwBytesWritten) {
 	const wchar_t* screenStringCStr = screenString.c_str();
 	for (short y = 0; y < nScreenHeight; y++) {
 		WriteConsoleOutputAttribute(hConsole, &attributes[y * nScreenWidth], nScreenWidth, {0,y}, &dwBytesWritten);
@@ -251,7 +222,7 @@ void drawGameScreen(HANDLE hConsole, wstring& screenString, vector<WORD>& attrib
 	}
 }
 
-void drawText(wstring stringToWrite, wstring& screenString, int x, int y) {
+void drawText(std::wstring stringToWrite, std::wstring& screenString, int x, int y) {
 	int i = 0, x1 = x, y1 = y;
 	while (i < stringToWrite.size() && x1 >= 0 && y1 >= 0 && x1 < nScreenWidth && y1 < nScreenHeight) {
 		if (stringToWrite[i] == L'\n') {
@@ -265,7 +236,7 @@ void drawText(wstring stringToWrite, wstring& screenString, int x, int y) {
 	}
 }
 
-void drawColor(WORD colorToDraw, vector<WORD>& attributes, int left, int top, int right, int bottom) {
+void drawColor(WORD colorToDraw, std::vector<WORD>& attributes, int left, int top, int right, int bottom) {
 	int x = max(left, 0), y = max(top, 0);
 	while (y <= bottom && y < nScreenHeight) {
 		attributes[x + y * nScreenWidth] = colorToDraw; // color foreground & background
@@ -279,202 +250,48 @@ void drawColor(WORD colorToDraw, vector<WORD>& attributes, int left, int top, in
 	}
 }
 
+
 int main() {	
 
 	 //									 //
 	// AUDIO SYSTEM SETUP (FMOD Studio) //
    //								   //
-	FMOD_RESULT result;									//create an FMOD Result
-	FMOD::Studio::System* system = NULL;				//create a pointer to a studio system object
-	result = FMOD::Studio::System::create(&system);		//create the Studio System object using the pointer
-	
-	if (liveUpdate) {
-		result = system->initialize(256, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback/live update
-	}
-	else {
-		result = system->initialize(256, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);		//initialize the system for audio playback
-	}
-	
+	std::vector<std::string> fmodEventNames = {
+		"Menu+Songs/SplashJingle",
+		"Menu+Songs/ANewChip",
+		"Menu+Songs/StartButton",
+		"Menu+Songs/FancyBoss",
+		"Menu+Songs/ExitGame",
+		"Instruments+FX/SnakeFruit",
+		"Instruments+FX/SnakeFruit11",
+		"Instruments+FX/SnakeMove",
+		"Instruments+FX/SnakeLunge",
+		"Instruments+FX/Death",
+		"Instruments+FX/Snare1",
+		"Instruments+FX/808Drum",
+		"Instruments+FX/Cymbal",
+		"Instruments+FX/KickTight",
+		"Instruments+FX/Triangle",
+		"Instruments+FX/arp",
+		"Instruments+FX/newHighScore"
+	};
 
-
-	FMOD::Studio::Bank* masterBank = NULL;																
-	system->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
-
-	FMOD::Studio::Bank* stringsBank = NULL;																
-	system->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
-																							
-	FMOD::Studio::Bank* musicandFX = NULL;																
-	result = system->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
-
-	  //							    //
-	 // LOADING/PREPARING AUDIO EVENTS //
-	//							      //
-	FMOD::Studio::EventDescription* splashJingleDescription = NULL;			//Splash Jingle (Citrus Studios splash screen) (FMOD)
-	system->getEvent("event:/Menu+Songs/SplashJingle", &splashJingleDescription);
-
-	FMOD::Studio::EventInstance* splashJingleInstance = NULL;
-	splashJingleDescription->createInstance(&splashJingleInstance);
-
-	FMOD::Studio::EventDescription* aNewChipDescription = NULL;				//ANewChip (start screen song)
-	system->getEvent("event:/Menu+Songs/ANewChip", &aNewChipDescription);
-
-	FMOD::Studio::EventInstance* aNewChipInstance = NULL;
-	aNewChipDescription->createInstance(&aNewChipInstance);
-
-	FMOD::Studio::EventDescription* startButtonDescription = NULL;			//StartButton (game start sound effect)
-	system->getEvent("event:/Menu+Songs/StartButton", &startButtonDescription);
-
-	FMOD::Studio::EventInstance* startButtonInstance = NULL;
-	startButtonDescription->createInstance(&startButtonInstance);
-
-	FMOD::Studio::EventDescription* fancyBossDescription = NULL;			//FancyBoss (game over song)
-	system->getEvent("event:/Menu+Songs/FancyBoss", &fancyBossDescription);
-
-	FMOD::Studio::EventInstance* fancyBossInstance = NULL;
-	fancyBossDescription->createInstance(&fancyBossInstance);
-
-	FMOD::Studio::EventDescription* exitGameDescription = NULL;				//Exit Game (Citrus Studios splash screen) (FMOD)
-	system->getEvent("event:/Menu+Songs/ExitGame", &exitGameDescription);
-
-	FMOD::Studio::EventInstance* exitGameInstance = NULL;
-	exitGameDescription->createInstance(&exitGameInstance);
-
-	FMOD::Studio::EventDescription* snakeFruitDescription = NULL;			//SnakeFruit (pickup fruit sound effect)
-	system->getEvent("event:/Instruments+FX/SnakeFruit", &snakeFruitDescription);
-
-	FMOD::Studio::EventInstance* snakeFruitInstance = NULL;
-	snakeFruitDescription->createInstance(&snakeFruitInstance);
-
-	FMOD::Studio::EventDescription* snakeFruitDescription11 = NULL;			//SnakeFruit11 (snake eyes score sound)
-	system->getEvent("event:/Instruments+FX/SnakeFruit11", &snakeFruitDescription11);
-
-	FMOD::Studio::EventInstance* snakeFruitInstance11 = NULL;
-	snakeFruitDescription11->createInstance(&snakeFruitInstance11);
-
-	FMOD::Studio::EventDescription* snakeMoveDescription = NULL;			//SnakeMove (movement sound effect)
-	system->getEvent("event:/Instruments+FX/SnakeMove", &snakeMoveDescription);
-
-	FMOD::Studio::EventInstance* snakeMoveInstance = NULL;
-	snakeMoveDescription->createInstance(&snakeMoveInstance);	
-
-	FMOD::Studio::EventDescription* snakeLungeDescription = NULL;			//SnakeLunge (lunge sound effect)
-	system->getEvent("event:/Instruments+FX/SnakeLunge", &snakeLungeDescription);
-
-	FMOD::Studio::EventInstance* snakeLungeInstance = NULL;
-	snakeLungeDescription->createInstance(&snakeLungeInstance);
-	
-	FMOD::Studio::EventDescription* deathDescription = NULL;				//Death (death collision sound)
-	system->getEvent("event:/Instruments+FX/Death", &deathDescription);
-
-	FMOD::Studio::EventInstance* deathInstance = NULL;
-	deathDescription->createInstance(&deathInstance);
-
-	FMOD::Studio::EventDescription* snare1Description = NULL;				//Snare Drum 1
-	system->getEvent("event:/Instruments+FX/Snare1", &snare1Description);
-
-	FMOD::Studio::EventInstance* snare1Instance = NULL;
-	snare1Description->createInstance(&snare1Instance);
-
-	FMOD::Studio::EventDescription* a808DrumDescription = NULL;				//808 Drum
-	system->getEvent("event:/Instruments+FX/808Drum", &a808DrumDescription);
-
-	FMOD::Studio::EventInstance* a808DrumInstance = NULL;
-	a808DrumDescription->createInstance(&a808DrumInstance);
-
-	FMOD::Studio::EventDescription* cymbalDescription = NULL;				//Cymbal
-	system->getEvent("event:/Instruments+FX/Cymbal", &cymbalDescription);
-
-	FMOD::Studio::EventInstance* cymbalInstance = NULL;
-	cymbalDescription->createInstance(&cymbalInstance);
-
-	FMOD::Studio::EventDescription* kickTightDescription = NULL;				//KickTight
-	system->getEvent("event:/Instruments+FX/KickTight", &kickTightDescription);
-
-	FMOD::Studio::EventInstance* kickTightInstance = NULL;
-	kickTightDescription->createInstance(&kickTightInstance);
-
-	FMOD::Studio::EventDescription* triangleDescription = NULL;					//triangle
-	system->getEvent("event:/Instruments+FX/Triangle", &triangleDescription);
-
-	FMOD::Studio::EventInstance* triangleInstance = NULL;
-	triangleDescription->createInstance(&triangleInstance);
-
-	FMOD::Studio::EventDescription* arpDescription = NULL;						//arp
-	system->getEvent("event:/Instruments+FX/arp", &arpDescription);
-
-	FMOD::Studio::EventInstance* arpInstance = NULL;
-	arpDescription->createInstance(&arpInstance);
-
-	FMOD::Studio::EventDescription* newHighScoreDescription = NULL;				//newHighScore
-	system->getEvent("event:/Instruments+FX/newHighScore", &newHighScoreDescription);
-
-	FMOD::Studio::EventInstance* newHighScoreInstance = NULL;
-	newHighScoreDescription->createInstance(&newHighScoreInstance);
-
-
-	vector<FMOD::Studio::EventDescription*> bpmDescriptions;					//chords
-	vector<FMOD::Studio::EventInstance*> bpmInstances;
-
-	bpmDescriptions.resize(12);
-	bpmInstances.resize(12);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm54_5", &bpmDescriptions[0]);	
-	bpmDescriptions[0]->createInstance(&bpmInstances[0]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm62_5", &bpmDescriptions[1]);
-	bpmDescriptions[1]->createInstance(&bpmInstances[1]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm75_5", &bpmDescriptions[2]);
-	bpmDescriptions[2]->createInstance(&bpmInstances[2]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm89", &bpmDescriptions[3]);
-	bpmDescriptions[3]->createInstance(&bpmInstances[3]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm100", &bpmDescriptions[4]);
-	bpmDescriptions[4]->createInstance(&bpmInstances[4]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm127", &bpmDescriptions[5]);
-	bpmDescriptions[5]->createInstance(&bpmInstances[5]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm137", &bpmDescriptions[6]);
-	bpmDescriptions[6]->createInstance(&bpmInstances[6]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm152", &bpmDescriptions[7]);
-	bpmDescriptions[7]->createInstance(&bpmInstances[7]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm164", &bpmDescriptions[8]);
-	bpmDescriptions[8]->createInstance(&bpmInstances[8]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm172", &bpmDescriptions[9]);
-	bpmDescriptions[9]->createInstance(&bpmInstances[9]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm181", &bpmDescriptions[10]);
-	bpmDescriptions[10]->createInstance(&bpmInstances[10]);
-
-	system->getEvent("event:/Instruments+FX/BPMs/bpm200", &bpmDescriptions[11]);
-	bpmDescriptions[10]->createInstance(&bpmInstances[11]);
+	AudioSystem snekAudioSystem(fmodEventNames);
 	
 
 	  //			   //
 	 // DISPLAY SETUP //
-	//			  	 //	
+	//			  	 //
 
-	if (debugMenu) {
-		nScreenHeight += 20;
-	}
-
-	////create screen buffer//
+	// store reference to console buffer that launched the game
 	HANDLE origConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// create console buffer for the game to run in
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
-
-	wstring screenString(nScreenWidth * nScreenHeight, L' ');	//character array which represents the game screen
-	ColorPalette colorPalette;
-	vector<WORD> attributes(nScreenWidth * nScreenHeight, colorPalette.logo);	//stores colors for display
-	//vector<std::pair<vector<int>, vector<int>>> attributes(nScreenWidth * nScreenHeight, std::pair<vector<int>, vector<int>>({52, 226, 226}, {0, 0, 0}));	//stores colors for display
-		   	
-	////disable the cursor visibility//
+	
+	// disable the cursor visibility
 	CONSOLE_CURSOR_INFO cursorInfo;					
 	GetConsoleCursorInfo(hConsole, &cursorInfo);
 	cursorInfo.bVisible = false;	
@@ -486,61 +303,57 @@ int main() {
 	consoleMode ^= ENABLE_MOUSE_INPUT;
 	SetConsoleMode(hConsole, consoleMode);
 
-	CONSOLE_SCREEN_BUFFER_INFO consoleBufferInfo;
+	/*CONSOLE_SCREEN_BUFFER_INFO consoleBufferInfo;
 	GetConsoleScreenBufferInfo(hConsole, &consoleBufferInfo);
 	consoleBufferInfo.srWindow.Top = 0;
 	consoleBufferInfo.srWindow.Left = 0;
 	consoleBufferInfo.srWindow.Right = 80;
 	consoleBufferInfo.srWindow.Bottom = 25;
-	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));
+	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));*/
 
-	//SetConsoleDisplayMode(hConsole, CONSOLE_WINDOWED_MODE, NULL);
-
-	EnableVTMode();
-
+	// initialize the data structures used to store our game display
+	ColorPalette colorPalette;
+	std::wstring screenString(nScreenWidth * nScreenHeight, L' ');	//character array which represents the game screen
+	std::vector<WORD> attributes(nScreenWidth * nScreenHeight, colorPalette.logo);	//stores colors for display
 
 	  //						 //
 	 // SPLASH SCREEN ANIMATION //
 	//						   //
 
-	splashJingleInstance->start();	//Begin Splash Screen (FMOD)
-	system->update();
+	snekAudioSystem.startEventInstance("Menu+Songs/SplashJingle");
+	snekAudioSystem.fmodUpdate();
 
+
+	// Draw Splash Screen
 	bool animation = true;
 	int u = 0;
-	int charToOverwrite = 996;	
-
-	while (animation) {			//Draw Splash Screen
+	int charToOverwrite = 996;
+	while (charToOverwrite <= 1005) {
 
 		screenString[charToOverwrite] = L"Citrus 64"[u];
 		charToOverwrite++;
 		u++;
 		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
-		this_thread::sleep_for(77ms);
-
-		if (charToOverwrite == 1005) {
-			animation = false;
-			this_thread::sleep_for(222ms);
-		}
-	}	
+		std::this_thread::sleep_for(std::chrono::milliseconds(77));
+	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(222));
 	
+
+	//Erase Splash Screen
 	animation = true;
 	charToOverwrite = 992;	
-	while (animation) {			//Erase Splash Screen
+	while (charToOverwrite <= 1006) {
 		
 		screenString[charToOverwrite] = char(32);
 		charToOverwrite++;
 		
 		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 		
-		this_thread::sleep_for(77ms);
-		
-		if (charToOverwrite == 1006) {
-			animation = false;
-			this_thread::sleep_for(222ms);
-		}		
+		std::this_thread::sleep_for(std::chrono::milliseconds(77));	
 	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(222));
+
 
 	  //			  //
 	 // START SCREEN //
@@ -549,10 +362,10 @@ int main() {
 	bool startScreenToggle = true;
 	int startScreenFrameCount = 111;
 
-	this_thread::sleep_for(777ms);
+	std::this_thread::sleep_for(std::chrono::milliseconds(777));
 
-	aNewChipInstance->start();	//begin start screen playback	(FMOD)
-	system->update();
+	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
+	snekAudioSystem.fmodUpdate();
 
 
 	
@@ -593,7 +406,7 @@ int main() {
 		screenString.replace((11 * 80) + 20, 38,  L"/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
 		screenString.replace((12 * 80) + 19, 40, L"/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
 
-		screenString.replace((20 * 80) + 34, 12, L"Players: <" + to_wstring(playerCount) + L">");
+		screenString.replace((20 * 80) + 34, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
 
 		if (playerCount == 2) {
 			screenString.replace((14 * 80) + 24, 32, L"                                ");
@@ -631,10 +444,10 @@ int main() {
 				startScreenToggle = false;
 				screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
-				snakeFruitInstance->setPitch(1.0f);
-				snakeFruitInstance->setVolume(0.7f);
-				snakeFruitInstance->start();	//play snakefruitinstance sound for flashing "press start" button (FMOD)
-				system->update();
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(0.7f);
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");	//play snakefruitinstance sound for flashing "press start" button (FMOD)
+				snekAudioSystem.fmodUpdate();
 				break;
 			case false:
 				startScreenToggle = true;
@@ -650,7 +463,7 @@ int main() {
 
 		startScreenFrameCount++;
 
-		this_thread::sleep_for(7ms);
+		std::this_thread::sleep_for(std::chrono::milliseconds(7));
 
 		for (int o = 0; o < 4; o++) {
 			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;						
@@ -658,18 +471,18 @@ int main() {
 
 		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
 			playerCount++;
-			snakeFruitInstance->setPitch(1.77f);
-			snakeFruitInstance->setVolume(1.0f);
-			snakeFruitInstance->start();
-			system->update();
+			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.77f);
+			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
+			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+			snekAudioSystem.fmodUpdate();
 			holdKey = true;
 		}
 		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
 			playerCount--;
-			snakeFruitInstance->setPitch(0.64f);
-			snakeFruitInstance->setVolume(1.0f);
-			snakeFruitInstance->start();
-			system->update();
+			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.64f);
+			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
+			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+			snekAudioSystem.fmodUpdate();
 			holdKey = true;
 		}
 		else if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
@@ -681,109 +494,48 @@ int main() {
 
 			startScreen = false;	//begin to exit start screen when Z key is pressed
 
-			aNewChipInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);	//FMOD)
-			startButtonInstance->start();
+			snekAudioSystem.stopEventInstance("Menu+Songs/ANewChip", true);	// (FMOD)
+			snekAudioSystem.startEventInstance("Menu+Songs/StartButton");
 
-			system->update();	//play startbutton sound
+			snekAudioSystem.fmodUpdate();	//play startbutton sound
 
 			
 
 			//Game Start animation//
 
-			screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");
+			std::vector<std::pair<std::wstring, int>> pressedStartAnimFrames = {
+				{L"Press [Z] to start", 33},
+				{L"Press [Z++to start", 33},
+				{L"Press [+AR+o start", 33},
+				{L"Press +TART+ start", 33},
+				{L"Press+START!+start", 33},
+				{L"Pres+ START! +tart", 33},
+				{L"Pre+  START!  +art", 33},
+				{L"Pr+   START!   +rt", 33},
+				{L"P+    START!    +t", 33},
+				{L"+     START!     +", 33},
+				{L"-                -", 177},
+				{L"-     START!     -", 177},
+				{L"-                -", 77},
+				{L"-     START!     -", 1389}
+			};
 
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-					   
-			screenString.replace((18 * 80) + 31, 18, L"Press [Z++to start");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Press [+AR+o start");
-			
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Press +TART+ start");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Press+START!+start");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Pres+ START! +tart");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Pre+  START!  +art");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"Pr+   START!   +rt");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"P+    START!    +t");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"+     START!     +");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(33ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"-                -");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(177ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(177ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"-                -");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			this_thread::sleep_for(77ms);
-
-			screenString.replace((18 * 80) + 31, 18, L"-     START!     -");
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+			for (auto& animFrame : pressedStartAnimFrames) {
+				screenString.replace((18 * 80) + 31, 18, animFrame.first);
+				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
+			}
 		}
-	}	
-
-	this_thread::sleep_for(1389ms);
-	   
+	}
+	
 	  //					  //
 	 // READ HIGH SCORE FILE //
 	//						//
-	ifstream scoreFileRead;
+	std::ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile");
 	if (scoreFileRead.is_open()) {
 		
-		string highScoreFromFile;
+		std::string highScoreFromFile;
 		getline(scoreFileRead, highScoreFromFile);
 		if (highScoreFromFile.length() != 0) {
 			highScore = stoi(highScoreFromFile);
@@ -827,7 +579,7 @@ int main() {
 					
 		gameLose = false;			//reset game lose condition
 		oldHighScore = highScore;	//update the old high score based on previous game's high score
-		fps = chrono::duration<long double, nano>(15000000000 / bpmValues[0]);			//reset the framerate
+		fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);			//reset the framerate
 		currentFrame = 0;			//reset the frame counter
 
 		for (int p = 0; p < playerCount; p++) {		//reset players' lengths
@@ -870,16 +622,16 @@ int main() {
 		snakeMoveReverbLevel = 0.0f;
 		i16thNote = 1;
 		if (!simpleSound) {
-			bpmInstances[0]->start();
+			snekAudioSystem.bpmInstances[0]->start();
 		}		
-		snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
-		snare1Instance->setParameterByName("SnareReverb", 0.0f);
-		arpInstance->setParameterByName("ArpVolume", 0.0f);
-		triangleInstance->setParameterByName("TriangleDecay", 1.0f);
-		snakeFruitInstance->setPitch(1.0f);
-		snakeFruitInstance->setVolume(0.7f);
-		result = system->setParameterByName("ChordsSelection", 0.0f);
-		result = system->setParameterByName("ChordsReverb", 0.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 1.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
+		snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(0.7f);
+		snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsSelection", 0.0f);
+		snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 0.0f);
 		//result = system->setVolume(1.0f);
 		chordsStartToggle = false;
 		currentChord = 4;
@@ -892,7 +644,7 @@ int main() {
 		currentChordBPM = 0;
 		waitUntilNextDownbeatish = false;
 
-		frameTime = chrono::steady_clock::now();	//record start time of first frame of the game loop
+		frameTime = std::chrono::steady_clock::now();	//record start time of first frame of the game loop
 
 		  //				   //
 		 // [GAME LOOP START] //
@@ -900,7 +652,7 @@ int main() {
 		while (gameLose == false) {
 
 			if (playerCount == 2 && currentFrame == 1) {
-				frameTime = chrono::steady_clock::now();
+				frameTime = std::chrono::steady_clock::now();
 			}
 
 			  //			   //
@@ -909,37 +661,37 @@ int main() {
 			if (gotNewFruit) {
 				switch (highestCurrentLength) {
 				case 1:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[1]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[1]);
 					break;
 				case 7:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[2]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[2]);
 					break;
 				case 11:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[3]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[3]);
 					break;
 				case 20:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[4]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[4]);
 					break;
 				case 30:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[5]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[5]);
 					break;
 				case 40:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[6]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[6]);
 					break;
 				case 50:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[7]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[7]);
 					break;
 				case 60:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[8]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[8]);
 					break;
 				case 70:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[9]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[9]);
 					break;
 				case 80:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[10]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[10]);
 					break;
 				case 90:
-					fps = chrono::duration<long double, nano>(15000000000 / bpmValues[11]);
+					fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[11]);
 					break;
 				}
 			}
@@ -947,7 +699,7 @@ int main() {
 			  //			//
 			 // TICK CLOCK //
 			//			  //
-			while (chrono::steady_clock::now() < frameTime + fps) {
+			while (std::chrono::steady_clock::now() < frameTime + fps) {
 				
 				  //				   //
 				 // READ PLAYER INPUT //
@@ -1003,7 +755,7 @@ int main() {
 			}		
 
 			currentFrame++;
-			frameTime += chrono::duration_cast<chrono::nanoseconds>(fps);
+			frameTime += std::chrono::duration_cast<std::chrono::nanoseconds>(fps);
 
 			  //				 //
 			 // REFRESH DISPLAY //
@@ -1467,45 +1219,45 @@ int main() {
 			//					//		
 			
 			if (simpleSound) {
-				snakeMoveInstance->start();
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeMove");
 			}
 
 			else {
 				if (gameLose) {					//play the death sound if the game is lost
-					bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-					deathInstance->start();
+					snekAudioSystem.bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					snekAudioSystem.startEventInstance("Instruments+FX/Death");
 				}
 
 				if (gotNewFruit) {				//if someone gets a new fruit..
 					for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
 						if (snek1[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 							if (gotNewHighScoreSoundPlay) {
-								newHighScoreInstance->start();
+								snekAudioSystem.startEventInstance("Instruments+FX/newHighScore");
 								gotNewHighScoreSoundPlay = false;
 							}
 							else if (snek1[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
-								snakeFruitInstance11->start();		//..if they did, then play the 11th fruit sound..
+								snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit11");		//..if they did, then play the 11th fruit sound..
 							}
 							else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
-								triangleInstance->start();			//if they got a fruit on an offbeat, play triangle sound
+								snekAudioSystem.startEventInstance("Instruments+FX/Triangle");			//if they got a fruit on an offbeat, play triangle sound
 							}
 							else if (i16thNote == 5 || i16thNote == 13) {
-								snare1Instance->start();			//if they got a fruit on an offbeat, play triangle sound
+								snekAudioSystem.startEventInstance("Instruments+FX/Snare1");			//if they got a fruit on an offbeat, play triangle sound
 							}
 							else if (i16thNote == 1) {
-								kickTightInstance->start();
-								triangleInstance->start();
-								snakeFruitInstance->start();
+								snekAudioSystem.startEventInstance("Instruments+FX/KickTight");
+								snekAudioSystem.startEventInstance("Instruments+FX/Triangle");
+								snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 							}
 							else {	//..otherwise, play the default fruit eating sound
-								snakeFruitInstance->start();
+								snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 							}
 						}
 					}
 
 					switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
 					case 1:
-						bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+						snekAudioSystem.bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
 						chordsStartToggle = true;
 						currentChordBPM = 1;
 						if (switchChordsCounter == 0) {
@@ -1514,8 +1266,8 @@ int main() {
 						break;
 
 					case 7:
-						arpInstance->setParameterByName("ArpVolume", 0.09f);
-						result = system->setParameterByName("ChordsReverb", 0.7f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.09f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 0.7f);
 						currentChordBPM = 2;
 						if (switchChordsCounter == 1) {
 							switchChords = true;
@@ -1526,11 +1278,11 @@ int main() {
 					case 11:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.125f;
-						snare1Instance->setParameterByName("SnareReverb", 0.2f);
-						arpInstance->setParameterByName("ArpVolume", 0.14f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 1.0f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.9f);
-						result = system->setParameterByName("ChordsReverb", 1.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.14f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.9f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 1.0f);
 						hiHatToggle = true;
 						currentChordBPM = 3;
 						if (switchChordsCounter == 7) {
@@ -1542,10 +1294,10 @@ int main() {
 					case 20:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.250f;
-						snare1Instance->setParameterByName("SnareReverb", 0.4f);
-						arpInstance->setParameterByName("ArpVolume", 0.17f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.9f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.8f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.17f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.9f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.8f);
 						currentChordBPM = 4;
 						if (switchChordsCounter == 11) {
 							switchChords = true;
@@ -1556,11 +1308,11 @@ int main() {
 					case 30:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.375f;
-						snare1Instance->setParameterByName("SnareReverb", 0.5f);
-						arpInstance->setParameterByName("ArpVolume", 0.2f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.88f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.5f);
-						result = system->setParameterByName("ChordsReverb", 1.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.5f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.2f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.88f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.5f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 1.0f);
 						currentChordBPM = 5;
 						if (switchChordsCounter == 20) {
 							switchChords = true;
@@ -1571,11 +1323,11 @@ int main() {
 					case 40:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.5f;
-						snare1Instance->setParameterByName("SnareReverb", 0.64f);
-						arpInstance->setParameterByName("ArpVolume", 0.3f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.25f);
-						result = system->setParameterByName("ChordsReverb", 0.7f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.64f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.3f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.25f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 0.7f);
 						currentChordBPM = 6;
 						if (switchChordsCounter == 30) {
 							switchChords = true;
@@ -1586,11 +1338,11 @@ int main() {
 					case 50:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.625f;
-						snare1Instance->setParameterByName("SnareReverb", 0.72f);
-						arpInstance->setParameterByName("ArpVolume", 0.45f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.2f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.15f);
-						result = system->setParameterByName("ChordsReverb", 0.3f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.72f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.2f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.15f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 0.3f);
 						currentChordBPM = 7;
 						if (switchChordsCounter == 40) {
 							switchChords = true;
@@ -1601,11 +1353,11 @@ int main() {
 					case 60:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.750f;
-						snare1Instance->setParameterByName("SnareReverb", 0.8f);
-						arpInstance->setParameterByName("ArpVolume", 0.45f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.4f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.1f);
-						result = system->setParameterByName("ChordsReverb", 0.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.8f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.1f);
+						snekAudioSystem.fmodResult = snekAudioSystem.fmodSystem->setParameterByName("ChordsReverb", 0.0f);
 						currentChordBPM = 8;
 						if (switchChordsCounter == 50) {
 							switchChords = true;
@@ -1616,10 +1368,10 @@ int main() {
 					case 70:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 0.875f;
-						snare1Instance->setParameterByName("SnareReverb", 0.4f);
-						arpInstance->setParameterByName("ArpVolume", 0.35f);
-						snakeMoveInstance->setParameterByName("SnakeMoveVolume", 0.6f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.35f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.6f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
 						currentChordBPM = 9;
 						if (switchChordsCounter == 60) {
 							switchChords = true;
@@ -1630,9 +1382,9 @@ int main() {
 					case 80:
 						snekMoveTimelinePositionMax += 200;
 						snakeMoveReverbLevel = 1.0f;
-						snare1Instance->setParameterByName("SnareReverb", 0.2f);
-						arpInstance->setParameterByName("ArpVolume", 0.20f);
-						triangleInstance->setParameterByName("TriangleDecay", 0.05f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.20f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
 						currentChordBPM = 10;
 						if (switchChordsCounter == 70) {
 							switchChords = true;
@@ -1642,8 +1394,8 @@ int main() {
 
 					case 90:
 						currentChordBPM = 11;
-						arpInstance->setParameterByName("ArpVolume", 0.0f);
-						snare1Instance->setParameterByName("SnareReverb", 0.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.0f);
+						snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.0f);
 						if (switchChordsCounter == 80) {
 							switchChords = true;
 							switchChordsCounter = 90;
@@ -1653,9 +1405,9 @@ int main() {
 				}
 				//if nobody got any fruits, then check if either snake is using the action keys..
 				else if (snek1[0].action_keys || snek1[1].action_keys) {
-					snakeLungeInstance->setPitch(proximityToFruit);
-					snakeLungeInstance->start();
-					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(proximityToFruit);
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeLunge");
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
 					if (!actionKeyHeld) {
 						snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
 						actionKeyHeld = true;
@@ -1666,15 +1418,15 @@ int main() {
 				else {
 
 					if (highestCurrentLength == 0) {
-						bpmInstances[0]->setParameterByName("HeartRateDryLevel", proximityToFruit);
+						snekAudioSystem.bpmInstances[0]->setParameterByName("HeartRateDryLevel", proximityToFruit);
 					}
 
 					actionKeyHeld = false;		//nobody is holding any action keys anymore
 
-					snakeMoveInstance->setPitch(proximityToFruit);
-					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);										
-					snakeMoveInstance->start();
+					snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(proximityToFruit);
+					snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setTimelinePosition(snekMoveTimelinePosition);
+					snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", snakeMoveReverbLevel);										
+					snekAudioSystem.startEventInstance("Instruments+FX/SnakeMove");
 					
 
 					snekMoveTimelinePosition += 200;
@@ -1703,7 +1455,7 @@ int main() {
 					}
 
 					if (!hasFirstSwitchHappened && currentChordBPM == 1) {
-						bpmInstances[1]->start();
+						snekAudioSystem.bpmInstances[1]->start();
 						i16thNote = 1;
 						currentChord = 1;
 						hasFirstSwitchHappened = true;
@@ -1714,20 +1466,20 @@ int main() {
 						if (switchChords == true) {
 							int oldPlaybackPosition;
 							int newPlaybackPosition;
-							bpmInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
-							bpmInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+							snekAudioSystem.bpmInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
+							snekAudioSystem.bpmInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
 
 							newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
 
-							bpmInstances[currentChordBPM]->start();
-							bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
+							snekAudioSystem.bpmInstances[currentChordBPM]->start();
+							snekAudioSystem.bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
 						}
 
 						switchChords = false;
 					}
 
 					if (currentChord == 1 && i16thNote == 1) {
-						bpmInstances[currentChordBPM]->start();
+						snekAudioSystem.bpmInstances[currentChordBPM]->start();
 					}
 
 					//ARP//
@@ -1735,28 +1487,28 @@ int main() {
 					case 1:
 						switch (i16thNote) {
 						case 1:
-							arpInstance->start();
+							snekAudioSystem.startEventInstance("Instruments+FX/arp");
 							break;
 						case 3:
-							arpInstance->setTimelinePosition(170);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(170);
 							break;
 						case 5:
-							arpInstance->setTimelinePosition(338);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(338);
 							break;
 						case 7:
-							arpInstance->setTimelinePosition(507);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(507);
 							break;
 						case 9:
-							arpInstance->setTimelinePosition(675);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(675);
 							break;
 						case 11:
-							arpInstance->setTimelinePosition(844);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(844);
 							break;
 						case 13:
-							arpInstance->setTimelinePosition(1012);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1012);
 							break;
 						case 15:
-							arpInstance->setTimelinePosition(1181);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1181);
 							break;
 						}
 						break;
@@ -1764,28 +1516,28 @@ int main() {
 					case 2:
 						switch (i16thNote) {
 						case 1:
-							arpInstance->setTimelinePosition(2023);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2023);
 							break;
 						case 3:
-							arpInstance->setTimelinePosition(2192);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2192);
 							break;
 						case 5:
-							arpInstance->setTimelinePosition(2361);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2361);
 							break;
 						case 7:
-							arpInstance->setTimelinePosition(2529);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2529);
 							break;
 						case 9:
-							arpInstance->setTimelinePosition(2698);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2698);
 							break;
 						case 11:
-							arpInstance->setTimelinePosition(2866);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2866);
 							break;
 						case 13:
-							arpInstance->setTimelinePosition(3035);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3035);
 							break;
 						case 15:
-							arpInstance->setTimelinePosition(3203);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3203);
 							break;
 						}
 						break;
@@ -1793,28 +1545,28 @@ int main() {
 					case 3:
 						switch (i16thNote) {
 						case 1:
-							arpInstance->setTimelinePosition(4046);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4046);
 							break;
 						case 3:
-							arpInstance->setTimelinePosition(4214);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4214);
 							break;
 						case 5:
-							arpInstance->setTimelinePosition(4383);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4383);
 							break;
 						case 7:
-							arpInstance->setTimelinePosition(4552);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4552);
 							break;
 						case 9:
-							arpInstance->setTimelinePosition(4720);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4720);
 							break;
 						case 11:
-							arpInstance->setTimelinePosition(4889);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4889);
 							break;
 						case 13:
-							arpInstance->setTimelinePosition(5057);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5057);
 							break;
 						case 15:
-							arpInstance->setTimelinePosition(5226);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5226);
 							break;
 						}
 						break;
@@ -1822,28 +1574,28 @@ int main() {
 					case 4:
 						switch (i16thNote) {
 						case 1:
-							arpInstance->setTimelinePosition(6068);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6068);
 							break;
 						case 3:
-							arpInstance->setTimelinePosition(6237);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6237);
 							break;
 						case 5:
-							arpInstance->setTimelinePosition(6405);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6405);
 							break;
 						case 7:
-							arpInstance->setTimelinePosition(6574);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6574);
 							break;
 						case 9:
-							arpInstance->setTimelinePosition(6743);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6743);
 							break;
 						case 11:
-							arpInstance->setTimelinePosition(6911);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6911);
 							break;
 						case 13:
-							arpInstance->setTimelinePosition(7080);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7080);
 							break;
 						case 15:
-							arpInstance->setTimelinePosition(7248);
+							snekAudioSystem.fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7248);
 							break;
 						}
 						break;
@@ -1858,7 +1610,7 @@ int main() {
 				}
 			}
 			
-			result = system->update(); //update FMOD system	
+			snekAudioSystem.fmodUpdate(); //update FMOD system	
 						
 			  //			 //
 			 // DRAW SCREEN //	
@@ -1932,7 +1684,7 @@ int main() {
 					
 					screenString.replace(1 + q + (80 * t), 14, L"       SCORE: ");
 					
-					wstring snekLengthString = to_wstring(highestCurrentLength);
+					std::wstring snekLengthString = std::to_wstring(highestCurrentLength);
 										
 					screenString.replace(15 + q + (80 * t), snekLengthString.length(), snekLengthString);
 
@@ -1940,7 +1692,7 @@ int main() {
 
 					
 					
-					wstring highScoreString = to_wstring(highScore);
+					std::wstring highScoreString = std::to_wstring(highScore);
 
 					screenString.replace(32 + snekLengthString.length() + q + (80 * t), highScoreString.length(), highScoreString);
 
@@ -1950,19 +1702,19 @@ int main() {
 
 					screenString.replace(1 + q + (80 * t), 14, L"    P1 SCORE: ");
 
-					wstring snekLengthString0 = to_wstring(snek1[0].snek_length);
+					std::wstring snekLengthString0 = std::to_wstring(snek1[0].snek_length);
 
 					screenString.replace(15 + q + (80 * t), snekLengthString0.length(), snekLengthString0);
 
 					screenString.replace(1 + q + (80 * (t + 1)), 14, L"    P2 SCORE: ");
 
-					wstring snekLengthString1 = to_wstring(snek1[1].snek_length);
+					std::wstring snekLengthString1 = std::to_wstring(snek1[1].snek_length);
 
 					screenString.replace(15 + q + (80 * (t + 1)), snekLengthString1.length(), snekLengthString1);
 
 					screenString.replace(15 + snekLengthString0.length() + q + (80 * t), 17, L"     HIGH SCORE: ");
 										
-					wstring highScoreString = to_wstring(highScore);
+					std::wstring highScoreString = std::to_wstring(highScore);
 
 					screenString.replace(32 + snekLengthString0.length() + q + (80 * t), highScoreString.length(), highScoreString);
 
@@ -1972,13 +1724,13 @@ int main() {
 
 					screenString.replace(1 + q + (80 * t), 14, L"       STYLE: ");
 
-					wstring styleCounterString = to_wstring(styleCounter);
+					std::wstring styleCounterString = std::to_wstring(styleCounter);
 
 					screenString.replace(15 + q + (80 * t), styleCounterString.length(), styleCounterString);
 
 					screenString.replace(16 + styleCounterString.length() + q + (80 * t), 17, L"     HIGH STYLE: ");
 
-					wstring highStyleString = to_wstring(styleHighScore);
+					std::wstring highStyleString = std::to_wstring(styleHighScore);
 
 					screenString.replace(33 + styleCounterString.length() + q + (80 * t), highStyleString.length(), highStyleString);
 
@@ -2120,17 +1872,17 @@ int main() {
 						
 			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
-			this_thread::sleep_for(3000ms);
+			std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		}
 
 		  //				  //
 		 // GAME OVER SCREEN //
 		//					//
 
-		bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
-		system->update(); //update FMOD system	
+		snekAudioSystem.bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+		snekAudioSystem.fmodUpdate(); //update FMOD system	
 
-		this_thread::sleep_for(700ms);
+		std::this_thread::sleep_for(std::chrono::milliseconds(700));
 
 		  //			//
 		 // NAME ENTRY //
@@ -2146,7 +1898,7 @@ int main() {
 			bool holdNameEntryDown = false;
 			bool holdNameEntryZ = false;
 			highScoreName.resize(0);
-			snakeFruitInstance->setVolume(1.0f);
+			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 
 			
 
@@ -2184,8 +1936,8 @@ int main() {
 				if (!holdNameEntryLeft && snek1[0].directional_keys[0]) {
 					if (currentSelChar - 1 > -1) {
 						currentSelChar--;
-						snakeFruitInstance->setPitch(2.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}
 					holdNameEntryLeft = true;
 				}
@@ -2198,8 +1950,8 @@ int main() {
 				if (!holdNameEntryRight && snek1[0].directional_keys[2]) {
 					if (currentSelChar + 1 < 32) {
 						currentSelChar++;
-						snakeFruitInstance->setPitch(2.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}
 					holdNameEntryRight = true;
 				}
@@ -2212,8 +1964,8 @@ int main() {
 				if (!holdNameEntryUp && snek1[0].directional_keys[1]) {
 					if (currentSelChar - 8 > -1) {
 						currentSelChar -= 8;
-						snakeFruitInstance->setPitch(2.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}
 					holdNameEntryUp = true;
 				}
@@ -2226,8 +1978,8 @@ int main() {
 				if (!holdNameEntryDown && snek1[0].directional_keys[3]) {
 					if (currentSelChar + 8 < 32) {
 						currentSelChar += 8;
-						snakeFruitInstance->setPitch(2.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}						
 					holdNameEntryDown = true;
 				}
@@ -2240,24 +1992,24 @@ int main() {
 				if (!holdNameEntryZ && snek1[0].action_keys) {					
 					if (currentSelChar < 29 && highScoreName.length() < 11) {
 						highScoreName.append(1, keyboard[currentSelChar]);
-						snakeFruitInstance->setPitch(1.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}
 					else if (currentSelChar == 29 && highScoreName.length() < 11 && highScoreName.length() != 0) {
 						highScoreName.append(1, keyboard[currentSelChar]);
-						snakeFruitInstance->setPitch(1.0f);
-						snakeFruitInstance->start();
+						snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 					}
 					else if (currentSelChar == 30) {
 						if (highScoreName.size() > 0) {
 							highScoreName.resize(highScoreName.size() - 1);
-							snakeFruitInstance->setPitch(0.3f);
-							snakeFruitInstance->start();
+							snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.3f);
+							snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 						}						
 					}
 					else if (currentSelChar == 31) {
 						nameEntry = false;
-						snakeFruitInstance11->start();
+						snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit11");
 					}
 					
 					holdNameEntryZ = true;
@@ -2312,15 +2064,15 @@ int main() {
 				//DISPLAY THE SCREEN//
 				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
-				system->update(); //update FMOD system	
+				snekAudioSystem.fmodUpdate(); //update FMOD system	
 			}
 
 			  //						  //
 			 // WRITE HIGH SCORE TO FILE //
 			//							//
-			ofstream scoreFileWrite;
-			scoreFileWrite.open("ScoreFile", ios::trunc);
-			scoreFileWrite << to_string(highScore) << endl << converter.to_bytes(highScoreName);
+			std::ofstream scoreFileWrite;
+			scoreFileWrite.open("ScoreFile", std::ios::trunc);
+			scoreFileWrite << std::to_string(highScore) << std::endl << converter.to_bytes(highScoreName);
 			scoreFileWrite.close();	
 
 			wasPreviousHighScoreFound = true;
@@ -2364,369 +2116,83 @@ int main() {
 		
 		screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
 
-		fancyBossInstance->start();			//(FMOD)
-		system->update(); //begin FMOD sound generation/song playback
+		snekAudioSystem.startEventInstance("Menu+Songs/FancyBoss");	// (FMOD)
+		snekAudioSystem.fmodUpdate();	//begin FMOD sound generation/song playback
 
-			screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, L"GAME OVER");
-			screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, L">Press [Z] to play again");
-			screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
-			screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
+		screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, L"GAME OVER");
+		screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, L">Press [Z] to play again");
+		screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
+		screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
+
+		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+
+		bool gameOverMessage = true;
+
+		bool xKey;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(527));
+
+		while (gameOverMessage) {
+
+			for (int o = 0; o < 4; o++) {
+				arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
+			}
+
+			if (arrowKeys[2] && playerCount < 2 && !holdKey) {
+				playerCount++; 
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.77f);
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+				snekAudioSystem.fmodUpdate();
+				holdKey = true;
+			}
+
+			else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
+				playerCount--;
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.64f);
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+				snekAudioSystem.fmodUpdate();
+				holdKey = true;
+			}
+
+			if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
+				holdKey = false;
+			}
+
+			screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
 
 			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
-
-			bool gameOverMessage = true;
-
-			bool xKey;
-
-			this_thread::sleep_for(527ms);
-
-			while (gameOverMessage) {
-
-				for (int o = 0; o < 4; o++) {
-					arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
-				}
-
-				if (arrowKeys[2] && playerCount < 2 && !holdKey) {
-					playerCount++; 
-					snakeFruitInstance->setPitch(1.77f);
-					snakeFruitInstance->start();
-					system->update();
-					holdKey = true;
-				}
-
-				else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
-					playerCount--;
-					snakeFruitInstance->setPitch(0.64f);
-					snakeFruitInstance->start();
-					system->update();
-					holdKey = true;
-				}
-
-				if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
-					holdKey = false;
-				}
-
-				screenString.replace((18 * 80) + 46, 12, L"Players: <" + to_wstring(playerCount) + L">");
-
-				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 								
-				if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
-					gameOverMessage = false;
-					playAgain = true;
+			if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
+				gameOverMessage = false;
+				playAgain = true;
 					
-					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
-					snakeFruitInstance->setPitch(1.0f);
-					snakeFruitInstance->start();
-					system->update();
-				}
-
-
-
-				if (xKey = (0x8000 & GetAsyncKeyState((unsigned char)("X"[0]))) != 0) {
-					gameOverMessage = false;
-					playAgain = false;
-
-					fancyBossInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);		//(FMOD)
-					exitGameInstance->start();
-
-					system->update();
-					this_thread::sleep_for(2671ms);
-				}
-
-				this_thread::sleep_for(10ms);
+				snekAudioSystem.stopEventInstance("Menu+Songs/FancyBoss");		//(FMOD)
+				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+				snekAudioSystem.fmodUpdate();
 			}
+
+
+
+			if (xKey = (0x8000 & GetAsyncKeyState((unsigned char)("X"[0]))) != 0) {
+				gameOverMessage = false;
+				playAgain = false;
+
+				snekAudioSystem.stopEventInstance("Menu+Songs/FancyBoss", true);		//(FMOD)
+				snekAudioSystem.startEventInstance("Menu+Songs/ExitGame");
+
+				snekAudioSystem.fmodUpdate();
+				std::this_thread::sleep_for(std::chrono::milliseconds(2671));
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
 	}
 
 	while (playAgain);
-
-	system->release();
 
 	SetConsoleActiveScreenBuffer(origConsole);
 
 	return 0;
 
 }
-
-  //		  //
- // JUNKYARD //
-//			//
-// UNUSED
-//int currentTrap = 0;			//current number of traps on the game grid
-//int trapLocations[200][2];	//locations of the traps on the game grid
-//int r = 4;					//used for counting the number of traps whose locations have been set
-//int actualTrapCount;
-//bool alternator1 = true;
-
-/*
-//E
-if (snek1[pt].direction_frame == 'e' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] + 2 < 25)) {
-	styleCounter++;
-	styleCounter++;
-}
-
-if (snek1[pt].direction_frame == 'e' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1]] == '+')) {
-	styleCounter++;
-}
-
-//W
-if (snek1[pt].direction_frame == 'w' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '7' && display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 2][snek1[pt].snek_head[1]] == '+' && snek1[pt].snek_head[0] - 2 >= 0)) {
-	styleCounter++;
-	styleCounter++;
-}
-
-if (snek1[pt].direction_frame == 'w' && ((display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == 'z' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1]] == '+')) {
-	styleCounter++;
-}
-
-//S
-if (snek1[pt].direction_frame == 's' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 2] == '+' && snek1[pt].snek_head[1] + 2 < 25)) {
-	styleCounter++;
-	styleCounter++;
-}
-
-if (snek1[pt].direction_frame == 's' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] + 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] + 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] + 1] == '+')) {
-	styleCounter++;
-}
-
-//N
-if (snek1[pt].direction_frame == 'n' && ((snek1[pt].action_keys) && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '7' && display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 2] == '+' && snek1[pt].snek_head[1] - 2 >= 0)) {
-	styleCounter++;
-	styleCounter++;
-}
-
-if (snek1[pt].direction_frame == 'n' && ((display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] + 1][snek1[pt].snek_head[1] - 1] == '7') && (display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '8' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == 'X' || display[snek1[pt].snek_head[0] - 1][snek1[pt].snek_head[1] - 1] == '7')) && (display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == 'z' || display[snek1[pt].snek_head[0]][snek1[pt].snek_head[1] - 1] == '+')) {
-	styleCounter++;
-}
-
-*/
-
-				/*else if (snek1[pt].action_keys && snek1[pt].snek_length > 10) {
-					snakeLungeInstance->setPitch(proximityToFruit);		//(FMOD)
-					snakeLungeInstance->start();
-					snakeMoveInstance->setParameterByName("Reverb Wet", 1.0f);
-					if (!snek1[pt].holdAction) {
-						snekMoveTimelinePosition += 200;
-						snek1[pt].holdAction = true;
-					}
-				}*/
-
-				/*else {
-
-					snek1[pt].holdAction = false;
-
-					snakeMoveInstance->setPitch(proximityToFruit);		//(FMOD)
-					snakeMoveInstance->setTimelinePosition(snekMoveTimelinePosition);
-					snakeMoveInstance->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-
-					if (highestCurrentLength != 0 && (isScoreUnder11 || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_SUSTAINING || snakeMoveInstance->getPlaybackState(NULL) == FMOD_STUDIO_PLAYBACK_STOPPED)) {
-						snakeMoveInstance->start();	//(FMOD)
-					}
-
-					/*
-					else if (highestCurrentLength == 0 && currentFrame % 2 == 1)	{
-						criticalInstance->setPitch(proximityToFruit);
-						criticalInstance->start();
-					}
-					else {
-						criticalInstance->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
-					}
-
-
-					snekMoveTimelinePosition += 200;
-
-					if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-						snekMoveTimelinePosition = 0;
-					}
-				}*/
-
-			/*
-			//DETERMINE TRAP LOCATIONS/////////////
-
-			if (currentTrap < snek1[0].snek_length) {
-				currentTrap++;
-
-				if (currentTrap == 3) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[0][0] = rand() % 25;
-						trapLocations[0][1] = rand() % 25;
-
-						if ((trapLocations[0][0] != snek1[0].snek_head[0] && trapLocations[0][1] != snek1[0].snek_head[1]) && display[trapLocations[0][0]][trapLocations[0][1]] != '7' && display[trapLocations[0][0]][trapLocations[0][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap == 7) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[1][0] = rand() % 25;
-						trapLocations[1][1] = rand() % 25;
-
-						if ((trapLocations[1][0] != snek1[0].snek_head[0] && trapLocations[1][1] != snek1[0].snek_head[1]) && display[trapLocations[1][0]][trapLocations[1][1]] != '7' && display[trapLocations[1][0]][trapLocations[1][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap == 11) {
-
-					for (int e = 0; e == 0;) {
-						trapLocations[2][0] = rand() % 25;
-						trapLocations[2][1] = rand() % 25;
-
-						if ((trapLocations[2][0] != snek1[0].snek_head[0] && trapLocations[2][1] != snek1[0].snek_head[1]) && display[trapLocations[2][0]][trapLocations[2][1]] != '7' && display[trapLocations[2][0]][trapLocations[2][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-
-					for (int e = 0; e == 0;) {
-						trapLocations[3][0] = rand() % 25;
-						trapLocations[3][1] = rand() % 25;
-
-						if ((trapLocations[3][0] != snek1[0].snek_head[0] && trapLocations[3][1] != snek1[0].snek_head[1]) && display[trapLocations[3][0]][trapLocations[3][1]] != '7' && display[trapLocations[3][0]][trapLocations[3][1]] != '+') {
-
-							actualTrapCount++;
-
-							e = 1;
-						}
-					}
-				}
-
-				if (currentTrap > 11) {
-
-					if (alternator1 = true) {
-						alternator1 = false;
-
-						for (int e = 0; e == 0;) {
-
-
-
-							trapLocations[r][0] = rand() % 25;
-							trapLocations[r][1] = rand() % 25;
-
-							if ((trapLocations[r][0] != snek1[0].snek_head[0] && trapLocations[r][1] != snek1[0].snek_head[1]) && display[trapLocations[r][0]][trapLocations[r][1]] != '7' && display[trapLocations[r][0]][trapLocations[r][1]] != '+') {
-
-								actualTrapCount++;
-								r++;
-								e = 1;
-
-
-
-
-							}
-						}
-					}
-
-					else {
-						alternator1 = true;
-
-					}
-				}
-
-
-
-			}
-			*/
-			//PLACE TRAPS INTO DISPLAY ARRAY/////////////
-			/*
-			for (int w = 0; w < actualTrapCount; w++) {
-				display[trapLocations[w][0]][trapLocations[w][1]] = 'X';
-
-			}
-			*/
-			//DETERMINE IF PLAYER HAS HIT A TRAP//////
-			/*
-			if (actualTrapCount < 0 && display[snek1[0].snek_head[0]][snek1[0].snek_head[1]] == 'X') {
-				gameLose = true;
-				break;
-
-			}
-			*/
-
-
-
-/*for (int q = 0; q < 25; q++) {
-
-	cout << q << " = " << display[q] << endl;
-
-}*/
-
-/*for (int q = 0; q < 25; q++) {
-
-	display[q] = 0;
-
-}*/
-
-/*
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //1 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //2 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //3 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //4 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //5 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //6 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //7 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //8 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //9 
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //10
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //11
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //12
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //13
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //14
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //15
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //16
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //17
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //18
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //19
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //20
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //21
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //22
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //23
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //24
-cout << "\n"; for (int i = 0; i < display[z]; i++) { cout << " "; } if (snek1[0].snek_head[0] == z) { cout << "="; } z++; //25
-
-}
-*/
-
-/*
-//PAUSE/////
-
-startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
-if (startKey) {
-	bool paused = true;
-	this_thread::sleep_for(777ms);
-	while (paused) {
-		startKey = (0x8000 & GetAsyncKeyState((unsigned char)("S"[0]))) != 0;
-		if (startKey) {
-			paused = false;
-		}
-	}
-}
-
-*/
-
-/*
-if (snek1[0].snek_head[0] >= 25) {
-	direction = 'w';
-
-}
-
-else if (snek1[0].snek_head[0] <= 1) {
-	direction = 'e';
-
-}
-*/
-
-/*if (snek1[0].snek_head[0] - 1 < 0 && direction == 'w' || snek1[0].snek_head[0] + 1 > 25 && direction == 'e' || snek1[0].snek_head[1] - 1 < 0 && direction == 'n' || snek1[0].snek_head[1] + 1 > 25 && direction == 's') {
-				gameLose = true;
-
-			}*/
