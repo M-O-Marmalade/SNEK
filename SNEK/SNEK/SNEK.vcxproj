@@ -148,6 +148,17 @@
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</UseUnicodeForAssemblerListing>
     </ClCompile>
+    <ClCompile Include="TextGraphics.cpp" />
+    <ClCompile Include="TextOutput.cpp" />
+    <ClCompile Include="TextOutputCMD.cpp" />
+    <ClCompile Include="TextSprite.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AudioSystem.h" />
+    <ClInclude Include="TextGraphics.h" />
+    <ClInclude Include="TextOutput.h" />
+    <ClInclude Include="TextOutputCMD.h" />
+    <ClInclude Include="TextSprite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

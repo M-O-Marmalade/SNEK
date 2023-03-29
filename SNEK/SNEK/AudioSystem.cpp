@@ -4,74 +4,62 @@
 #include <string>
 #include <vector>
 
-class AudioSystem {
-private:
-public:
-	FMOD_RESULT fmodResult;
-	FMOD::Studio::System* fmodSystem = NULL;
-	std::map<std::string, FMOD::Studio::EventInstance*> fmodEventInstances;
-	std::vector<std::string> bpmNames = {
-		"event:/Instruments+FX/BPMs/bpm54_5",
-		"event:/Instruments+FX/BPMs/bpm62_5",
-		"event:/Instruments+FX/BPMs/bpm75_5",
-		"event:/Instruments+FX/BPMs/bpm89",
-		"event:/Instruments+FX/BPMs/bpm100",
-		"event:/Instruments+FX/BPMs/bpm127",
-		"event:/Instruments+FX/BPMs/bpm137",
-		"event:/Instruments+FX/BPMs/bpm152",
-		"event:/Instruments+FX/BPMs/bpm164",
-		"event:/Instruments+FX/BPMs/bpm172",
-		"event:/Instruments+FX/BPMs/bpm181",
-		"event:/Instruments+FX/BPMs/bpm200"
-	};
-	std::vector<FMOD::Studio::EventInstance*> bpmInstances;
+#include "AudioSystem.h"
 
-	AudioSystem(std::vector<std::string> fmodEventNames, bool fmodLiveUpdate = false) {
-		fmodResult = FMOD::Studio::System::create(&fmodSystem);
-		fmodResult = fmodSystem->initialize(256, fmodLiveUpdate ? FMOD_STUDIO_INIT_LIVEUPDATE : FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);
 
-		FMOD::Studio::Bank* masterBank = NULL;
-		fmodSystem->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
+AudioSystem::AudioSystem(bool fmodLiveUpdate) {
 
-		FMOD::Studio::Bank* stringsBank = NULL;
-		fmodSystem->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
+	// create the Studio System
+	fmodResult = FMOD::Studio::System::create(&fmodSystem);
 
-		FMOD::Studio::Bank* musicandFX = NULL;
-		fmodResult = fmodSystem->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
+	// configure Studio System for stereo output
+	FMOD::System* fmodCoreSystem;
+	fmodSystem->getCoreSystem(&fmodCoreSystem);
+	int sampleRate;
+	FMOD_SPEAKERMODE speakerMode;
+	int numRawSpeakers;
+	fmodCoreSystem->getSoftwareFormat(&sampleRate, &speakerMode, &numRawSpeakers);
+	fmodCoreSystem->setSoftwareFormat(sampleRate, FMOD_SPEAKERMODE_STEREO, numRawSpeakers);
 
-		// populate `this->fmodEventInstances`
-		for (auto& eventName : fmodEventNames) {
-			FMOD::Studio::EventDescription* eventDescription = NULL;
-			fmodSystem->getEvent(("event:/" + eventName).c_str(), &eventDescription);
+	// initialize the Studio System
+	fmodResult = fmodSystem->initialize(256, fmodLiveUpdate ? FMOD_STUDIO_INIT_LIVEUPDATE : FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0);
+}
 
-			FMOD::Studio::EventInstance* eventInstance = NULL;
-			eventDescription->createInstance(&eventInstance);
+AudioSystem::~AudioSystem() {
+	this->fmodSystem->release();
+}
 
-			fmodEventInstances[eventName] = eventInstance;
-		}
+void AudioSystem::loadBanks() {
+	FMOD::Studio::Bank* masterBank = NULL;
+	fmodSystem->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
 
-		// populate `this->bpmInstances`
-		bpmInstances.resize(bpmNames.size());
-		for (int i = 0; i < bpmNames.size(); i++) {
-			FMOD::Studio::EventDescription* tempDescription;
-			fmodSystem->getEvent(bpmNames[i].c_str(), &tempDescription);
-			tempDescription->createInstance(&bpmInstances[i]);
-		}
-	}
+	FMOD::Studio::Bank* stringsBank = NULL;
+	fmodSystem->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
 
-	~AudioSystem() {
-		this->fmodSystem->release();
-	}
+	FMOD::Studio::Bank* musicandFX = NULL;
+	fmodResult = fmodSystem->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
 
-	void fmodUpdate() {
-		fmodResult = fmodSystem->update();
-	}
+	fmodResult = musicandFX->loadSampleData();
+}
 
-	void startEventInstance(std::string eventName) {
-		fmodEventInstances[eventName]->start();
-	}
+void AudioSystem::loadEventInstance(std::string eventName) {
+	FMOD::Studio::EventDescription* eventDescription = NULL;
+	fmodSystem->getEvent(("event:/" + eventName).c_str(), &eventDescription);
 
-	void stopEventInstance(std::string eventName, bool fadeOut = false) {
-		fmodEventInstances[eventName]->stop(fadeOut ? FMOD_STUDIO_STOP_ALLOWFADEOUT : FMOD_STUDIO_STOP_IMMEDIATE);
-	}
-};
+	FMOD::Studio::EventInstance* eventInstance = NULL;
+	eventDescription->createInstance(&eventInstance);
+
+	fmodEventInstances[eventName] = eventInstance;
+}
+
+void AudioSystem::fmodUpdate() {
+	fmodResult = fmodSystem->update();
+}
+
+void AudioSystem::startEventInstance(std::string eventName) {
+	fmodEventInstances[eventName]->start();
+}
+
+void AudioSystem::stopEventInstance(std::string eventName, bool fadeOut) {
+	fmodEventInstances[eventName]->stop(fadeOut ? FMOD_STUDIO_STOP_ALLOWFADEOUT : FMOD_STUDIO_STOP_IMMEDIATE);
+}

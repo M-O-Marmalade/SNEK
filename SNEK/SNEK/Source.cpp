@@ -72,6 +72,7 @@
   //					 //
  // INCLUDES/NAMESPACES //
 //					   //
+#pragma once
 #include <Windows.h>
 #include <algorithm>
 #include <chrono>
@@ -81,15 +82,10 @@
 #include <thread>
 #include <vector>
 
-#include "AudioSystem.cpp"
+#include "AudioSystem.h"
+#include "TextGraphics.h"
+#include "TextOutputCMD.h"
 
-
-  //                  //
- // MACROS / DEFINES //
-//                  //
-
-#define ESC L"\x1b"
-#define CSI L"\x1b["
 
   //				  //
  // GLOBAL VARIABLES //
@@ -131,6 +127,7 @@ int nScreenHeight = 25;			//height of the console window (measured in characters
 
 struct ColorPalette
 {
+	WORD standard = FOREGROUND_GREEN;
 	WORD logo = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 	WORD press_start = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 	WORD player_amount = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
@@ -205,57 +202,13 @@ struct snek {
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 };
 
-void drawGameScreen(HANDLE hConsole, std::wstring& screenString, std::vector<WORD>& attributes, DWORD& dwBytesWritten) {
-	const wchar_t* screenStringCStr = screenString.c_str();
-	for (short y = 0; y < nScreenHeight; y++) {
-		WriteConsoleOutputAttribute(hConsole, &attributes[y * nScreenWidth], nScreenWidth, {0,y}, &dwBytesWritten);
-		WriteConsoleOutputCharacter(hConsole, screenStringCStr + y * nScreenWidth, nScreenWidth, { 0,y }, &dwBytesWritten);
-		
-		// using VTS to draw the screen
-		//wprintf(CSI L"%d;%dH", y, x);	// position the cursor
-		//wprintf(CSI L"38;2;%d;%d;%dm",	// set foreground RGB color
-		//	    attributes[x + y * nScreenWidth].first[0],
-		//	    attributes[x + y * nScreenWidth].first[1],
-		//	    attributes[x + y * nScreenWidth].first[2]);
-		//wprintf(CSI L"48;2;%d;%d;%dm"); // set background RGB color
-		//wprintf(L"%c" ,screenString[x + y * nScreenWidth]); // print the character
-	}
-}
-
-void drawText(std::wstring stringToWrite, std::wstring& screenString, int x, int y) {
-	int i = 0, x1 = x, y1 = y;
-	while (i < stringToWrite.size() && x1 >= 0 && y1 >= 0 && x1 < nScreenWidth && y1 < nScreenHeight) {
-		if (stringToWrite[i] == L'\n') {
-			x1 = x;
-			y1++;
-		}
-		else {
-			screenString[x1 + y1 * nScreenWidth] = stringToWrite[i];
-		}
-		i++;
-	}
-}
-
-void drawColor(WORD colorToDraw, std::vector<WORD>& attributes, int left, int top, int right, int bottom) {
-	int x = max(left, 0), y = max(top, 0);
-	while (y <= bottom && y < nScreenHeight) {
-		attributes[x + y * nScreenWidth] = colorToDraw; // color foreground & background
-		if (x < right && x < nScreenWidth - 1) {
-			x++;
-		}
-		else {
-			x = left;
-			y++;
-		}
-	}
-}
-
 
 int main() {	
 
 	 //									 //
 	// AUDIO SYSTEM SETUP (FMOD Studio) //
    //								   //
+
 	std::vector<std::string> fmodEventNames = {
 		"Menu+Songs/SplashJingle",
 		"Menu+Songs/ANewChip",
@@ -276,45 +229,41 @@ int main() {
 		"Instruments+FX/newHighScore"
 	};
 
-	AudioSystem snekAudioSystem(fmodEventNames);
+	std::vector<std::string> bpmNames = {
+		"Instruments+FX/BPMs/bpm54_5",
+		"Instruments+FX/BPMs/bpm62_5",
+		"Instruments+FX/BPMs/bpm75_5",
+		"Instruments+FX/BPMs/bpm89",
+		"Instruments+FX/BPMs/bpm100",
+		"Instruments+FX/BPMs/bpm127",
+		"Instruments+FX/BPMs/bpm137",
+		"Instruments+FX/BPMs/bpm152",
+		"Instruments+FX/BPMs/bpm164",
+		"Instruments+FX/BPMs/bpm172",
+		"Instruments+FX/BPMs/bpm181",
+		"Instruments+FX/BPMs/bpm200"
+	};
+
+	AudioSystem snekAudioSystem;
+
+	snekAudioSystem.loadBanks();
+
+	for (std::string name : fmodEventNames) {
+		snekAudioSystem.loadEventInstance(name);
+	}
+
+	for (std::string name : bpmNames) {
+		snekAudioSystem.loadEventInstance(name);
+	}
 	
 
 	  //			   //
 	 // DISPLAY SETUP //
 	//			  	 //
 
-	// store reference to console buffer that launched the game
-	HANDLE origConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	// create console buffer for the game to run in
-	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-	SetConsoleActiveScreenBuffer(hConsole);
-	DWORD dwBytesWritten = 0;
-	
-	// disable the cursor visibility
-	CONSOLE_CURSOR_INFO cursorInfo;					
-	GetConsoleCursorInfo(hConsole, &cursorInfo);
-	cursorInfo.bVisible = false;	
-	SetConsoleCursorInfo(hConsole, &cursorInfo);
-
-	// disable mouse input
-	DWORD consoleMode;
-	GetConsoleMode(hConsole, &consoleMode);
-	consoleMode ^= ENABLE_MOUSE_INPUT;
-	SetConsoleMode(hConsole, consoleMode);
-
-	/*CONSOLE_SCREEN_BUFFER_INFO consoleBufferInfo;
-	GetConsoleScreenBufferInfo(hConsole, &consoleBufferInfo);
-	consoleBufferInfo.srWindow.Top = 0;
-	consoleBufferInfo.srWindow.Left = 0;
-	consoleBufferInfo.srWindow.Right = 80;
-	consoleBufferInfo.srWindow.Bottom = 25;
-	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));*/
-
-	// initialize the data structures used to store our game display
 	ColorPalette colorPalette;
-	std::wstring screenString(nScreenWidth * nScreenHeight, L' ');	//character array which represents the game screen
-	std::vector<WORD> attributes(nScreenWidth * nScreenHeight, colorPalette.logo);	//stores colors for display
+	TextGraphics textGraphics(nScreenWidth, nScreenHeight);
+	TextOutputCMD textOutputCMD;
 
 	  //						 //
 	 // SPLASH SCREEN ANIMATION //
@@ -323,17 +272,20 @@ int main() {
 	snekAudioSystem.startEventInstance("Menu+Songs/SplashJingle");
 	snekAudioSystem.fmodUpdate();
 
+	// reset the color of the whole screen
+	textGraphics.fillColor(colorPalette.standard, 0, 0, textGraphics.width - 1, textGraphics.height - 1);
 
 	// Draw Splash Screen
 	bool animation = true;
 	int u = 0;
 	int charToOverwrite = 996;
+	textGraphics.fillColor(colorPalette.bright_cyan, 30, 10, 50, 20);
 	while (charToOverwrite <= 1005) {
 
-		screenString[charToOverwrite] = L"Citrus 64"[u];
+		textGraphics.textBuffer[charToOverwrite] = L"Citrus 64"[u];
 		charToOverwrite++;
 		u++;
-		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+		textOutputCMD.pushOutput(textGraphics);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(77));
 	}
@@ -345,10 +297,10 @@ int main() {
 	charToOverwrite = 992;	
 	while (charToOverwrite <= 1006) {
 		
-		screenString[charToOverwrite] = char(32);
+		textGraphics.textBuffer[charToOverwrite] = char(32);
 		charToOverwrite++;
 		
-		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+		textOutputCMD.pushOutput(textGraphics);
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(77));	
 	}
@@ -367,99 +319,69 @@ int main() {
 	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
 	snekAudioSystem.fmodUpdate();
 
-
 	
-	for (int yt = 0; yt < 1040; yt++) {
-		attributes[yt] = colorPalette.hud;
-	}
-	for (int yt = 0; yt < 960; yt++) {
-		attributes[yt + 1040] = colorPalette.player_1;
-	}
-	for (int yt = 1440; yt < 1520; yt++) {
-		attributes[yt] = colorPalette.press_start;
-	}
-	for (int yt = 1600; yt < 1638; yt++) {
-		attributes[yt] = colorPalette.player_2;
-	}
-	for (int yt = 1625; yt < 1651; yt++) {
-		attributes[yt] = colorPalette.grey;
-	}
-	attributes[1643] = colorPalette.white;
-	attributes[1644] = colorPalette.white;
-	attributes[1645] = colorPalette.white;
-	for (int yt = 1651; yt < 1680; yt++) {
-		attributes[yt] = colorPalette.bright_green;
-	}
-	for (int yt = 1680; yt < 2000; yt++) {
-		attributes[yt] = colorPalette.logo;
-	}
-
-	drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 	bool holdKey = false;
 	while (startScreen) {
 
-		screenString.replace((7 * 80) + 20, 38,   L"__    _    _              _  __   ____");		//draw logo each frame
-		screenString.replace((8 * 80) + 19, 40,  L"/ /   | \\  | |     /\\     | |/ /  |  __|");
-		screenString.replace((9 * 80) + 19, 39,  L"\\ \\   |  \\ | |    /  \\    | | /   | |__");
-		screenString.replace((10 * 80) + 20, 39,  L"\\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
-		screenString.replace((11 * 80) + 20, 38,  L"/ /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
-		screenString.replace((12 * 80) + 19, 40, L"/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
+		// draw logo
+		textGraphics.drawTextSprite(19, 7, TextSprite(
+			L" __    _    _              _  __   ____\n"
+			L"/ /   | \\  | |     /\\     | |/ /  |  __|\n"
+			L"\\ \\   |  \\ | |    /  \\    | | /   | |__\n"
+			L" \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|\n"
+			L" / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__\n"
+			L"/_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|",
+			colorPalette.hud));
 
-		screenString.replace((20 * 80) + 34, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
+		// draw player count
+		textGraphics.fillColor(colorPalette.grey, 34, 20, 42, 20);
+		textGraphics.fillColor(colorPalette.white, 43, 20, 45, 20);
+		textGraphics.drawText(34, 20, L"Players: <" + std::to_wstring(playerCount) + L">");
 
 		if (playerCount == 2) {
-			screenString.replace((14 * 80) + 24, 32, L"                                ");
-			screenString.replace((15 * 80) + 24, 32, L"                                ");
-			screenString.replace((16 * 80) + 24, 32, L"                                ");
-			screenString.replace((14 * 80) + 41, 26, L"--------------------------");
-			screenString.replace((15 * 80) + 41, 26, L"| P1: Arrow Keys + P-Key |");
-			screenString.replace((16 * 80) + 41, 26, L"--------------------------");
-			screenString.replace((14 * 80) + 15, 20, L"--------------------");
-			screenString.replace((15 * 80) + 15, 20, L"| P2: WASD + B-Key |");
-			screenString.replace((16 * 80) + 15, 20, L"--------------------");
+
+			textGraphics.fillColor(colorPalette.player_2, 15, 14, 35, 16);
+			textGraphics.fillColor(colorPalette.player_1, 36, 14, 80, 16);
+			textGraphics.drawText(15, 14, 
+				L"--------------------      --------------------------\n"
+				L"| P2: WASD + B-Key |      | P1: Arrow Keys + P-Key |\n"
+				L"--------------------      --------------------------");
 			
-			drawColor(colorPalette.player_2, attributes, 0, 14, 35, 16);
 		}
-		else {			
-			screenString.replace((14 * 80) + 41, 26, L"                          ");
-			screenString.replace((15 * 80) + 41, 26, L"                          ");
-			screenString.replace((16 * 80) + 41, 26, L"                          ");
-			screenString.replace((14 * 80) + 15, 20, L"                    ");
-			screenString.replace((15 * 80) + 15, 20, L"                    ");
-			screenString.replace((16 * 80) + 15, 20, L"                    ");
-			screenString.replace((14 * 80) + 24, 32, L"--------------------------------");
-			screenString.replace((15 * 80) + 24, 32, L"| Controls: Arrow Keys + Z-Key |");
-			screenString.replace((16 * 80) + 24, 32, L"--------------------------------");
+		else {
 
-			drawColor(colorPalette.player_1, attributes, 0, 14, 35, 16);
-
+			textGraphics.drawTextSprite(15, 14, TextSprite(
+				L"         --------------------------------           \n"
+				L"         | Controls: Arrow Keys + Z-Key |           \n"
+				L"         --------------------------------           ",
+				colorPalette.player_1));
 		}
 
-		screenString.replace((22 * 80) + 35, 9, L"Citrus 64");		//draw studio name each frame
+		textGraphics.drawTextSprite(35, 22, TextSprite(L"Citrus 64", colorPalette.logo)); // draw studio name
 
 		if (startScreenFrameCount == 111) {
-			switch (startScreenToggle) {
-			case true:
+			if (startScreenToggle) {
 				startScreenToggle = false;
-				screenString.replace((18 * 80) + 31, 18, L"Press [Z] to start");	//draw "Press Z to start" every 111th frame
 
+				// draw "Press Z to start" every 111th frame
+				TextSprite pressStartSprite(L"Press [Z] to start", colorPalette.press_start);
+				textGraphics.drawTextSprite(31, 18, pressStartSprite);
+
+				// play snakefruitinstance sound for flashing "press start" button (FMOD)
 				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
 				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(0.7f);
-				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");	//play snakefruitinstance sound for flashing "press start" button (FMOD)
-				snekAudioSystem.fmodUpdate();
-				break;
-			case false:
+				snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
+			}
+			else {
 				startScreenToggle = true;
-				screenString.replace((18 * 80) + 31, 18, L"                  ");
-
-				break;
+				textGraphics.drawText(31, 18, L"                  ");
 			}
 
 			startScreenFrameCount = 0;
-		}				
+		}
 
-		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+		textOutputCMD.pushOutput(textGraphics);
 
 		startScreenFrameCount++;
 
@@ -474,7 +396,6 @@ int main() {
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.77f);
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
-			snekAudioSystem.fmodUpdate();
 			holdKey = true;
 		}
 		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
@@ -482,13 +403,11 @@ int main() {
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.64f);
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
-			snekAudioSystem.fmodUpdate();
 			holdKey = true;
 		}
 		else if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
 			holdKey = false;
 		}
-		
 
 		if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 
@@ -496,7 +415,6 @@ int main() {
 
 			snekAudioSystem.stopEventInstance("Menu+Songs/ANewChip", true);	// (FMOD)
 			snekAudioSystem.startEventInstance("Menu+Songs/StartButton");
-
 			snekAudioSystem.fmodUpdate();	//play startbutton sound
 
 			
@@ -521,11 +439,13 @@ int main() {
 			};
 
 			for (auto& animFrame : pressedStartAnimFrames) {
-				screenString.replace((18 * 80) + 31, 18, animFrame.first);
-				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+				textGraphics.drawText(31, 18, animFrame.first);
+				textOutputCMD.pushOutput(textGraphics);
 				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}
+
+		snekAudioSystem.fmodUpdate();
 	}
 	
 	  //					  //
@@ -602,18 +522,14 @@ int main() {
 		}
 
 		//Reset the Game Grid Display//
-		for (int x = 0; x < 25; x++) {			
-
+		for (int x = 0; x < 25; x++) {
 			for (int y = 0; y < 25; y++) {
 				display[x][y] = 'z';
-
 			}
 		}
 
 		//Reset the Screen String Buffer//
-		for (int n = 0; n < nScreenHeight * nScreenWidth; n++) {	
-			screenString.replace(n, 1, L" ");
-		}
+		textGraphics.fillText(0, 0, textGraphics.width - 1, textGraphics.height - 1, L' ');
 
 		//Reset FMOD-Related Audio/Sound Variables//
 		snekMoveTimelinePosition = 0;
@@ -622,7 +538,7 @@ int main() {
 		snakeMoveReverbLevel = 0.0f;
 		i16thNote = 1;
 		if (!simpleSound) {
-			snekAudioSystem.bpmInstances[0]->start();
+			snekAudioSystem.startEventInstance(bpmNames[0]);
 		}		
 		snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
 		snekAudioSystem.fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.0f);
@@ -1224,7 +1140,7 @@ int main() {
 
 			else {
 				if (gameLose) {					//play the death sound if the game is lost
-					snekAudioSystem.bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+					snekAudioSystem.stopEventInstance(bpmNames[currentChordBPM], true);
 					snekAudioSystem.startEventInstance("Instruments+FX/Death");
 				}
 
@@ -1257,7 +1173,7 @@ int main() {
 
 					switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
 					case 1:
-						snekAudioSystem.bpmInstances[0]->stop(FMOD_STUDIO_STOP_ALLOWFADEOUT);
+						snekAudioSystem.stopEventInstance(bpmNames[0], true);
 						chordsStartToggle = true;
 						currentChordBPM = 1;
 						if (switchChordsCounter == 0) {
@@ -1418,7 +1334,7 @@ int main() {
 				else {
 
 					if (highestCurrentLength == 0) {
-						snekAudioSystem.bpmInstances[0]->setParameterByName("HeartRateDryLevel", proximityToFruit);
+						snekAudioSystem.fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", proximityToFruit);
 					}
 
 					actionKeyHeld = false;		//nobody is holding any action keys anymore
@@ -1455,7 +1371,7 @@ int main() {
 					}
 
 					if (!hasFirstSwitchHappened && currentChordBPM == 1) {
-						snekAudioSystem.bpmInstances[1]->start();
+						snekAudioSystem.startEventInstance(bpmNames[1]);
 						i16thNote = 1;
 						currentChord = 1;
 						hasFirstSwitchHappened = true;
@@ -1466,20 +1382,20 @@ int main() {
 						if (switchChords == true) {
 							int oldPlaybackPosition;
 							int newPlaybackPosition;
-							snekAudioSystem.bpmInstances[currentChordBPM - 1]->getTimelinePosition(&oldPlaybackPosition);
-							snekAudioSystem.bpmInstances[currentChordBPM - 1]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+							snekAudioSystem.fmodEventInstances[bpmNames[currentChordBPM - 1]]->getTimelinePosition(&oldPlaybackPosition);
+							snekAudioSystem.stopEventInstance(bpmNames[currentChordBPM - 1]);
 
 							newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
 
-							snekAudioSystem.bpmInstances[currentChordBPM]->start();
-							snekAudioSystem.bpmInstances[currentChordBPM]->setTimelinePosition(newPlaybackPosition);
+							snekAudioSystem.startEventInstance(bpmNames[currentChordBPM]);
+							snekAudioSystem.fmodEventInstances[bpmNames[currentChordBPM]]->setTimelinePosition(newPlaybackPosition);
 						}
 
 						switchChords = false;
 					}
 
 					if (currentChord == 1 && i16thNote == 1) {
-						snekAudioSystem.bpmInstances[currentChordBPM]->start();
+						snekAudioSystem.startEventInstance(bpmNames[currentChordBPM]);
 					}
 
 					//ARP//
@@ -1616,180 +1532,132 @@ int main() {
 			 // DRAW SCREEN //	
 			//			   //
 			for (int t = 0; t < 25; t++) {
-				int q = 0;
-
-				for (q; q < 25; q++) {
+				for (int q = 0; q < 25; q++) {
 
 					if (display[q][t] == 'z') {
-						screenString[q + (80 * t)] = ' ';
+						textGraphics.drawText(q, t, L" ");
 
 					}
 
 					else if (display[q][t] == '7') {
-						screenString[q + (80 * t)] = '8';
+						textGraphics.drawText(q, t, L"8");
 					}
 
 					else if (display[q][t] == '8' && snek1[0].direction_frame == 'n') {
-						screenString[q + (80 * t)] = '^';
+						textGraphics.drawText(q, t, L"^");
 					}
 
 					else if (display[q][t] == '8' && snek1[0].direction_frame == 's') {
-						screenString[q + (80 * t)] = 'v';
+						textGraphics.drawText(q, t, L"v");
 					}
 
 					else if (display[q][t] == '8' && snek1[0].direction_frame == 'w') {
-						screenString[q + (80 * t)] = '<';
+						textGraphics.drawText(q, t, L"<");
 					}
 
 					else if (display[q][t] == '8' && snek1[0].direction_frame == 'e') {
-						screenString[q + (80 * t)] = '>';
+						textGraphics.drawText(q, t, L">");
 					}
 
 					else if (display[q][t] == 'p') {
-						screenString[q + (80 * t)] = 'O';
+						textGraphics.drawText(q, t, L"O");
 					}
 
 					else {
-						screenString[q + (80 * t)] = display[q][t];
+						textGraphics.drawText(q, t, L"+");
 					}
 				}
-
-				screenString[q + (80 * t)] = '|';
-
-				if (t == 0 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, L"       __    _    _              _  __   ____");
-				}
-
-				else if (t == 1 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, L"      / /   | \\  | |     /\\     | |/ /  |  __|");
-				}
-				
-				else if (t == 2 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, L"      \\ \\   |  \\ | |    /  \\    | | /   | |__");
-				}
-
-				else if (t == 3 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, L"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|");
-				}
-
-				else if (t == 4 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 45, L"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__");
-				}
-
-				else if (t == 5 && q == 25) {
-					screenString.replace(1 + q + (80 * t), 46, L"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|");
-				}
-
-				else if (t == 7 && q == 25 && playerCount == 1) {
-					
-					screenString.replace(1 + q + (80 * t), 14, L"       SCORE: ");
-					
-					std::wstring snekLengthString = std::to_wstring(highestCurrentLength);
-										
-					screenString.replace(15 + q + (80 * t), snekLengthString.length(), snekLengthString);
-
-					screenString.replace(15 + snekLengthString.length() + q + (80 * t), 17, L"     HIGH SCORE: ");
-
-					
-					
-					std::wstring highScoreString = std::to_wstring(highScore);
-
-					screenString.replace(32 + snekLengthString.length() + q + (80 * t), highScoreString.length(), highScoreString);
-
-				}
-
-				else if (t == 7 && q == 25 && playerCount == 2) {
-
-					screenString.replace(1 + q + (80 * t), 14, L"    P1 SCORE: ");
-
-					std::wstring snekLengthString0 = std::to_wstring(snek1[0].snek_length);
-
-					screenString.replace(15 + q + (80 * t), snekLengthString0.length(), snekLengthString0);
-
-					screenString.replace(1 + q + (80 * (t + 1)), 14, L"    P2 SCORE: ");
-
-					std::wstring snekLengthString1 = std::to_wstring(snek1[1].snek_length);
-
-					screenString.replace(15 + q + (80 * (t + 1)), snekLengthString1.length(), snekLengthString1);
-
-					screenString.replace(15 + snekLengthString0.length() + q + (80 * t), 17, L"     HIGH SCORE: ");
-										
-					std::wstring highScoreString = std::to_wstring(highScore);
-
-					screenString.replace(32 + snekLengthString0.length() + q + (80 * t), highScoreString.length(), highScoreString);
-
-				}
-
-				else if (t == 9 && q == 25 && highestCurrentLength > 10) {
-
-					screenString.replace(1 + q + (80 * t), 14, L"       STYLE: ");
-
-					std::wstring styleCounterString = std::to_wstring(styleCounter);
-
-					screenString.replace(15 + q + (80 * t), styleCounterString.length(), styleCounterString);
-
-					screenString.replace(16 + styleCounterString.length() + q + (80 * t), 17, L"     HIGH STYLE: ");
-
-					std::wstring highStyleString = std::to_wstring(styleHighScore);
-
-					screenString.replace(33 + styleCounterString.length() + q + (80 * t), highStyleString.length(), highStyleString);
-
-				}								
 			}
 
-			for (int pt = 0; pt < playerCount; pt++) {
+			textGraphics.fillColor(colorPalette.hud, 25, 0, 25, textGraphics.height - 1);
+			textGraphics.fillText(25, 0, 25, textGraphics.height - 1, L'|');
+
+			textGraphics.drawTextSprite(32, 0, TextSprite(
+				L"       __    _    _              _  __   ____\n"
+				L"      / /   | \\  | |     /\\     | |/ /  |  __|\n"
+				L"      \\ \\   |  \\ | |    /  \\    | | /   | |__\n"
+				L"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|\n"
+				L"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__\n"
+				L"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|",
+				colorPalette.hud
+			));
+
+			if (playerCount == 1) {
+				textGraphics.drawText(33, 7, L"SCORE: " + std::to_wstring(highestCurrentLength) );
+			}
+			else {
+				textGraphics.drawText(30, 7, L"P1 SCORE: " + std::to_wstring(snek1[0].snek_length));
+				textGraphics.drawText(30, 8, L"P2 SCORE: " + std::to_wstring(snek1[1].snek_length));
+			}
+
+			textGraphics.drawText(47, 7, L"HIGH SCORE: " + std::to_wstring(highScore));
+
+			textGraphics.drawText(33, 9, L"STYLE: " + std::to_wstring(styleCounter));
+			textGraphics.drawText(47, 9, L"HIGH STYLE: " + std::to_wstring(styleHighScore));
+
+			for (int i = 0; i < playerCount; i++) {
+				WORD playerColor = i == 0 ? colorPalette.player_1 : colorPalette.player_2;
 				
-				if (snek1[pt].justDied) {
-					screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'X';
+				if (snek1[i].justDied) {
+					textGraphics.drawTextSprite(snek1[i].snek_head[0], snek1[i].snek_head[1], TextSprite(L"X", colorPalette.white));
 				}
 				else {
-					switch (snek1[pt].direction_frame) {
+					switch (snek1[i].direction_frame) {
 					case 'n':
-						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '^';
+						textGraphics.drawTextSprite(snek1[i].snek_head[0], snek1[i].snek_head[1], TextSprite(L"^", playerColor));
 						break;
 					case 's':
-						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = 'v';
+						textGraphics.drawTextSprite(snek1[i].snek_head[0], snek1[i].snek_head[1], TextSprite(L"v", playerColor));
 						break;
 					case 'e':
-						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '>';
+						textGraphics.drawTextSprite(snek1[i].snek_head[0], snek1[i].snek_head[1], TextSprite(L">", playerColor));
 						break;
 					case 'w':
-						screenString[snek1[pt].snek_head[0] + (80 * snek1[pt].snek_head[1])] = '<';
+						textGraphics.drawTextSprite(snek1[i].snek_head[0], snek1[i].snek_head[1], TextSprite(L"<", playerColor));
 						break;
 					}
 				}				
 			}
 
-			for (int yt = 0; yt < portalCount*2; yt++) {				
-				screenString[portalCoordinates[yt][0] + (80 * portalCoordinates[yt][1])] = 'O';
+			if (portalCount) {
+				textGraphics.drawTextSprite(portalCoordinates[0][0], portalCoordinates[0][1], TextSprite(L"O", colorPalette.portal));
+				textGraphics.drawTextSprite(portalCoordinates[1][0], portalCoordinates[1][1], TextSprite(L"O", colorPalette.portal));
 			}
 
 			if (wasPreviousHighScoreFound) {
-				screenString.replace(64 + (80 * 6), 13, L"-------------");
-				screenString.replace(63 + (80 * 7), 2, L"| ");
-				screenString.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length(), highScoreName);
-				screenString.replace(76 + (80 * 7), 2, L" |");
-				screenString.replace(64 + (80 * 8), 13, L"-------------");
+				textGraphics.drawTextSprite(63, 6, TextSprite(
+					L" -------------\n"
+					L"|             |\n"
+					L" -------------",
+					colorPalette.hud));
+				textGraphics.drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 			}			
 
 			if (playerCount == 2 && currentFrame == 1) {
 
-				screenString.replace(10 * 80 + 14, 8, L"Player 1");
-				screenString.replace(11 * 80 + 17, 1, L"|");				
+				textGraphics.drawTextSprite(14, 8, TextSprite(
+					L"Player 1\n"
+					L"   |    \n"
+					L"   |    \n"
+					L"   V    ",
+					colorPalette.player_1
+				));
 
-				screenString.replace(10 * 80 + 4, 8, L"Player 2");
-				screenString.replace(11 * 80 + 7, 1, L"|");	
+				textGraphics.drawTextSprite(4, 8, TextSprite(
+					L"Player 2\n"
+					L"   |    \n"
+					L"   |    \n"
+					L"   V    ",
+					colorPalette.player_2
+				));
 			}
-			
-
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
 
 			  //				  //
 			 // COLOR THE SCREEN //
 			//				    //
 
 			//reset entire display color to green//
-			drawColor(colorPalette.green, attributes, 0, 0, nScreenWidth - 1, nScreenHeight - 1);
+			//drawColor(colorPalette.green, attributes, 0, 0, nScreenWidth - 1, nScreenHeight - 1);
 			/*for (int yt = 0; yt < nScreenWidth * nScreenHeight; yt++) {		
 				attributes[yt] = FOREGROUND_GREEN;
 			}*/
@@ -1797,39 +1665,39 @@ int main() {
 			  //					  //
 			 // COLOR THE FRUIT PINK //
 			//						//
-			attributes[currentFruit[0] + (currentFruit[1] * 80)] = colorPalette.fruit;		
+			textGraphics.fillColor(colorPalette.fruit, currentFruit[0], currentFruit[1], currentFruit[0], currentFruit[1]);
 
 			  //					  //
 			 // COLOR PLAYER 1 GREEN //
 			//						//			
 			
 			if (!snek1[0].justDied) {
-				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.player_1;
+				textGraphics.attributeBuffer[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.player_1;
 
 				if (!snek1[0].justGotNewFruit) {
 					for (int l = 0; l < snek1[0].snek_length; l++) {
-						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
+						textGraphics.attributeBuffer[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
 					}
 					if (snek1[0].snekSwallowTimer <= snek1[0].snek_length) {
-						attributes[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
+						textGraphics.attributeBuffer[snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][0] + (snek1[0].snek_body[snek1[0].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
 						snek1[0].snekSwallowTimer++;
 					}
 				}
 				else {
 					snek1[0].justGotNewFruit = false;
 					for (int l = 0; l < snek1[0].snek_length - 1; l++) {
-						attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
+						textGraphics.attributeBuffer[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.player_1;
 					}
 					if (snek1[0].snekSwallowTimer == 0) {
-						attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
+						textGraphics.attributeBuffer[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
 						snek1[0].snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				attributes[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.white;
+				textGraphics.attributeBuffer[snek1[0].snek_head[0] + (snek1[0].snek_head[1] * 80)] = colorPalette.white;
 				for (int l = 0; l < snek1[0].snek_length - 1; l++) {
-					attributes[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.white;
+					textGraphics.attributeBuffer[snek1[0].snek_body[l][0] + (snek1[0].snek_body[l][1] * 80)] = colorPalette.white;
 				}
 			}
 				
@@ -1838,37 +1706,37 @@ int main() {
 			//					  //
 			if (playerCount == 2) {
 				if (!snek1[1].justDied) {
-					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.player_2;
+					textGraphics.attributeBuffer[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.player_2;
 
 					if (!snek1[1].justGotNewFruit) {
 						for (int l = 0; l < snek1[1].snek_length; l++) {
-							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
+							textGraphics.attributeBuffer[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
 						}
 						if (snek1[1].snekSwallowTimer <= snek1[1].snek_length) {
-							attributes[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
+							textGraphics.attributeBuffer[snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][0] + (snek1[1].snek_body[snek1[1].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
 							snek1[1].snekSwallowTimer++;
 						}
 					}
 					else {
 						snek1[1].justGotNewFruit = false;
 						for (int l = 0; l < snek1[1].snek_length - 1; l++) {
-							attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
+							textGraphics.attributeBuffer[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.player_2;
 						}
 						if (snek1[1].snekSwallowTimer == 0) {
-							attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
+							textGraphics.attributeBuffer[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.fruit_swallowed;
 							snek1[1].snekSwallowTimer++;
 						}
 					}
 				}
 				else {
-					attributes[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.white;
+					textGraphics.attributeBuffer[snek1[1].snek_head[0] + (snek1[1].snek_head[1] * 80)] = colorPalette.white;
 					for (int l = 0; l < snek1[1].snek_length - 1; l++) {
-						attributes[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.white;
+						textGraphics.attributeBuffer[snek1[1].snek_body[l][0] + (snek1[1].snek_body[l][1] * 80)] = colorPalette.white;
 					}
 				}
 			}			
 			
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+			textOutputCMD.pushOutput(textGraphics);
 						
 			// delay for first frame if in 2 player mode //
 			if (playerCount == 2 && currentFrame == 1)
@@ -1879,7 +1747,7 @@ int main() {
 		 // GAME OVER SCREEN //
 		//					//
 
-		snekAudioSystem.bpmInstances[currentChordBPM]->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+		snekAudioSystem.stopEventInstance(bpmNames[currentChordBPM]);
 		snekAudioSystem.fmodUpdate(); //update FMOD system	
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(700));
@@ -1901,23 +1769,22 @@ int main() {
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 
 			
-
-			screenString.replace((80 * 9) + 32, 32, L"NEW HIGH SCORE! ENTER YOUR NAME:");
-			screenString.replace(65 + (80 * 7), 11, L"           ");
+			textGraphics.drawText(32, 9, L"NEW HIGH SCORE! ENTER YOUR NAME:");
+			textGraphics.fillText(65, 7, 76, 7, L' ');
 
 			//..display the keyboard..
 			for (int y = 0; y < 32; y++) {
 				if (y < 8) {
-					screenString[40 + (13 * 80) + (y * 2)] = keyboard[y];
+					textGraphics.textBuffer[40 + (13 * 80) + (y * 2)] = keyboard[y];
 				}
 				else if (y < 16) {
-					screenString[24 + (15 * 80) + (y * 2)] = keyboard[y];
+					textGraphics.textBuffer[24 + (15 * 80) + (y * 2)] = keyboard[y];
 				}
 				else if (y < 24) {
-					screenString[8 + (17 * 80) + (y * 2)] = keyboard[y];
+					textGraphics.textBuffer[8 + (17 * 80) + (y * 2)] = keyboard[y];
 				}
 				else {
-					screenString[-8 + (19 * 80) + (y * 2)] = keyboard[y];
+					textGraphics.textBuffer[-8 + (19 * 80) + (y * 2)] = keyboard[y];
 				}				
 			}
 
@@ -2014,55 +1881,49 @@ int main() {
 					
 					holdNameEntryZ = true;
 				}
-				//..if they release the Z key..
+				// ..if they release the Z key..
 				else if (!snek1[0].action_keys) {
 					holdNameEntryZ = false;
 				}
 
 
-				//erase name display
-				screenString.replace(65 + (80 * 7), 11, L"           ");
+				// erase name display
+				textGraphics.fillText(65, 7, 76, 7, L' ');
 
 
-				//display their name as they type it
-				screenString.replace(64 + (80 * 6), 13, L"-------------");
-				screenString.replace(63 + (80 * 7), 2, L"| ");
+				// display their name as they type it
+				textGraphics.drawText(63, 6, 
+					L" -------------\n"
+					L"|             |\n"
+					L" -------------");
+
 
 				if (highScoreName.length() == 11) {
-					screenString.replace(65 + (80 * 7), highScoreName.length(), highScoreName);
+					textGraphics.textBuffer.replace(65 + (80 * 7), highScoreName.length(), highScoreName);
 				}
 				else {
-					screenString.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length() + 1, highScoreName + L" ");
-				}				
-
-				screenString.replace(76 + (80 * 7), 2, L" |");
-				screenString.replace(64 + (80 * 8), 13, L"-------------");
-				//screenString.replace((7 * 80) + 64 + highScoreName.length(), 1, L" ");			//delete any extra characters from backspace/delete inputs
-							   				 			  
+					textGraphics.textBuffer.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length() + 1, highScoreName + L" ");
+				}
 
 				//color the whole right side of the screen green
-				for (int p = 0; p < 25; p++) {
-					for (int t = 26; t < 80; t++) {
-						attributes[(p * 80) + t] = colorPalette.hud;
-					}					
-				}
+				textGraphics.fillColor(colorPalette.hud, 26, 0, textGraphics.width - 1, textGraphics.height - 1);
 
 				//invert the color of the currently selected keyboard character
 				if (currentSelChar < 8) {
-					attributes[40 + (13 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+					textGraphics.attributeBuffer[40 + (13 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else if (currentSelChar < 16) {
-					attributes[24 + (15 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+					textGraphics.attributeBuffer[24 + (15 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else if (currentSelChar < 24) {
-					attributes[8 + (17 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+					textGraphics.attributeBuffer[8 + (17 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 				else {
-					attributes[-8 + (19 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+					textGraphics.attributeBuffer[-8 + (19 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
 				}
 
 				//DISPLAY THE SCREEN//
-				drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+				textOutputCMD.pushOutput(textGraphics);
 
 				snekAudioSystem.fmodUpdate(); //update FMOD system	
 			}
@@ -2076,55 +1937,43 @@ int main() {
 			scoreFileWrite.close();	
 
 			wasPreviousHighScoreFound = true;
-			screenString.replace((80 * 9) + 32, 32, L"           HIGH SCORE SAVED!    ");
+			textGraphics.drawText(32, 9, L"           HIGH SCORE SAVED!    ");
 		}			
 
 		  //					 //
 		 // "TRY AGAIN?" SCREEN //
 		//					   //
 
-		screenString.replace(40 + (13 * 80), 39, L"                                       ");
-		screenString.replace(40 + (14 * 80), 39, L"                                       ");
-		screenString.replace(40 + (15 * 80), 39, L"                                       ");
-		screenString.replace(40 + (16 * 80), 39, L"                                       ");
-		screenString.replace(40 + (17 * 80), 39, L"                                       ");
-		screenString.replace(40 + (18 * 80), 39, L"                                       ");
-		screenString.replace(40 + (19 * 80), 39, L"                                       ");
-		screenString.replace(40 + (20 * 80), 39, L"                                       ");
+		textGraphics.fillText(40, 13, 79, 20, L' ');
 
 
-		//color the whole right side of the screen green
-		for (int p = 0; p < 25; p++) {
-			for (int t = 26; t < 80; t++) {
-				attributes[(p * 80) + t] = colorPalette.hud;
-			}
-		}
+		// color the whole right side of the screen green
+		textGraphics.fillColor(colorPalette.hud, 26, 0, nScreenWidth, nScreenHeight);
 				
 		Sleep(100);
 		
 		if (playerCount == 2) {
-			if (snek1[0].justDied) {
-				screenString.replace(19 + 25 + (80 * 12), 18, L"PLAYER 1 DIED!    ");
-			}
-			else {
-				screenString.replace(19 + 25 + (80 * 12), 18, L"PLAYER 2 DIED!    ");
-			}
+			textGraphics.drawText(44, 12, L"PLAYER " + std::to_wstring(snek1[0].justDied ? 1 : 2) + L" DIED!");
 		}
 		else {
-			screenString.replace(14 + 25 + (80 * 21), 18, L"                  ");
+			textGraphics.fillText(44, 21, 62, 21, L' ');
 		}
 		
-		screenString.replace(8 + 25 + (80 * 17), 33, L"                                 ");
+		textGraphics.fillText(33, 17, 66, 17, L' ');
 
 		snekAudioSystem.startEventInstance("Menu+Songs/FancyBoss");	// (FMOD)
 		snekAudioSystem.fmodUpdate();	//begin FMOD sound generation/song playback
 
-		screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, L"GAME OVER");
-		screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, L">Press [Z] to play again");
-		screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
-		screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
+		textGraphics.drawText(47, 15, L"GAME OVER");
+		textGraphics.drawText(46, 18, L"Players: <" + std::to_wstring(playerCount) + L">");
+		textGraphics.drawText(40, 20, L">Press [Z] to play again");
+		textGraphics.drawText(40, 21, L">Press [X] to quit");
+		//screenString.replace((nScreenHeight * nScreenWidth) - 753, 9, L"GAME OVER");
+		//screenString.replace((nScreenHeight * nScreenWidth) - 360, 24, L">Press [Z] to play again");
+		//screenString.replace((nScreenHeight * nScreenWidth) - 280, 18, L">Press [X] to quit");
+		//screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
 
-		drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+		textOutputCMD.pushOutput(textGraphics);
 
 		bool gameOverMessage = true;
 
@@ -2158,9 +2007,10 @@ int main() {
 				holdKey = false;
 			}
 
-			screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
+			textGraphics.drawText(46, 18, L"Players: <" + std::to_wstring(playerCount) + L">");
+			//screenString.replace((18 * 80) + 46, 12, L"Players: <" + std::to_wstring(playerCount) + L">");
 
-			drawGameScreen(hConsole, screenString, attributes, dwBytesWritten);
+			textOutputCMD.pushOutput(textGraphics);
 								
 			if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
 				gameOverMessage = false;
@@ -2190,8 +2040,6 @@ int main() {
 	}
 
 	while (playAgain);
-
-	SetConsoleActiveScreenBuffer(origConsole);
 
 	return 0;
 
