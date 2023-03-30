@@ -1,6 +1,8 @@
-#include "TextOutputCMD.h"
+#include "ASCIIOutputCMD.h"
 
-TextOutputCMD::TextOutputCMD() {
+#include "boost/nowide/convert.hpp"
+
+ASCIIOutputCMD::ASCIIOutputCMD() {
 
 	// store reference to console buffer that launched the game
 	this->originalConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -31,15 +33,15 @@ TextOutputCMD::TextOutputCMD() {
 	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));*/
 }
 
-TextOutputCMD::~TextOutputCMD() {
+ASCIIOutputCMD::~ASCIIOutputCMD() {
 	SetConsoleActiveScreenBuffer(this->originalConsoleHandle);
 }
 
-void TextOutputCMD::pushOutput(TextGraphics& textGraphics) {
+void ASCIIOutputCMD::pushOutput(ASCIIGraphics& textGraphics) {
 	DWORD dwBytesWritten;
 	for (short y = 0; y < textGraphics.height; y++) {
 		WriteConsoleOutputAttribute(this->gameConsoleHandle, &textGraphics.attributeBuffer[y * textGraphics.width], textGraphics.width, { 0,y }, &dwBytesWritten);
-		WriteConsoleOutputCharacterW(this->gameConsoleHandle, textGraphics.textBuffer.c_str() + y * textGraphics.width, textGraphics.width, { 0,y }, &dwBytesWritten);
+		WriteConsoleOutputCharacterW(this->gameConsoleHandle, boost::nowide::widen(textGraphics.textBuffer).c_str() + y * textGraphics.width, textGraphics.width, { 0,y }, &dwBytesWritten);
 
 		// using VTS to draw the screen
 		//wprintf(CSI L"%d;%dH", y, x);	// position the cursor

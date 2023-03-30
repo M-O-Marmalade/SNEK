@@ -3,11 +3,11 @@
 #include <string>
 #include <Windows.h>
 
-class TextSprite {
+class ASCIISprite {
 private:
 
 public:
-	std::wstring text;
+	std::string text;
 	WORD color;
-	TextSprite(std::wstring text, WORD color);
+	ASCIISprite(std::string text, WORD color);
 };

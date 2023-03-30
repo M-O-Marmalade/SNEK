@@ -76,10 +76,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x86;$(SolutionDir)Dependencies\FMODapi\studio\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x86;$(SolutionDir)Dependencies\FMODapi\studio\lib\x86;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -93,10 +93,10 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x64;$(SolutionDir)Dependencies\FMODapi\studio\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x64;$(SolutionDir)Dependencies\FMODapi\studio\lib\x64;C:\libraries\boost\stage\lib;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -112,13 +112,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x86;$(SolutionDir)Dependencies\FMODapi\studio\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x86;$(SolutionDir)Dependencies\FMODapi\studio\lib\x86;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -130,35 +130,40 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x64;$(SolutionDir)Dependencies\FMODapi\studio\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x64;$(SolutionDir)Dependencies\FMODapi\studio\lib\x64;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AudioSystem.cpp" />
+    <ClCompile Include="ColorPalette.cpp" />
+    <ClCompile Include="Snake.cpp" />
+    <ClCompile Include="SnakeGame.cpp" />
     <ClCompile Include="Source.cpp">
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</UseUnicodeForAssemblerListing>
     </ClCompile>
-    <ClCompile Include="TextGraphics.cpp" />
-    <ClCompile Include="TextOutput.cpp" />
-    <ClCompile Include="TextOutputCMD.cpp" />
-    <ClCompile Include="TextSprite.cpp" />
+    <ClCompile Include="ASCIIGraphics.cpp" />
+    <ClCompile Include="ASCIIOutputCMD.cpp" />
+    <ClCompile Include="ASCIISprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioSystem.h" />
-    <ClInclude Include="TextGraphics.h" />
-    <ClInclude Include="TextOutput.h" />
-    <ClInclude Include="TextOutputCMD.h" />
-    <ClInclude Include="TextSprite.h" />
+    <ClInclude Include="ASCIIGraphics.h" />
+    <ClInclude Include="ASCIIOutput.h" />
+    <ClInclude Include="ASCIIOutputCMD.h" />
+    <ClInclude Include="ASCIISprite.h" />
+    <ClInclude Include="ColorPalette.h" />
+    <ClInclude Include="Snake.h" />
+    <ClInclude Include="SnakeGame.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -21,16 +21,22 @@
     <ClCompile Include="AudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextGraphics.cpp">
+    <ClCompile Include="ASCIIGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextOutput.cpp">
+    <ClCompile Include="ASCIIOutputCMD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextOutputCMD.cpp">
+    <ClCompile Include="ASCIISprite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextSprite.cpp">
+    <ClCompile Include="Snake.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorPalette.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SnakeGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,16 +44,25 @@
     <ClInclude Include="AudioSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextGraphics.h">
+    <ClInclude Include="ASCIIGraphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextOutput.h">
+    <ClInclude Include="ASCIIOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextOutputCMD.h">
+    <ClInclude Include="ASCIIOutputCMD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TextSprite.h">
+    <ClInclude Include="ASCIISprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Snake.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorPalette.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SnakeGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

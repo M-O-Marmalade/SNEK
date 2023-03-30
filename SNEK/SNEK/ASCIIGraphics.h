@@ -3,19 +3,19 @@
 #include <vector>
 #include <Windows.h>
 
-#include "TextSprite.h"
+#include "ASCIISprite.h"
 
-class TextGraphics {
+class ASCIIGraphics {
 public:
 	int width;
 	int height;
-	std::wstring textBuffer;
+	std::string textBuffer;
 	std::vector<WORD> attributeBuffer;
 
-	TextGraphics(int width, int height);
+	ASCIIGraphics(int width, int height);
 
-	void drawTextSprite(int x, int y, TextSprite sprite);
-	void drawText(int x, int y, std::wstring stringToWrite);
+	void drawTextSprite(int x, int y, ASCIISprite sprite);
+	void drawText(int x, int y, std::string stringToWrite);
 	void fillText(int left, int top, int right, int bottom, wchar_t charToWrite);
 	void fillColor(WORD colorToDraw, int left, int top, int right, int bottom);
 };

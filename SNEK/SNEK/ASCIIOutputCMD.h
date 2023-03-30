@@ -1,17 +1,17 @@
 #pragma once
-#include "TextOutput.h"
+#include "ASCIIOutput.h"
 
 #include <Windows.h>
 #include <string>
 #include <vector>
 
-class TextOutputCMD : public TextOutput {
+class ASCIIOutputCMD : public ASCIIOutput {
 private:
     HANDLE originalConsoleHandle = 0;
     HANDLE gameConsoleHandle = 0;
 public:
-    TextOutputCMD();
-    ~TextOutputCMD();
-    void pushOutput(TextGraphics& textGraphics);
+    ASCIIOutputCMD();
+    ~ASCIIOutputCMD();
+    void pushOutput(ASCIIGraphics& textGraphics);
 };
 
