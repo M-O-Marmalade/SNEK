@@ -3,6 +3,6 @@
 
 class ASCIIOutput
 {
-	virtual void pushOutput(ASCIIGraphics& textGraphics) = 0;
+	virtual void pushOutput(ASCIIGraphics& asciiGraphics) = 0;
 };
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -23,15 +24,15 @@ public:
 	std::vector<Snake> snakes;
 	std::vector<std::vector<char>> gameGrid; //char display[25][25]{ 'z' };		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
 	
-	bool gameLose = false;				//current Game Lose state
-	bool playAgain = true;					//decides whether or not to play again after losing
-	int currentFruit[2];			//location of the current fruit on the game grid [x,y]
-	int playerCount = 1;			//amount of players, can be increased at start screen
-	int highestCurrentLength = 0;	//highest length out of all current players/sneks
+	Coords2D currentFruit;			//location of the current fruit on the game grid [x,y]
 	int portalCount = 0;			//amount of portals on the map
 	int portalCoordinates[6][2];	//coordinates of the current portals on the map
 	bool gotNewFruit = false;
 	
+	bool gameLose = false;				//current Game Lose state
+	bool playAgain = true;					//decides whether or not to play again after losing
+	int playerCount = 1;			//amount of players, can be increased at start screen
+	int highestCurrentLength = 0;	//highest length out of all current players/sneks
 	bool wasPreviousHighScoreFound;
 	int oldHighScore;
 	bool gotNewHighScore = false;

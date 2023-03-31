@@ -1,6 +1,7 @@
 #pragma once
 #include "ASCIIOutput.h"
 
+#define NOMINMAX
 #include <Windows.h>
 #include <string>
 #include <vector>
@@ -12,6 +13,6 @@ private:
 public:
     ASCIIOutputCMD();
     ~ASCIIOutputCMD();
-    void pushOutput(ASCIIGraphics& textGraphics);
+    void pushOutput(ASCIIGraphics& asciiGraphics);
 };
 

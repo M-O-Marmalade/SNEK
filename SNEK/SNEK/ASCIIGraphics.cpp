@@ -21,6 +21,10 @@ void ASCIIGraphics::drawTextSprite(int x, int y, ASCIISprite sprite) {
 	}
 }
 
+void ASCIIGraphics::drawTextSprite(Coords2D coordinates, ASCIISprite sprite) {
+	drawTextSprite(coordinates.x, coordinates.y, sprite);
+}
+
 void ASCIIGraphics::drawText(int x, int y, std::string stringToWrite) {
 	int i = 0, x1 = x, y1 = y;
 	while (i < stringToWrite.size() && x1 >= 0 && y1 >= 0 && x1 < this->width && y1 < this->height) {
@@ -36,6 +40,10 @@ void ASCIIGraphics::drawText(int x, int y, std::string stringToWrite) {
 	}
 }
 
+void ASCIIGraphics::drawText(Coords2D coordinates, std::string stringToWrite) {
+	this->drawText(coordinates.x, coordinates.y, stringToWrite);
+}
+
 void ASCIIGraphics::fillText(int left, int top, int right, int bottom, wchar_t charToWrite) {
 	int x = left, y = top;
 	for (int y = top; y <= bottom; y++) {
@@ -46,7 +54,7 @@ void ASCIIGraphics::fillText(int left, int top, int right, int bottom, wchar_t c
 }
 
 void ASCIIGraphics::fillColor(WORD colorToDraw, int left, int top, int right, int bottom) {
-	int x = max(left, 0), y = max(top, 0);
+	int x = std::max(left, 0), y = std::max(top, 0);
 	while (y <= bottom && y < this->height) {
 		this->attributeBuffer[x + y * this->width] = colorToDraw; // color foreground & background
 		if (x < right && x < this->width - 1) {
@@ -57,4 +65,8 @@ void ASCIIGraphics::fillColor(WORD colorToDraw, int left, int top, int right, in
 			y++;
 		}
 	}
+}
+
+void ASCIIGraphics::fillColor(WORD colorToDraw, int x, int y) {
+		this->attributeBuffer[x + y * this->width] = colorToDraw; // color foreground & background
 }

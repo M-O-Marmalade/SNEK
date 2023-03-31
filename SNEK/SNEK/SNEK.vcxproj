@@ -162,6 +162,7 @@
     <ClInclude Include="ASCIIOutputCMD.h" />
     <ClInclude Include="ASCIISprite.h" />
     <ClInclude Include="ColorPalette.h" />
+    <ClInclude Include="Coords2D.h" />
     <ClInclude Include="Snake.h" />
     <ClInclude Include="SnakeGame.h" />
   </ItemGroup>

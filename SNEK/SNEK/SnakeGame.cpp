@@ -1,5 +1,23 @@
 #include "SnakeGame.h"
 
+///////////////////////
+// PROGRAM STRUCTURE //
+///////////////////////
+/*
+
+| Audio/Graphics Init | Splash Screen | Start Screen | Pre-New Game Setup | Read Input | Game Logic | Audio Processing | Graphics Display | Name Entry | Try Again Screen |
+|=================================STARTUP=================================|===========================GAME LOOP===========================|===========GAME OVER===========|
+
+*/
+
+//The game is time-synced to a specific BPM (beats-per-minute) at all times, as the game is very music focused
+
+//time/tick/framerate calculations are done in nanoseconds (0.000000001 second, or 1e-9 second).
+//BPM to ns (beats-per-minute to nanoseconds) conversions are done as 60,000,000,000ns/xBPM.
+
+//audio timeline (FMOD Studio) calculations are done in milliseconds (0.001 second, or 1e-3 second).
+//BPM to ms (beats-per-minute to milliseconds) conversions are done as 60,000ms/xBPM.
+
 void SnakeGame::readScoreFile() {
 	std::ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile");
@@ -30,24 +48,29 @@ void SnakeGame::readScoreFile() {
 SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, ASCIIGraphics* asciiGraphics, ASCIIOutputCMD* asciiOutput, AudioSystem* audioSystem) : playerCount{ playerCount }, asciiGraphics { asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem } {
 	
 	// initialize/resize `gameGrid`
-	this->gameGrid = std::vector<std::vector<char>>(gridWidth,std::vector<char>(gridHeight, 'z'));
+	this->gameGrid = std::vector<std::vector<char>>(gridWidth,std::vector<char>(gridHeight, ' '));
 
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<Snake>();
-	this->snakes.push_back(Snake(playerCount == 1 ? 13 : 17, 12, 's'));
-	this->snakes.push_back(Snake(7, 12, 's'));
+	this->snakes.push_back(Snake(colorPalette.player_1, { playerCount == 1 ? 13 : 17, 12 }, { 0,1 }));
+	if (playerCount > 1) {
+		this->snakes.push_back(Snake(colorPalette.player_2, { 7, 12 }, { 0,1 }));
+	}
 
+	// load the saved high score
 	this->readScoreFile();
 	
-	fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);			//reset the framerate
+	// reset the framerate
+	fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);
 
-	srand(time(0));	//seed the RNG using system time, and make a new fruit location
+	// seed the RNG using system time, and make a new fruit location
+	srand(time(0));
 	for (bool inLoop = true; inLoop;) {
 
-		currentFruit[0] = rand() % 13 + 6;
-		currentFruit[1] = rand() % 13 + 6;
+		currentFruit.x = rand() % 13 + 6;
+		currentFruit.y = rand() % 13 + 6;
 
-		if (currentFruit[0] != 13) {
+		if (currentFruit.x != 13) {
 			inLoop = false;
 		}
 	}
@@ -55,12 +78,17 @@ SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, ASCIIGraphi
 	//Reset the Game Grid Display//
 	for (int x = 0; x < 25; x++) {
 		for (int y = 0; y < 25; y++) {
-			gameGrid[x][y] = 'z';
+			gameGrid[x][y] = ' ';
 		}
 	}
 
 	//Reset the Screen String Buffer//
 	asciiGraphics->fillText(0, 0, asciiGraphics->width - 1, asciiGraphics->height - 1, ' ');
+
+	// Load the required FMOD soundbanks
+	for (std::string& name : bpmNames) {
+		snekAudioSystem->loadEventInstance(name);
+	}
 
 	//Reset FMOD-Related Audio/Sound Variables//
 	snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
@@ -76,10 +104,9 @@ SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, ASCIIGraphi
 
 void SnakeGame::play() {
 
-
-	frameTime = std::chrono::steady_clock::now();	//record start time of first frame of the game loop
-
-	snekAudioSystem->startEventInstance(bpmNames[0]);
+	// record start time of first frame of the game loop
+	frameTime = std::chrono::steady_clock::now();
+	bool firstFrameOfTheGame = true;
 
 	//				     //
 	// [GAME LOOP START] //
@@ -144,9 +171,11 @@ void SnakeGame::play() {
 
 			}
 
-			for (int k = 0; k < 4; k++) {	//player 2
-				snakes[1].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("AWDS"[k]))) != 0;
+			if (playerCount > 1) {
+				for (int k = 0; k < 4; k++) {	//player 2
+					snakes[1].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("AWDS"[k]))) != 0;
 
+				}
 			}
 
 			if (highestCurrentLength > 10) {
@@ -161,7 +190,9 @@ void SnakeGame::play() {
 			}
 			else {
 				snakes[0].action_keys = false;
-				snakes[1].action_keys = false;
+				if (playerCount > 1) {
+					snakes[1].action_keys = false;
+				}
 			}
 
 
@@ -169,22 +200,18 @@ void SnakeGame::play() {
 			// CHECK + SET DIRECTION [TICK RESOLUTION] //
 			//										 //
 
-			for (int pt = 0; pt < playerCount; pt++) {
-
-				if (snakes[pt].directional_keys[0] && snakes[pt].holdW == false && snakes[pt].direction_frame != 'e') {
-					snakes[pt].direction_tick = 'w';
+			for (Snake& snake : this->snakes) {
+				if (snake.directional_keys[0] && !snake.holdW && snake.direction_frame.x != 1) {
+					snake.direction_tick = Coords2D{-1,0};
 				}
-
-				else if (snakes[pt].directional_keys[1] && snakes[pt].holdN == false && snakes[pt].direction_frame != 's') {
-					snakes[pt].direction_tick = 'n';
+				else if (snake.directional_keys[1] && !snake.holdN && snake.direction_frame.y != 1) {
+					snake.direction_tick = Coords2D{0,-1};
 				}
-
-				else if (snakes[pt].directional_keys[2] && snakes[pt].holdE == false && snakes[pt].direction_frame != 'w') {
-					snakes[pt].direction_tick = 'e';
+				else if (snake.directional_keys[2] && !snake.holdE && snake.direction_frame.x != -1) {
+					snake.direction_tick = Coords2D{1,0};
 				}
-
-				else if (snakes[pt].directional_keys[3] && snakes[pt].holdS == false && snakes[pt].direction_frame != 'n') {
-					snakes[pt].direction_tick = 's';
+				else {
+					snake.direction_tick = Coords2D{0,1};
 				}
 			}
 		}
@@ -196,222 +223,213 @@ void SnakeGame::play() {
 		// REFRESH DISPLAY //
 		//				 //
 		for (int x = 0; x < 25; x++) {
-
 			for (int y = 0; y < 25; y++) {
-
-				gameGrid[x][y] = 'z';
+				gameGrid[x][y] = ' ';
 			}
 		}
 
 		//					  //
 		// MOVE BODY SEGMENTS //
 		//					//
-		for (int pt = 0; pt < playerCount; pt++) {
-
-			for (int r = snakes[pt].snek_length - 1; r >= 0; r--) {
-
-				if (r > 0) {
-					snakes[pt].snek_body[r][0] = snakes[pt].snek_body[r - 1][0];	//move all segments except the segment right before the head
-					snakes[pt].snek_body[r][1] = snakes[pt].snek_body[r - 1][1];
-
+		for (Snake& snake : snakes) {
+			for (int i = snake.body.size() - 1; i >= 0; i--) {
+				if (i > 0) {
+					//move all segments except the segment right before the head
+					snake.body[i] = snake.body[i - 1];
 				}
-
 				else {
-					snakes[pt].snek_body[r][0] = snakes[pt].head[0];		//move the segment right before the head
-					snakes[pt].snek_body[r][1] = snakes[pt].head[1];
-
+					//move the segment right before the head
+					snake.body[i] = snake.head;
 				}
 			}
-
 		}
 
 		//										    //
 		// CHECK + SET DIRECTION [FRAME RESOLUTION] //
 		//										  //
-		for (int pt = 0; pt < playerCount; pt++) {
+		for (Snake& snake : this->snakes) {
 
-			if (snakes[pt].direction_tick == 'w' && snakes[pt].holdW == false && snakes[pt].direction_frame != 'e') {
-				snakes[pt].direction_frame = 'w';
+			if (snake.direction_tick.x == -1 && snake.holdW == false && snake.direction_frame.x != 1) {
+				snake.direction_frame = Coords2D{ -1,0 };
 
-				snakes[pt].holdW = true;
-				snakes[pt].holdE = false;
-				snakes[pt].holdS = false;
-				snakes[pt].holdN = false;
+				snake.holdW = true;
+				snake.holdE = false;
+				snake.holdS = false;
+				snake.holdN = false;
 			}
 
-			else if (snakes[pt].direction_tick == 'n' && snakes[pt].holdN == false && snakes[pt].direction_frame != 's') {
-				snakes[pt].direction_frame = 'n';
+			else if (snake.direction_tick.y == -1 && snake.holdN == false && snake.direction_frame.y != 1) {
+				snake.direction_frame = Coords2D{ 0,-1 };
 
-				snakes[pt].holdN = true;
-				snakes[pt].holdE = false;
-				snakes[pt].holdS = false;
-				snakes[pt].holdW = false;
+				snake.holdN = true;
+				snake.holdE = false;
+				snake.holdS = false;
+				snake.holdW = false;
 			}
 
-			else if (snakes[pt].direction_tick == 'e' && snakes[pt].holdE == false && snakes[pt].direction_frame != 'w') {
-				snakes[pt].direction_frame = 'e';
+			else if (snake.direction_tick.x == 1 && snake.holdE == false && snake.direction_frame.x != -1) {
+				snake.direction_frame = Coords2D{ 1,0 };
 
-				snakes[pt].holdE = true;
-				snakes[pt].holdW = false;
-				snakes[pt].holdS = false;
-				snakes[pt].holdN = false;
+				snake.holdE = true;
+				snake.holdW = false;
+				snake.holdS = false;
+				snake.holdN = false;
 			}
 
-			else if (snakes[pt].direction_tick == 's' && snakes[pt].holdS == false && snakes[pt].direction_frame != 'n') {
-				snakes[pt].direction_frame = 's';
+			else if (snake.direction_tick.y == 1 && snake.holdS == false && snake.direction_frame.y != -1) {
+				snake.direction_frame = Coords2D{ 0,1 };
 
-				snakes[pt].holdS = true;
-				snakes[pt].holdE = false;
-				snakes[pt].holdW = false;
-				snakes[pt].holdN = false;
+				snake.holdS = true;
+				snake.holdE = false;
+				snake.holdW = false;
+				snake.holdN = false;
 			}
 		}
 
 		//								      //
 		// PLACE SNEK BODY INTO DISPLAY ARRAY //
 		//									//
-		for (int pt = 0; pt < playerCount; pt++) {
-
-			for (int r = snakes[pt].snek_length - 1; r >= 0; r--) {
-				gameGrid[snakes[pt].snek_body[r][0]][snakes[pt].snek_body[r][1]] = '7';
+		for (Snake& snake : this->snakes) {
+			for (int r = snake.body.size() - 1; r >= 0; r--) {
+				gameGrid[snake.body[r].x][snake.body[r].y] = '8';
 			}
 		}
 
 		//								  //
 		// STORE EACH SNEK'S SURROUNDINGS //
 		//								//
-		//for (int i = 0; i < playerCount; i++) {
+		//for (Snake& snake : this->snakes) {
 
 		//	//North
-		//	if (snakes[i].head[1] > 0 && gameGrid[snakes[i].head[0]][snakes[i].head[1] - 1] == 'z' || gameGrid[snakes[i].head[0]][snakes[i].head[1] - 1] == '+') {
-		//		snakes[i].surroundingObstacles[0] = false;
+		//	if (snake.head.y > 0 && gameGrid[snake.head.x][snake.head.y - 1] == ' ' || gameGrid[snake.head.x][snake.head.y - 1] == '+') {
+		//		snake.surroundingObstacles[0] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[0] = true;
+		//		snake.surroundingObstacles[0] = true;
 		//	}
 
 		//	//North-East
-		//	if (snakes[i].head[0] < 24 && snakes[i].head[1] > 0 && gameGrid[snakes[i].head[0] + 1][snakes[i].head[1] - 1] == 'z' || gameGrid[snakes[i].head[0] + 1][snakes[i].head[1] - 1] == '+') {
-		//		snakes[i].surroundingObstacles[1] = false;
+		//	if (snake.head.x < 24 && snake.head.y > 0 && gameGrid[snake.head.x + 1][snake.head.y - 1] == ' ' || gameGrid[snake.head.x + 1][snake.head.y - 1] == '+') {
+		//		snake.surroundingObstacles[1] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[1] = true;
+		//		snake.surroundingObstacles[1] = true;
 		//	}
 
 		//	//East
-		//	if (snakes[i].head[0] < 24 && gameGrid[snakes[i].head[0] + 1][snakes[i].head[1]] == 'z' || gameGrid[snakes[i].head[0] + 1][snakes[i].head[1]] == '+') {
-		//		snakes[i].surroundingObstacles[2] = false;
+		//	if (snake.head.x < 24 && gameGrid[snake.head.x + 1][snake.head.y] == ' ' || gameGrid[snake.head.x + 1][snake.head.y] == '+') {
+		//		snake.surroundingObstacles[2] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[2] = true;
+		//		snake.surroundingObstacles[2] = true;
 		//	}
 
 		//	//South-East
-		//	if (snakes[i].head[0] < 24 && snakes[i].head[1] < 24 && gameGrid[snakes[i].head[0] + 1][snakes[i].head[1] + 1] == 'z' || gameGrid[snakes[i].head[0] + 1][snakes[i].head[1] + 1] == '+') {
-		//		snakes[i].surroundingObstacles[3] = false;
+		//	if (snake.head.x < 24 && snake.head.y < 24 && gameGrid[snake.head.x + 1][snake.head.y + 1] == ' ' || gameGrid[snake.head.x + 1][snake.head.y + 1] == '+') {
+		//		snake.surroundingObstacles[3] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[3] = true;
+		//		snake.surroundingObstacles[3] = true;
 		//	}
 
 		//	//South
-		//	if (snakes[i].head[1] < 24 && gameGrid[snakes[i].head[0]][snakes[i].head[1] + 1] == 'z' || gameGrid[snakes[i].head[0]][snakes[i].head[1] + 1] == '+') {
-		//		snakes[i].surroundingObstacles[4] = false;
+		//	if (snake.head.y < 24 && gameGrid[snake.head.x][snake.head.y + 1] == ' ' || gameGrid[snake.head.x][snake.head.y + 1] == '+') {
+		//		snake.surroundingObstacles[4] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[4] = true;
+		//		snake.surroundingObstacles[4] = true;
 		//	}
 
 		//	//South-West
-		//	if (snakes[i].head[0] > 0 && snakes[i].head[1] < 24 && gameGrid[snakes[i].head[0] - 1][snakes[i].head[1] + 1] == 'z' || gameGrid[snakes[i].head[0] - 1][snakes[i].head[1] + 1] == '+') {
-		//		snakes[i].surroundingObstacles[5] = false;
+		//	if (snake.head.x > 0 && snake.head.y < 24 && gameGrid[snake.head.x - 1][snake.head.y + 1] == ' ' || gameGrid[snake.head.x - 1][snake.head.y + 1] == '+') {
+		//		snake.surroundingObstacles[5] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[5] = true;
+		//		snake.surroundingObstacles[5] = true;
 		//	}
 
 		//	//West
-		//	if (snakes[i].head[0] > 0 && gameGrid[snakes[i].head[0] - 1][snakes[i].head[1]] == 'z' || gameGrid[snakes[i].head[0] - 1][snakes[i].head[1]] == '+') {
-		//		snakes[i].surroundingObstacles[6] = false;
+		//	if (snake.head.x > 0 && gameGrid[snake.head.x - 1][snake.head.y] == ' ' || gameGrid[snake.head.x - 1][snake.head.y] == '+') {
+		//		snake.surroundingObstacles[6] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[6] = true;
+		//		snake.surroundingObstacles[6] = true;
 		//	}
 
 		//	//North-West
-		//	if (snakes[i].head[0] > 0 && snakes[i].head[1] > 0 && gameGrid[snakes[i].head[0] - 1][snakes[i].head[1] - 1] == 'z' || gameGrid[snakes[i].head[0] - 1][snakes[i].head[1] - 1] == '+') {
-		//		snakes[i].surroundingObstacles[7] = false;
+		//	if (snake.head.x > 0 && snake.head.y > 0 && gameGrid[snake.head.x - 1][snake.head.y - 1] == ' ' || gameGrid[snake.head.x - 1][snake.head.y - 1] == '+') {
+		//		snake.surroundingObstacles[7] = false;
 		//	}
 		//	else {
-		//		snakes[i].surroundingObstacles[7] = true;
+		//		snake.surroundingObstacles[7] = true;
 		//	}
 		//}
 
 		////				    //
 		//// ADD STYLE POINTS //
 		////				  //
-		//for (int pt = 0; pt < playerCount; pt++) {
+		//for (Snake& snake : this->snakes) {
 
 		//	//EAST//
-		//	if (snakes[pt].direction_frame == 'e') {
+		//	if (snake.direction_frame == 'e') {
 
 		//		//if player jumps over an obstacle to the East, add two style points
-		//		if (snakes[pt].action_keys && snakes[pt].surroundingObstacles[2] && snakes[pt].head[0] + 2 < 25) {
-		//			if (gameGrid[snakes[pt].head[0] + 2][snakes[pt].head[1]] == 'z' || gameGrid[snakes[pt].head[0] + 2][snakes[pt].head[1]] == '+') {
+		//		if (snake.action_keys && snake.surroundingObstacles[2] && snake.head.x + 2 < 25) {
+		//			if (gameGrid[snake.head.x + 2][snake.head.y] == ' ' || gameGrid[snake.head.x + 2][snake.head.y] == '+') {
 		//				styleCounter += 2;
 		//			}
 		//		}
 
 		//		//if player goes in-between two obstacles to the North-East and South-East, add one style point
-		//		else if (snakes[pt].surroundingObstacles[1] && snakes[pt].surroundingObstacles[3] && !snakes[pt].surroundingObstacles[2] && snakes[pt].head[0] + 1 < 25) {
+		//		else if (snake.surroundingObstacles[1] && snake.surroundingObstacles[3] && !snake.surroundingObstacles[2] && snake.head.x + 1 < 25) {
 		//			styleCounter++;
 		//		}
 		//	}
 
 		//	//WEST//
-		//	if (snakes[pt].direction_frame == 'w') {
+		//	if (snake.direction_frame == 'w') {
 
 		//		//if player jumps over an obstacle to the West, add two style points
-		//		if (snakes[pt].action_keys && snakes[pt].surroundingObstacles[6] && snakes[pt].head[0] - 2 > 0) {
-		//			if (gameGrid[snakes[pt].head[0] - 2][snakes[pt].head[1]] == 'z' || gameGrid[snakes[pt].head[0] - 2][snakes[pt].head[1]] == '+') {
+		//		if (snake.action_keys && snake.surroundingObstacles[6] && snake.head.x - 2 > 0) {
+		//			if (gameGrid[snake.head.x - 2][snake.head.y] == ' ' || gameGrid[snake.head.x - 2][snake.head.y] == '+') {
 		//				styleCounter += 2;
 		//			}
 		//		}
 
 		//		//if player goes in-between two obstacles to the North-West and South-West, add one style point
-		//		else if (snakes[pt].surroundingObstacles[7] && snakes[pt].surroundingObstacles[5] && !snakes[pt].surroundingObstacles[6] && snakes[pt].head[0] - 1 > 0) {
+		//		else if (snake.surroundingObstacles[7] && snake.surroundingObstacles[5] && !snake.surroundingObstacles[6] && snake.head.x - 1 > 0) {
 		//			styleCounter++;
 		//		}
 		//	}
 
 		//	//NORTH//
-		//	if (snakes[pt].direction_frame == 'n') {
+		//	if (snake.direction_frame == 'n') {
 
 		//		//if player jumps over an obstacle to the North, add two style points
-		//		if (snakes[pt].action_keys && snakes[pt].surroundingObstacles[0] && snakes[pt].head[1] - 2 > 0) {
-		//			if (gameGrid[snakes[pt].head[0]][snakes[pt].head[1] - 2] == 'z' || gameGrid[snakes[pt].head[0]][snakes[pt].head[1] - 2] == '+') {
+		//		if (snake.action_keys && snake.surroundingObstacles[0] && snake.head.y - 2 > 0) {
+		//			if (gameGrid[snake.head.x][snake.head.y - 2] == ' ' || gameGrid[snake.head.x][snake.head.y - 2] == '+') {
 		//				styleCounter += 2;
 		//			}
 		//		}
 
 		//		//if player goes in-between two obstacles to the North-West and North-East, add one style point
-		//		else if (snakes[pt].surroundingObstacles[7] && snakes[pt].surroundingObstacles[1] && !snakes[pt].surroundingObstacles[0] && snakes[pt].head[1] - 1 > 0) {
+		//		else if (snake.surroundingObstacles[7] && snake.surroundingObstacles[1] && !snake.surroundingObstacles[0] && snake.head.y - 1 > 0) {
 		//			styleCounter++;
 		//		}
 		//	}
 
 		//	//SOUTH//
-		//	if (snakes[pt].direction_frame == 's') {
+		//	if (snake.direction_frame == 's') {
 
 		//		//if player jumps over an obstacle to the South, add two style points
-		//		if (snakes[pt].action_keys && snakes[pt].surroundingObstacles[4] && snakes[pt].head[1] + 2 < 25) {
-		//			if (gameGrid[snakes[pt].head[0]][snakes[pt].head[1] + 2] == 'z' || gameGrid[snakes[pt].head[0]][snakes[pt].head[1] + 2] == '+') {
+		//		if (snake.action_keys && snake.surroundingObstacles[4] && snake.head.y + 2 < 25) {
+		//			if (gameGrid[snake.head.x][snake.head.y + 2] == ' ' || gameGrid[snake.head.x][snake.head.y + 2] == '+') {
 		//				styleCounter += 2;
 		//			}
 		//		}
 
 		//		//if player goes in-between two obstacles to the South-West and South-East, add one style point
-		//		else if (snakes[pt].surroundingObstacles[5] && snakes[pt].surroundingObstacles[3] && !snakes[pt].surroundingObstacles[4] && snakes[pt].head[1] + 1 < 25) {
+		//		else if (snake.surroundingObstacles[5] && snake.surroundingObstacles[3] && !snake.surroundingObstacles[4] && snake.head.y + 1 < 25) {
 		//			styleCounter++;
 		//		}
 		//	}
@@ -424,40 +442,40 @@ void SnakeGame::play() {
 		//	styleHighScore++;
 		//}
 
-		//			   //
-		// MOVE PLAYER //
-		//			 //
-		for (int pt = 0; pt < playerCount; pt++) {
+		  //             //
+		 // MOVE PLAYER //
+		//             //
+		for (Snake& snake : this->snakes) {
 
-			if (snakes[pt].direction_frame == 'e') {
-				snakes[pt].head[0]++;
+			if (snake.direction_frame == Coords2D{ 1,0 }) {
+				snake.head.x++;
 
-				if (snakes[pt].action_keys) {
-					snakes[pt].head[0]++;
+				if (snake.action_keys) {
+					snake.head.x++;
 				}
 			}
 
-			else if (snakes[pt].direction_frame == 'w') {
-				snakes[pt].head[0]--;
+			else if (snake.direction_frame == Coords2D{ -1,0 }) {
+				snake.head.x--;
 
-				if (snakes[pt].action_keys) {
-					snakes[pt].head[0]--;
+				if (snake.action_keys) {
+					snake.head.x--;
 				}
 			}
 
-			else if (snakes[pt].direction_frame == 's') {
-				snakes[pt].head[1]++;
+			else if (snake.direction_frame == Coords2D{ 0,1 }) {
+				snake.head.y++;
 
-				if (snakes[pt].action_keys) {
-					snakes[pt].head[1]++;
+				if (snake.action_keys) {
+					snake.head.y++;
 				}
 			}
 
-			else if (snakes[pt].direction_frame == 'n') {
-				snakes[pt].head[1]--;
+			else if (snake.direction_frame == Coords2D{ 0,-1 }) {
+				snake.head.y--;
 
-				if (snakes[pt].action_keys) {
-					snakes[pt].head[1]--;
+				if (snake.action_keys) {
+					snake.head.y--;
 				}
 			}
 		}
@@ -465,48 +483,52 @@ void SnakeGame::play() {
 		//								     //
 		// DETECT IF PLAYER HAS HIT MAP EDGE //
 		//								   //
-		for (int pt = 0; pt < playerCount; pt++) {
-			if (snakes[pt].head[0] < 0 || snakes[pt].head[0] > 24 || snakes[pt].head[1] < 0 || snakes[pt].head[1] > 24) {
-				snakes[pt].justDied = true;
+		for (Snake& snake : this->snakes) {
+			if (snake.head.x < 0 || snake.head.x > 24 || snake.head.y < 0 || snake.head.y > 24) {
+				snake.justDied = true;
 				gameLose = true;
 
-				if (snakes[pt].head[0] > 24) {
-					snakes[pt].head[0] = 24;
+				if (snake.head.x > 24) {
+					snake.head.x = 24;
 				}
-				else if (snakes[pt].head[0] < 0) {
-					snakes[pt].head[0] = 0;
+				else if (snake.head.x < 0) {
+					snake.head.x = 0;
 				}
-				else if (snakes[pt].head[1] > 24) {
-					snakes[pt].head[1] = 24;
+				else if (snake.head.y > 24) {
+					snake.head.y = 24;
 				}
-				else if (snakes[pt].head[1] < 0) {
-					snakes[pt].head[1] = 0;
+				else if (snake.head.y < 0) {
+					snake.head.y = 0;
 				}
 			}
 		}
 
 
-		//									   //
-		// DETECT IF PLAYER HAS HIT THEMSELVES //
-		//									 //
-		for (int pt = 0; pt < playerCount; pt++) {
-			if (gameGrid[snakes[pt].head[0]][snakes[pt].head[1]] == '7' || gameGrid[snakes[pt].head[0]][snakes[pt].head[1]] == 'X' || gameGrid[snakes[pt].head[0]][snakes[pt].head[1]] == '8') {
-				snakes[pt].justDied = true;
+		  //                                     //
+		 // DETECT IF PLAYER HAS HIT THEMSELVES //
+		//                                     //
+		for (Snake& snake : this->snakes) {
+			if (gameGrid[snake.head.x][snake.head.y] == '8' || gameGrid[snake.head.x][snake.head.y] == 'X' || gameGrid[snake.head.x][snake.head.y] == 'h') {
+				snake.justDied = true;
 				gameLose = true;
 			}
 		}
 
-		//								    //
-		// CALCULATE PROXIMITY TO THE FRUIT //
-		//								  //
-		for (int pt = 0; pt < playerCount; pt++) {	//calculate each player's individual proximity
-			snakes[pt].iProximityToFruit = 1.0f - ((abs(snakes[pt].head[0] - currentFruit[0]) + abs(snakes[pt].head[1] - currentFruit[1])) / 48.0f);	//1/48 max distance
+		  //                                  //
+		 // CALCULATE PROXIMITY TO THE FRUIT //
+		//                                  //
+
+		// calculate each player's individual proximity
+		std::vector<float> fruitProximities;
+		for (Snake& snake : this->snakes) {
+			float thisSnakesProximityToFruit = 1.0f - ((std::abs(snake.head.x - currentFruit.x) + std::abs(snake.head.y - currentFruit.y)) / 48.0f);	//1/48 max distance
+			fruitProximities.push_back(thisSnakesProximityToFruit);
 		}
-		if (playerCount > 1 && snakes[1].iProximityToFruit > snakes[0].iProximityToFruit) {	//use whichever one is closer
-			proximityToFruit = snakes[1].iProximityToFruit;
-		}
-		else {
-			proximityToFruit = snakes[0].iProximityToFruit;	//if there is only one player, then 
+
+		// use the closest proximity
+		float closestProximityToFruit = 48.0f;
+		for (float& proximity : fruitProximities) {
+			closestProximityToFruit = std::min(proximity, closestProximityToFruit);
 		}
 
 
@@ -515,63 +537,63 @@ void SnakeGame::play() {
 		//								//
 		gotNewFruit = false;
 
-		for (int pt = 0; pt < playerCount; pt++) {
+		for (Snake& snake : this->snakes) {
 
-			if (snakes[pt].head[0] == currentFruit[0] && snakes[pt].head[1] == currentFruit[1]) {
+			if (snake.head.x == currentFruit.x && snake.head.y == currentFruit.y) {
 
-				snakes[pt].snek_length++;
-				snakes[pt].justGotNewFruit = true;
+				snake.body.push_back({ snake.head });
+				snake.justGotNewFruit = true;
 				gotNewFruit = true;
-				snakes[pt].snekSwallowTimer = 0;
+				snake.snekSwallowTimer = 0;
 
 				for (int e = 0; e < 300; e++) {
-					currentFruit[0] = rand() % 25;		//create a potential fruit spot
-					currentFruit[1] = rand() % 25;
+					currentFruit.x = rand() % 25;		//create a potential fruit spot
+					currentFruit.y = rand() % 25;
 
 					//check if that spot is currently filled//
-					if ((currentFruit[0] != snakes[pt].head[0] && currentFruit[1] != snakes[pt].head[1]) && gameGrid[currentFruit[0]][currentFruit[1]] != '7' && gameGrid[currentFruit[0]][currentFruit[1]] != 'X' && gameGrid[currentFruit[0]][currentFruit[1]] != 'p') {
+					if ((currentFruit.x != snake.head.x && currentFruit.y != snake.head.y) && gameGrid[currentFruit.x][currentFruit.y] != '8' && gameGrid[currentFruit.x][currentFruit.y] != 'X' && gameGrid[currentFruit.x][currentFruit.y] != 'O') {
 
 						//a temp proximity to use in the for loop for the new fruit//
-						int proximityToFruitTemp = (abs(snakes[pt].head[0] - currentFruit[0]) + abs(snakes[pt].head[1] - currentFruit[1]));
+						int proximityToFruitTemp = (abs(snake.head.x - currentFruit.x) + abs(snake.head.y - currentFruit.y));
 
 						//calculate snek's potential spots to be on the beat
 						if (i16thNote == 1) {
-							snakes[pt].potentialFruitSpot1 = 17;
+							snake.potentialFruitSpot1 = 17;
 						}
 						else {
-							snakes[pt].potentialFruitSpot1 = 17 - i16thNote;
+							snake.potentialFruitSpot1 = 17 - i16thNote;
 						}
 
 						if (i16thNote >= 5) {
-							snakes[pt].potentialFruitSpot2 = 16 - (i16thNote - 5);
+							snake.potentialFruitSpot2 = 16 - (i16thNote - 5);
 						}
 						else {
-							snakes[pt].potentialFruitSpot2 = 5 - i16thNote;
+							snake.potentialFruitSpot2 = 5 - i16thNote;
 						}
 
 						if (i16thNote >= 13) {
-							snakes[pt].potentialFruitSpot3 = 16 - (i16thNote - 13);
+							snake.potentialFruitSpot3 = 16 - (i16thNote - 13);
 						}
 						else {
-							snakes[pt].potentialFruitSpot3 = 13 - i16thNote;
+							snake.potentialFruitSpot3 = 13 - i16thNote;
 						}
 
 						//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
-						if (proximityToFruitTemp % 16 == snakes[pt].potentialFruitSpot1 || proximityToFruitTemp % 16 == snakes[pt].potentialFruitSpot2 || proximityToFruitTemp % 16 == snakes[pt].potentialFruitSpot3) {
+						if (proximityToFruitTemp % 16 == snake.potentialFruitSpot1 || proximityToFruitTemp % 16 == snake.potentialFruitSpot2 || proximityToFruitTemp % 16 == snake.potentialFruitSpot3) {
 							break;
 						}
 					}
 				}
 
-				if (snakes[pt].snek_length == 11) {
+				if (snake.body.size() >= 11) {
 					isScoreUnder11 = false;
 				}
 
 				//					  //
 				// SET NEW HIGH SCORE //
 				//					//
-				if (snakes[pt].snek_length > highestCurrentLength) {		//update current highest length
-					highestCurrentLength = snakes[pt].snek_length;
+				if (snake.body.size() > highestCurrentLength) {		//update current highest length
+					highestCurrentLength = snake.body.size();
 
 					if (highestCurrentLength > highScore) {				//update high score
 						highScore = highestCurrentLength;
@@ -598,8 +620,8 @@ void SnakeGame::play() {
 					portalCoordinates[0][0] = (rand() % 21) + 2;
 					portalCoordinates[0][1] = (rand() % 21) + 2;
 
-					if (portalCoordinates[0][0] != snakes[0].head[0] && portalCoordinates[0][1] != snakes[0].head[1]) {
-						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '7' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'p') {
+					if (portalCoordinates[0][0] != snakes[0].head.x && portalCoordinates[0][1] != snakes[0].head.y) {
+						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '8' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'O') {
 							e = 1;
 						}
 					}
@@ -609,8 +631,8 @@ void SnakeGame::play() {
 					portalCoordinates[1][0] = (rand() % 21) + 2;
 					portalCoordinates[1][1] = (rand() % 21) + 2;
 
-					if (portalCoordinates[1][0] != snakes[0].head[0] && portalCoordinates[1][1] != snakes[0].head[1]) {
-						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '7' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'p') {
+					if (portalCoordinates[1][0] != snakes[0].head.x && portalCoordinates[1][1] != snakes[0].head.y) {
+						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '8' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'O') {
 							e = 1;
 						}
 					}
@@ -626,11 +648,11 @@ void SnakeGame::play() {
 		//							   //
 		// PASS PLAYER THROUGH PORTALS //
 		//							 //
-		for (int pt = 0; pt < playerCount; pt++) {
+		for (Snake& snake : this->snakes) {
 			for (int hh = 0; hh < portalCount * 2; hh++) {
-				if (snakes[pt].head[0] == portalCoordinates[hh][0] && snakes[pt].head[1] == portalCoordinates[hh][1]) {
-					snakes[pt].head[0] = portalCoordinates[((hh + 1) % 2)][0];
-					snakes[pt].head[1] = portalCoordinates[((hh + 1) % 2)][1];
+				if (snake.head.x == portalCoordinates[hh][0] && snake.head.y == portalCoordinates[hh][1]) {
+					snake.head.x = portalCoordinates[((hh + 1) % 2)][0];
+					snake.head.y = portalCoordinates[((hh + 1) % 2)][1];
 					break;
 				}
 			}
@@ -639,33 +661,39 @@ void SnakeGame::play() {
 		//								   //
 		// PLACE PLAYER INTO DISPLAY ARRAY //
 		//								 //
-		for (int pt = 0; pt < playerCount; pt++) {
-			gameGrid[snakes[pt].head[0]][snakes[pt].head[1]] = '8';
+		for (Snake& snake : this->snakes) {
+			gameGrid[snake.head.x][snake.head.y] = 'h';
 		}
 
 		//								  //
 		// PLACE FRUIT INTO DISPLAY ARRAY //
 		//								//
-		gameGrid[currentFruit[0]][currentFruit[1]] = '+';
+		gameGrid[currentFruit.x][currentFruit.y] = '+';
 
 
 		//				    //
 		// AUDIO PROCESSING //
 		//				  //		
 
-		if (gameLose) {					//play the death sound if the game is lost
+		//play the death sound if the game is lost
+		if (gameLose) {
 			snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM], true);
 			snekAudioSystem->startEventInstance("Instruments+FX/Death");
 		}
 
+		if (firstFrameOfTheGame) {
+			firstFrameOfTheGame = false;
+			snekAudioSystem->startEventInstance(bpmNames[0]);
+		}
+
 		if (gotNewFruit) {				//if someone gets a new fruit..
-			for (int pt = 0; pt < playerCount; pt++) {		//..check each player..
-				if (snakes[pt].justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
+			for (Snake& snake : this->snakes) {		//..check each player..
+				if (snake.justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 					if (gotNewHighScoreSoundPlay) {
 						snekAudioSystem->startEventInstance("Instruments+FX/newHighScore");
 						gotNewHighScoreSoundPlay = false;
 					}
-					else if (snakes[pt].snek_length == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
+					else if (snake.body.size() == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
 						snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit11");		//..if they did, then play the 11th fruit sound..
 					}
 					else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
@@ -688,7 +716,6 @@ void SnakeGame::play() {
 			switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
 			case 1:
 				snekAudioSystem->stopEventInstance(bpmNames[0], true);
-				chordsStartToggle = true;
 				currentChordBPM = 1;
 				if (switchChordsCounter == 0) {
 					switchChordsCounter = 1;
@@ -833,9 +860,10 @@ void SnakeGame::play() {
 				break;
 			}
 		}
+
 		//if nobody got any fruits, then check if either snake is using the action keys..
-		else if (snakes[0].action_keys || snakes[1].action_keys) {
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(proximityToFruit);
+		else if (snakes[0].action_keys || snakes.size() > 1 && snakes[1].action_keys) {
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
 			snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
 			if (!actionKeyHeld) {
@@ -848,12 +876,12 @@ void SnakeGame::play() {
 		else {
 
 			if (highestCurrentLength == 0) {
-				snekAudioSystem->fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", proximityToFruit);
+				snekAudioSystem->fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", closestProximityToFruit);
 			}
 
 			actionKeyHeld = false;		//nobody is holding any action keys anymore
 
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(proximityToFruit);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(closestProximityToFruit);
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setTimelinePosition(snekMoveTimelinePosition);
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
 			snekAudioSystem->startEventInstance("Instruments+FX/SnakeMove");
@@ -866,7 +894,7 @@ void SnakeGame::play() {
 		}
 
 		//CHORDS//			
-		if (chordsStartToggle) {
+		if (highestCurrentLength >= 1) {
 			if (i16thNote == 1) {
 				switch (currentChord) {
 				case 1:
@@ -1044,37 +1072,41 @@ void SnakeGame::play() {
 		//			 //
 		// DRAW SCREEN //	
 		//			   //
-		for (int t = 0; t < 25; t++) {
-			for (int q = 0; q < 25; q++) {
 
-				if (gameGrid[q][t] == 'z') {
+		// blank the game grid
+		asciiGraphics->fillText(0, 0, gameGrid.size() - 1, gameGrid[0].size() - 1, ' ');
+
+
+		for (int t = 0; t < this->gameGrid.size(); t++) {
+			for (int q = 0; q < this->gameGrid[0].size(); q++) {
+
+				if (gameGrid[q][t] == ' ') {
 					asciiGraphics->drawText(q, t, " ");
-
 				}
 
-				else if (gameGrid[q][t] == '7') {
+				else if (gameGrid[q][t] == '8') {
 					asciiGraphics->drawText(q, t, "8");
 				}
 
-				else if (gameGrid[q][t] == '8' && snakes[0].direction_frame == 'n') {
+				/*else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'n') {
 					asciiGraphics->drawText(q, t, "^");
 				}
 
-				else if (gameGrid[q][t] == '8' && snakes[0].direction_frame == 's') {
+				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 's') {
 					asciiGraphics->drawText(q, t, "v");
 				}
 
-				else if (gameGrid[q][t] == '8' && snakes[0].direction_frame == 'w') {
+				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'w') {
 					asciiGraphics->drawText(q, t, "<");
 				}
 
-				else if (gameGrid[q][t] == '8' && snakes[0].direction_frame == 'e') {
+				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'e') {
 					asciiGraphics->drawText(q, t, ">");
-				}
+				}*/
 
-				else if (gameGrid[q][t] == 'p') {
+				/*else if (gameGrid[q][t] == 'O') {
 					asciiGraphics->drawText(q, t, "O");
-				}
+				}*/
 
 				else {
 					asciiGraphics->drawText(q, t, "+");
@@ -1099,8 +1131,8 @@ void SnakeGame::play() {
 			asciiGraphics->drawText(33, 7, "SCORE: " + std::to_string(highestCurrentLength));
 		}
 		else {
-			asciiGraphics->drawText(30, 7, "P1 SCORE: " + std::to_string(snakes[0].snek_length));
-			asciiGraphics->drawText(30, 8, "P2 SCORE: " + std::to_string(snakes[1].snek_length));
+			asciiGraphics->drawText(30, 7, "P1 SCORE: " + std::to_string(snakes[0].body.size()));
+			asciiGraphics->drawText(30, 8, "P2 SCORE: " + std::to_string(snakes[1].body.size()));
 		}
 
 		asciiGraphics->drawText(47, 7, "HIGH SCORE: " + std::to_string(highScore));
@@ -1108,27 +1140,29 @@ void SnakeGame::play() {
 		asciiGraphics->drawText(33, 9, "STYLE: " + std::to_string(styleCounter));
 		asciiGraphics->drawText(47, 9, "HIGH STYLE: " + std::to_string(styleHighScore));
 
-		for (int i = 0; i < playerCount; i++) {
-			WORD playerColor = i == 0 ? colorPalette.player_1 : colorPalette.player_2;
+		for (Snake& snake : this->snakes) {
 
-			if (snakes[i].justDied) {
-				asciiGraphics->drawTextSprite(snakes[i].head[0], snakes[i].head[1], ASCIISprite("X", colorPalette.white));
+			if (snake.justDied) {
+				asciiGraphics->drawTextSprite(snake.head.x, snake.head.y, ASCIISprite("X", colorPalette.white));
 			}
 			else {
-				switch (snakes[i].direction_frame) {
-				case 'n':
-					asciiGraphics->drawTextSprite(snakes[i].head[0], snakes[i].head[1], ASCIISprite("^", playerColor));
-					break;
-				case 's':
-					asciiGraphics->drawTextSprite(snakes[i].head[0], snakes[i].head[1], ASCIISprite("v", playerColor));
-					break;
-				case 'e':
-					asciiGraphics->drawTextSprite(snakes[i].head[0], snakes[i].head[1], ASCIISprite(">", playerColor));
-					break;
-				case 'w':
-					asciiGraphics->drawTextSprite(snakes[i].head[0], snakes[i].head[1], ASCIISprite("<", playerColor));
-					break;
+				std::string snakeHeadText;
+				if (snake.direction_frame == Coords2D{ 0,-1 }) {
+					snakeHeadText = "^";
 				}
+				else if (snake.direction_frame == Coords2D{ 0,1 }) {
+					snakeHeadText = "v";
+				}
+				else if (snake.direction_frame == Coords2D{ 1,0 }) {
+					snakeHeadText = ">";
+				}
+				else if (snake.direction_frame == Coords2D{ -1,0 }) {
+					snakeHeadText = "<";
+				}
+				else {
+					snakeHeadText = "_";
+				}
+				asciiGraphics->drawTextSprite(snake.head, ASCIISprite(snakeHeadText, snake.color));
 			}
 		}
 
@@ -1178,39 +1212,40 @@ void SnakeGame::play() {
 		//					  //
 		// COLOR THE FRUIT PINK //
 	//						//
-		asciiGraphics->fillColor(colorPalette.fruit, currentFruit[0], currentFruit[1], currentFruit[0], currentFruit[1]);
+		asciiGraphics->fillColor(colorPalette.fruit, currentFruit.x, currentFruit.y, currentFruit.x, currentFruit.y);
 
 		//					  //
 		// COLOR PLAYER 1 GREEN //
 		//						//			
 
 		if (!snakes[0].justDied) {
-			asciiGraphics->attributeBuffer[snakes[0].head[0] + (snakes[0].head[1] * 80)] = colorPalette.player_1;
+			asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = snakes[0].color;
 
 			if (!snakes[0].justGotNewFruit) {
-				for (int l = 0; l < snakes[0].snek_length; l++) {
-					asciiGraphics->attributeBuffer[snakes[0].snek_body[l][0] + (snakes[0].snek_body[l][1] * 80)] = colorPalette.player_1;
+				for (int i = 0; i < snakes[0].body.size(); i++) {
+					asciiGraphics->attributeBuffer[snakes[0].body[i].x + (snakes[0].body[i].y * 80)] = snakes[0].color;
 				}
-				if (snakes[0].snekSwallowTimer <= snakes[0].snek_length) {
-					asciiGraphics->attributeBuffer[snakes[0].snek_body[snakes[0].snekSwallowTimer - 1][0] + (snakes[0].snek_body[snakes[0].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
+				if (snakes[0].snekSwallowTimer <= snakes[0].body.size()) {
+					asciiGraphics->attributeBuffer[snakes[0].body[snakes[0].snekSwallowTimer - 1].x + (snakes[0].body[snakes[0].snekSwallowTimer - 1].y * 80)] = colorPalette.fruit_swallowed;
 					snakes[0].snekSwallowTimer++;
 				}
 			}
 			else {
 				snakes[0].justGotNewFruit = false;
-				for (int l = 0; l < snakes[0].snek_length - 1; l++) {
-					asciiGraphics->attributeBuffer[snakes[0].snek_body[l][0] + (snakes[0].snek_body[l][1] * 80)] = colorPalette.player_1;
+				for (Coords2D& segment : snakes[0].body) {
+					asciiGraphics->fillColor(snakes[0].color, segment.x, segment.y);
 				}
 				if (snakes[0].snekSwallowTimer == 0) {
-					asciiGraphics->attributeBuffer[snakes[0].head[0] + (snakes[0].head[1] * 80)] = colorPalette.fruit_swallowed;
+					asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = colorPalette.fruit_swallowed;
 					snakes[0].snekSwallowTimer++;
 				}
 			}
 		}
 		else {
-			asciiGraphics->attributeBuffer[snakes[0].head[0] + (snakes[0].head[1] * 80)] = colorPalette.white;
-			for (int l = 0; l < snakes[0].snek_length - 1; l++) {
-				asciiGraphics->attributeBuffer[snakes[0].snek_body[l][0] + (snakes[0].snek_body[l][1] * 80)] = colorPalette.white;
+			asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = colorPalette.white;
+			for (Coords2D& segment : snakes[0].body) {
+				asciiGraphics->fillColor(colorPalette.white, segment.x, segment.y);
+				//asciiGraphics->attributeBuffer[snakes[0].body[l].x + (snakes[0].body[l].y * 80)] = colorPalette.white;
 			}
 		}
 
@@ -1219,35 +1254,37 @@ void SnakeGame::play() {
 		//					  //
 		if (playerCount == 2) {
 			if (!snakes[1].justDied) {
-				asciiGraphics->attributeBuffer[snakes[1].head[0] + (snakes[1].head[1] * 80)] = colorPalette.player_2;
+				asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = snakes[1].color;
 
 				if (!snakes[1].justGotNewFruit) {
-					for (int l = 0; l < snakes[1].snek_length; l++) {
-						asciiGraphics->attributeBuffer[snakes[1].snek_body[l][0] + (snakes[1].snek_body[l][1] * 80)] = colorPalette.player_2;
+					for (int l = 0; l < snakes[1].body.size(); l++) {
+						asciiGraphics->attributeBuffer[snakes[1].body[l].x + (snakes[1].body[l].y * 80)] = snakes[1].color;
 					}
-					if (snakes[1].snekSwallowTimer <= snakes[1].snek_length) {
-						asciiGraphics->attributeBuffer[snakes[1].snek_body[snakes[1].snekSwallowTimer - 1][0] + (snakes[1].snek_body[snakes[1].snekSwallowTimer - 1][1] * 80)] = colorPalette.fruit_swallowed;
+					if (snakes[1].snekSwallowTimer <= snakes[1].body.size()) {
+						asciiGraphics->attributeBuffer[snakes[1].body[snakes[1].snekSwallowTimer - 1].x + (snakes[1].body[snakes[1].snekSwallowTimer - 1].y * 80)] = colorPalette.fruit_swallowed;
 						snakes[1].snekSwallowTimer++;
 					}
 				}
 				else {
 					snakes[1].justGotNewFruit = false;
-					for (int l = 0; l < snakes[1].snek_length - 1; l++) {
-						asciiGraphics->attributeBuffer[snakes[1].snek_body[l][0] + (snakes[1].snek_body[l][1] * 80)] = colorPalette.player_2;
+					for (Coords2D& segment : snakes[1].body) {
+						asciiGraphics->fillColor(snakes[1].color, segment.x, segment.y);
 					}
 					if (snakes[1].snekSwallowTimer == 0) {
-						asciiGraphics->attributeBuffer[snakes[1].head[0] + (snakes[1].head[1] * 80)] = colorPalette.fruit_swallowed;
+						asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = colorPalette.fruit_swallowed;
 						snakes[1].snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				asciiGraphics->attributeBuffer[snakes[1].head[0] + (snakes[1].head[1] * 80)] = colorPalette.white;
-				for (int l = 0; l < snakes[1].snek_length - 1; l++) {
-					asciiGraphics->attributeBuffer[snakes[1].snek_body[l][0] + (snakes[1].snek_body[l][1] * 80)] = colorPalette.white;
+				asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = colorPalette.white;
+				for (int l = 0; l < snakes[1].body.size() - 1; l++) {
+					asciiGraphics->attributeBuffer[snakes[1].body[l].x + (snakes[1].body[l].y * 80)] = colorPalette.white;
 				}
 			}
 		}
+
+		asciiGraphics->drawText(0, 24, "{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
 
 		asciiOutput->pushOutput(*asciiGraphics);
 

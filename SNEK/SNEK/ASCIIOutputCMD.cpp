@@ -37,11 +37,11 @@ ASCIIOutputCMD::~ASCIIOutputCMD() {
 	SetConsoleActiveScreenBuffer(this->originalConsoleHandle);
 }
 
-void ASCIIOutputCMD::pushOutput(ASCIIGraphics& textGraphics) {
+void ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics) {
 	DWORD dwBytesWritten;
-	for (short y = 0; y < textGraphics.height; y++) {
-		WriteConsoleOutputAttribute(this->gameConsoleHandle, &textGraphics.attributeBuffer[y * textGraphics.width], textGraphics.width, { 0,y }, &dwBytesWritten);
-		WriteConsoleOutputCharacterW(this->gameConsoleHandle, boost::nowide::widen(textGraphics.textBuffer).c_str() + y * textGraphics.width, textGraphics.width, { 0,y }, &dwBytesWritten);
+	for (short y = 0; y < asciiGraphics.height; y++) {
+		WriteConsoleOutputAttribute(this->gameConsoleHandle, &asciiGraphics.attributeBuffer[y * asciiGraphics.width], asciiGraphics.width, { 0,y }, &dwBytesWritten);
+		WriteConsoleOutputCharacterW(this->gameConsoleHandle, boost::nowide::widen(asciiGraphics.textBuffer).c_str() + y * asciiGraphics.width, asciiGraphics.width, { 0,y }, &dwBytesWritten);
 
 		// using VTS to draw the screen
 		//wprintf(CSI L"%d;%dH", y, x);	// position the cursor

@@ -29,22 +29,26 @@ AudioSystem::~AudioSystem() {
 	this->fmodSystem->release();
 }
 
-void AudioSystem::loadBanks() {
-	FMOD::Studio::Bank* masterBank = NULL;
-	fmodSystem->loadBankFile("media/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &masterBank);
+void AudioSystem::loadMasterBank(std::string bankPath) {
+	fmodSystem->loadBankFile( bankPath.c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &(this->masterBank));
+}
 
-	FMOD::Studio::Bank* stringsBank = NULL;
-	fmodSystem->loadBankFile("media/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &stringsBank);
+void AudioSystem::loadStringsBank(std::string bankPath) {
+	fmodSystem->loadBankFile( bankPath.c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &(this->stringsBank));
+}
 
-	FMOD::Studio::Bank* musicandFX = NULL;
-	fmodResult = fmodSystem->loadBankFile("media/MusicandFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL, &musicandFX);
-
-	fmodResult = musicandFX->loadSampleData();
+void AudioSystem::loadBank(std::string bankPath) {
+	FMOD::Studio::Bank* bankPtr = NULL;
+	this->fmodResult = fmodSystem->loadBankFile(bankPath.c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bankPtr);
+	this->fmodBanks[bankPath] = bankPtr;
+	this->fmodResult = this->fmodBanks[bankPath]->loadSampleData();
 }
 
 void AudioSystem::loadEventInstance(std::string eventName) {
 	FMOD::Studio::EventDescription* eventDescription = NULL;
-	fmodSystem->getEvent(("event:/" + eventName).c_str(), &eventDescription);
+	auto tempStr = "event:/" + eventName;
+	auto tempStrPtr = tempStr.c_str();
+	fmodSystem->getEvent(tempStrPtr, &eventDescription);
 
 	FMOD::Studio::EventInstance* eventInstance = NULL;
 	eventDescription->createInstance(&eventInstance);

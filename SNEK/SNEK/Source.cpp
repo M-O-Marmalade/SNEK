@@ -6,74 +6,12 @@
 //	/_/   |_| \__| /__/  \__\ |_| \_\ |____|
 // / / BY M. O. MARMALADE / / / / / / / / / / / / /
 
-  ///////////////////////
- // PROGRAM STRUCTURE //
-///////////////////////
-/*
-
-| Audio/Graphics Init | Splash Screen | Start Screen | Pre-New Game Setup | Read Input | Game Logic | Audio Processing | Graphics Display | Name Entry | Try Again Screen |
-|=================================STARTUP=================================|===========================GAME LOOP===========================|===========GAME OVER===========|
-
-*/
-
-//The game is time-synced to a specific BPM (beats-per-minute) at all times, as the game is very music focused
-
-//time/tick/framerate calculations are done in nanoseconds (0.000000001 second, or 1e-9 second).
-//BPM to ns (beats-per-minute to nanoseconds) conversions are done as 60,000,000,000ns/xBPM.
-
-//audio timeline (FMOD Studio) calculations are done in milliseconds (0.001 second, or 1e-3 second).
-//BPM to ms (beats-per-minute to milliseconds) conversions are done as 60,000ms/xBPM.
-
-  /////////////////////
- // PROJECT OUTLINE //
-/////////////////////
-// Includes/Namespaces
-// Global Variables
-// Audio System Setup (FMOD Studio)
-// Loading/Preparing Audio Events
-// Display Setup
-// [Splash Screen Animation]
-// [Start Screen]
-// Read High Score File
-// [New Game Perparation]
-// [Game Loop Start]
-// Set Framerate
-// Tick Clock
-// Read Player Input
-// Check + Set Direction [Tick Resolution]
-// Refresh Display
-// Move Body Segments
-// Check + Set Direction [Frame Resolution]
-// Place Snek Body Into Display Array
-// Store Each Snek's Surroundings
-// Add Style Points
-// Update Style High Score
-// Move Player
-// Detect if Player Has Hit Map Edge
-// Detect if Player Has Hit Themselves
-// Calculate Proximity to the Fruit
-// Detect if Player Has Hit Fruit
-// Set New High Score
-// Create Portals
-// Pass Player Through Portals
-// Place Player Into Display Array
-// Place Fruit Into Display Array
-// Audio Processing
-// Draw Screen
-// Color the Screen
-// Color the Fruit Pink
-// Color Player 1 Green
-// Color Player 2 Red
-// Game Over Screen
-// Name Entry
-// Write High Score To File
-// "Try Again?" Screen
-
-
-  //					 //
+  //                     //
  // INCLUDES/NAMESPACES //
-//					   //
+//                     //
+
 #pragma once
+#define NOMINMAX
 #include <Windows.h>
 #include <algorithm>
 #include <chrono>
@@ -90,30 +28,6 @@
 
 #include "SnakeGame.h"
 
-
-  //				  //
- // GLOBAL VARIABLES //
-//					//
-
-//LOGIC VARIABLES
-char gameGrid[25][25]{'z'};		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
-bool gameLose;					//current Game Lose state
-bool playAgain;					//decides whether or not to play again after losing
-int highScore = 0;				//current High Score
-int styleCounter = 0;			//current STYLE Score
-int styleHighScore = 0;			//current Style High Score
-int currentFruit[2];			//location of the current fruit on the game grid [x,y]
-int playerCount = 1;			//amount of players, can be increased at start screen
-int highestCurrentLength = 0;	//highest length out of all current players/sneks
-int portalCount = 0;			//amount of portals on the map
-int portalCoordinates[6][2];	//coordinates of the current portals on the map
-bool gotNewFruit = false;
-int oldHighScore;
-bool gotNewHighScore = false;
-std::string keyboard = "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-_$& ";
-std::string highScoreName;
-bool wasPreviousHighScoreFound;
-std::vector<double> bpmValues = { 54.5f, 62.5f, 75.5f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
 
 //INPUT VARIABLES
 bool arrowKeys[4];				//stores input from arrow keys
@@ -146,31 +60,12 @@ int main() {
 		"Instruments+FX/newHighScore"
 	};
 
-	std::vector<std::string> bpmNames = {
-		"Instruments+FX/BPMs/bpm54_5",
-		"Instruments+FX/BPMs/bpm62_5",
-		"Instruments+FX/BPMs/bpm75_5",
-		"Instruments+FX/BPMs/bpm89",
-		"Instruments+FX/BPMs/bpm100",
-		"Instruments+FX/BPMs/bpm127",
-		"Instruments+FX/BPMs/bpm137",
-		"Instruments+FX/BPMs/bpm152",
-		"Instruments+FX/BPMs/bpm164",
-		"Instruments+FX/BPMs/bpm172",
-		"Instruments+FX/BPMs/bpm181",
-		"Instruments+FX/BPMs/bpm200"
-	};
-
-	const bool fmodLiveUpdate = false;
-	AudioSystem snekAudioSystem(fmodLiveUpdate);
-
-	snekAudioSystem.loadBanks();
+	AudioSystem snekAudioSystem(false);
+	snekAudioSystem.loadMasterBank("media/Master.bank");
+	snekAudioSystem.loadStringsBank("media/Master.strings.bank");
+	snekAudioSystem.loadBank("media/MusicandFX.bank");
 
 	for (std::string name : fmodEventNames) {
-		snekAudioSystem.loadEventInstance(name);
-	}
-
-	for (std::string name : bpmNames) {
 		snekAudioSystem.loadEventInstance(name);
 	}
 
@@ -178,13 +73,10 @@ int main() {
 	  //			   //
 	 // DISPLAY SETUP //
 	//			  	 //
-	
-	int nScreenWidth = 80;			//width of the console window (measured in characters, not pixels)
-	int nScreenHeight = 25;			//height of the console window (measured in characters, not pixels)
 
 	ColorPalette colorPalette;
-	ASCIIGraphics textGraphics(nScreenWidth, nScreenHeight);
-	ASCIIOutputCMD textOutputCMD;
+	ASCIIGraphics asciiGraphics(80, 25);
+	ASCIIOutputCMD asciiOutputCMD;
 
 
 	  //						 //
@@ -195,19 +87,19 @@ int main() {
 	snekAudioSystem.fmodUpdate();
 
 	// reset the color of the whole screen
-	textGraphics.fillColor(colorPalette.standard, 0, 0, textGraphics.width - 1, textGraphics.height - 1);
+	asciiGraphics.fillColor(colorPalette.standard, 0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1);
 
 	// Draw Splash Screen
 	bool animation = true;
 	int u = 0;
 	int charToOverwrite = 996;
-	textGraphics.fillColor(colorPalette.bright_cyan, 30, 10, 50, 20);
+	asciiGraphics.fillColor(colorPalette.bright_cyan, 30, 10, 50, 20);
 	while (charToOverwrite <= 1005) {
 
-		textGraphics.textBuffer[charToOverwrite] = "Citrus 64"[u];
+		asciiGraphics.textBuffer[charToOverwrite] = "Citrus 64"[u];
 		charToOverwrite++;
 		u++;
-		textOutputCMD.pushOutput(textGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(77));
 	}
@@ -219,10 +111,10 @@ int main() {
 	charToOverwrite = 992;	
 	while (charToOverwrite <= 1006) {
 		
-		textGraphics.textBuffer[charToOverwrite] = char(32);
+		asciiGraphics.textBuffer[charToOverwrite] = char(32);
 		charToOverwrite++;
 		
-		textOutputCMD.pushOutput(textGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics);
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(77));	
 	}
@@ -241,13 +133,13 @@ int main() {
 	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
 	snekAudioSystem.fmodUpdate();
 
-	
+	int playerCount = 1;
 
 	bool holdKey = false;
 	while (startScreen) {
 
 		// draw logo
-		textGraphics.drawTextSprite(19, 7, ASCIISprite(
+		asciiGraphics.drawTextSprite(19, 7, ASCIISprite(
 			" __    _    _              _  __   ____\n"
 			"/ /   | \\  | |     /\\     | |/ /  |  __|\n"
 			"\\ \\   |  \\ | |    /  \\    | | /   | |__\n"
@@ -257,15 +149,15 @@ int main() {
 			colorPalette.hud));
 
 		// draw player count
-		textGraphics.fillColor(colorPalette.grey, 34, 20, 42, 20);
-		textGraphics.fillColor(colorPalette.white, 43, 20, 45, 20);
-		textGraphics.drawText(34, 20, "Players: <" + std::to_string(playerCount) + ">");
+		asciiGraphics.fillColor(colorPalette.grey, 34, 20, 42, 20);
+		asciiGraphics.fillColor(colorPalette.white, 43, 20, 45, 20);
+		asciiGraphics.drawText(34, 20, "Players: <" + std::to_string(playerCount) + ">");
 
 		if (playerCount == 2) {
 
-			textGraphics.fillColor(colorPalette.player_2, 15, 14, 35, 16);
-			textGraphics.fillColor(colorPalette.player_1, 36, 14, 80, 16);
-			textGraphics.drawText(15, 14, 
+			asciiGraphics.fillColor(colorPalette.player_2, 15, 14, 35, 16);
+			asciiGraphics.fillColor(colorPalette.player_1, 36, 14, 80, 16);
+			asciiGraphics.drawText(15, 14, 
 				"--------------------      --------------------------\n"
 				"| P2: WASD + B-Key |      | P1: Arrow Keys + P-Key |\n"
 				"--------------------      --------------------------");
@@ -273,14 +165,14 @@ int main() {
 		}
 		else {
 
-			textGraphics.drawTextSprite(15, 14, ASCIISprite(
+			asciiGraphics.drawTextSprite(15, 14, ASCIISprite(
 				"         --------------------------------           \n"
 				"         | Controls: Arrow Keys + Z-Key |           \n"
 				"         --------------------------------           ",
 				colorPalette.player_1));
 		}
 
-		textGraphics.drawTextSprite(35, 22, ASCIISprite("Citrus 64", colorPalette.logo)); // draw studio name
+		asciiGraphics.drawTextSprite(35, 22, ASCIISprite("Citrus 64", colorPalette.logo)); // draw studio name
 
 		if (startScreenFrameCount == 111) {
 			if (startScreenToggle) {
@@ -288,7 +180,7 @@ int main() {
 
 				// draw "Press Z to start" every 111th frame
 				ASCIISprite pressStartSprite("Press [Z] to start", colorPalette.press_start);
-				textGraphics.drawTextSprite(31, 18, pressStartSprite);
+				asciiGraphics.drawTextSprite(31, 18, pressStartSprite);
 
 				// play snakefruitinstance sound for flashing "press start" button (FMOD)
 				snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
@@ -297,13 +189,13 @@ int main() {
 			}
 			else {
 				startScreenToggle = true;
-				textGraphics.drawText(31, 18, "                  ");
+				asciiGraphics.drawText(31, 18, "                  ");
 			}
 
 			startScreenFrameCount = 0;
 		}
 
-		textOutputCMD.pushOutput(textGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics);
 
 		startScreenFrameCount++;
 
@@ -361,8 +253,8 @@ int main() {
 			};
 
 			for (auto& animFrame : pressedStartAnimFrames) {
-				textGraphics.drawText(31, 18, animFrame.first);
-				textOutputCMD.pushOutput(textGraphics);
+				asciiGraphics.drawText(31, 18, animFrame.first);
+				asciiOutputCMD.pushOutput(asciiGraphics);
 				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}
@@ -370,10 +262,10 @@ int main() {
 		snekAudioSystem.fmodUpdate();
 	}
 	
-	SnakeGame currentGame(playerCount, 25, 25, &textGraphics, &textOutputCMD, &snekAudioSystem);
+	SnakeGame currentGame(playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem);
 	currentGame.play();
 	while (currentGame.playAgain) {
-		currentGame = SnakeGame(currentGame.playerCount, 25, 25, &textGraphics, &textOutputCMD, &snekAudioSystem);
+		currentGame = SnakeGame(currentGame.playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem);
 		currentGame.play();
 	}
 
