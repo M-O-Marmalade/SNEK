@@ -76,7 +76,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;$(SolutionDir)SNEK\Soil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x86;$(SolutionDir)Dependencies\FMODapi\studio\lib\x86;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
@@ -93,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;$(SolutionDir)SNEK\Soil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\FMODapi\core\lib\x64;$(SolutionDir)Dependencies\FMODapi\studio\lib\x64;C:\libraries\boost\stage\lib;C:\libraries\boost\stage\lib</AdditionalLibraryDirectories>
@@ -112,7 +112,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;$(SolutionDir)SNEK\Soil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -130,7 +130,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\FMODapi\studio\inc;$(SolutionDir)Dependencies\FMODapi\core\inc;C:\libraries\boost;$(SolutionDir)SNEK\Soil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -141,8 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AudioSystem.cpp" />
-    <ClCompile Include="ColorPalette.cpp" />
+    <ClCompile Include="soil\AudioSystem.cpp" />
     <ClCompile Include="Snake.cpp" />
     <ClCompile Include="SnakeGame.cpp" />
     <ClCompile Include="Source.cpp">
@@ -151,18 +150,18 @@
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</UseUnicodeForAssemblerListing>
     </ClCompile>
-    <ClCompile Include="ASCIIGraphics.cpp" />
-    <ClCompile Include="ASCIIOutputCMD.cpp" />
-    <ClCompile Include="ASCIISprite.cpp" />
+    <ClCompile Include="soil\ASCIIGraphics.cpp" />
+    <ClCompile Include="soil\ASCIIOutputCMD.cpp" />
+    <ClCompile Include="soil\ASCIISprite.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioSystem.h" />
-    <ClInclude Include="ASCIIGraphics.h" />
-    <ClInclude Include="ASCIIOutput.h" />
-    <ClInclude Include="ASCIIOutputCMD.h" />
-    <ClInclude Include="ASCIISprite.h" />
-    <ClInclude Include="ColorPalette.h" />
-    <ClInclude Include="Coords2D.h" />
+    <ClInclude Include="soil\AudioSystem.h" />
+    <ClInclude Include="soil\ASCIIGraphics.h" />
+    <ClInclude Include="soil\ASCIIOutput.h" />
+    <ClInclude Include="soil\ASCIIOutputCMD.h" />
+    <ClInclude Include="soil\ASCIISprite.h" />
+    <ClInclude Include="soil\ColorPalette.h" />
+    <ClInclude Include="soil\Coords2D.h" />
     <ClInclude Include="Snake.h" />
     <ClInclude Include="SnakeGame.h" />
   </ItemGroup>

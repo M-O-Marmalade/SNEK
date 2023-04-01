@@ -1,6 +1,6 @@
 #include "ASCIIOutputCMD.h"
 
-ASCIIOutputCMD::ASCIIOutputCMD() {
+Soil::ASCIIOutputCMD::ASCIIOutputCMD() {
 
 	// store reference to console buffer that launched the game
 	this->originalConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -31,11 +31,11 @@ ASCIIOutputCMD::ASCIIOutputCMD() {
 	SetConsoleWindowInfo(hConsole, TRUE, &(consoleBufferInfo.srWindow));*/
 }
 
-ASCIIOutputCMD::~ASCIIOutputCMD() {
+Soil::ASCIIOutputCMD::~ASCIIOutputCMD() {
 	SetConsoleActiveScreenBuffer(this->originalConsoleHandle);
 }
 
-void ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics) {
+void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics) {
 	DWORD dwBytesWritten;
 	for (short y = 0; y < asciiGraphics.height; y++) {
 		WriteConsoleOutputAttribute(this->gameConsoleHandle, &asciiGraphics.attributeBuffer[y * asciiGraphics.width], asciiGraphics.width, { 0,y }, &dwBytesWritten);

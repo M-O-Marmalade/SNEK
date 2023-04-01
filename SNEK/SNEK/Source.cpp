@@ -60,7 +60,7 @@ int main() {
 		"Instruments+FX/newHighScore"
 	};
 
-	AudioSystem snekAudioSystem(false);
+	Soil::AudioSystem snekAudioSystem(false);
 	snekAudioSystem.loadMasterBank("media/Master.bank");
 	snekAudioSystem.loadStringsBank("media/Master.strings.bank");
 	snekAudioSystem.loadBank("media/MusicandFX.bank");
@@ -74,9 +74,9 @@ int main() {
 	 // DISPLAY SETUP //
 	//			  	 //
 
-	ColorPalette colorPalette;
-	ASCIIGraphics asciiGraphics(80, 25);
-	ASCIIOutputCMD asciiOutputCMD;
+	Soil::ColorPalette colorPalette;
+	Soil::ASCIIGraphics asciiGraphics(80, 25);
+	Soil::ASCIIOutputCMD asciiOutputCMD;
 
 
 	  //						 //
@@ -139,7 +139,7 @@ int main() {
 	while (startScreen) {
 
 		// draw logo
-		asciiGraphics.drawTextSprite(19, 7, ASCIISprite(
+		asciiGraphics.drawTextSprite(19, 7, Soil::ASCIISprite(
 			" __    _    _              _  __   ____\n"
 			"/ /   | \\  | |     /\\     | |/ /  |  __|\n"
 			"\\ \\   |  \\ | |    /  \\    | | /   | |__\n"
@@ -165,21 +165,21 @@ int main() {
 		}
 		else {
 
-			asciiGraphics.drawTextSprite(15, 14, ASCIISprite(
+			asciiGraphics.drawTextSprite(15, 14, Soil::ASCIISprite(
 				"         --------------------------------           \n"
 				"         | Controls: Arrow Keys + Z-Key |           \n"
 				"         --------------------------------           ",
 				colorPalette.player_1));
 		}
 
-		asciiGraphics.drawTextSprite(35, 22, ASCIISprite("Citrus 64", colorPalette.logo)); // draw studio name
+		asciiGraphics.drawTextSprite(35, 22, Soil::ASCIISprite("Citrus 64", colorPalette.logo)); // draw studio name
 
 		if (startScreenFrameCount == 111) {
 			if (startScreenToggle) {
 				startScreenToggle = false;
 
 				// draw "Press Z to start" every 111th frame
-				ASCIISprite pressStartSprite("Press [Z] to start", colorPalette.press_start);
+				Soil::ASCIISprite pressStartSprite("Press [Z] to start", colorPalette.press_start);
 				asciiGraphics.drawTextSprite(31, 18, pressStartSprite);
 
 				// play snakefruitinstance sound for flashing "press start" button (FMOD)

@@ -11,13 +11,13 @@ class Snake {
 public:
 	WORD color = FOREGROUND_GREEN;
 
-	Coords2D head;					//the snek's head position on the play grid
-	std::vector<Coords2D> body;		//the snek's body segments on the play grid
+	Soil::Coords2D head;					//the snek's head position on the play grid
+	std::vector<Soil::Coords2D> body;		//the snek's body segments on the play grid
 	
 	bool directional_keys[4];		//stores input from directional keys
 	bool action_keys;				//stores input from action keys
-	Coords2D direction_tick;			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
-	Coords2D direction_frame;			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
+	Soil::Coords2D direction_tick;			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
+	Soil::Coords2D direction_frame;			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
 	bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
 	bool holdE = false;				//"		"
 	bool holdS = false;				//"		"
@@ -31,6 +31,6 @@ public:
 	int potentialFruitSpot3;
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 
-	Snake(WORD color, Coords2D startPosition, Coords2D startDirection);
+	Snake(WORD color, Soil::Coords2D startPosition, Soil::Coords2D startDirection);
 };
 

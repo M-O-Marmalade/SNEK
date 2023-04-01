@@ -18,22 +18,19 @@
     <ClCompile Include="Source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AudioSystem.cpp">
+    <ClCompile Include="soil\AudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ASCIIGraphics.cpp">
+    <ClCompile Include="soil\ASCIIGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ASCIIOutputCMD.cpp">
+    <ClCompile Include="soil\ASCIIOutputCMD.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ASCIISprite.cpp">
+    <ClCompile Include="soil\ASCIISprite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Snake.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ColorPalette.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SnakeGame.cpp">
@@ -41,31 +38,31 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioSystem.h">
+    <ClInclude Include="soil\AudioSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ASCIIGraphics.h">
+    <ClInclude Include="soil\ASCIIGraphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ASCIIOutput.h">
+    <ClInclude Include="soil\ASCIIOutput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ASCIIOutputCMD.h">
+    <ClInclude Include="soil\ASCIIOutputCMD.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ASCIISprite.h">
+    <ClInclude Include="soil\ASCIISprite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Snake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ColorPalette.h">
+    <ClInclude Include="soil\ColorPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SnakeGame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Coords2D.h">
+    <ClInclude Include="soil\Coords2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -45,7 +45,7 @@ void SnakeGame::readScoreFile() {
 	oldHighScore = highScore;
 }
 
-SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, ASCIIGraphics* asciiGraphics, ASCIIOutputCMD* asciiOutput, AudioSystem* audioSystem) : playerCount{ playerCount }, asciiGraphics { asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem } {
+SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem) : playerCount{ playerCount }, asciiGraphics { asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem } {
 	
 	// initialize/resize `gameGrid`
 	this->gameGrid = std::vector<std::vector<char>>(gridWidth,std::vector<char>(gridHeight, ' '));
@@ -202,16 +202,16 @@ void SnakeGame::play() {
 
 			for (Snake& snake : this->snakes) {
 				if (snake.directional_keys[0] && !snake.holdW && snake.direction_frame.x != 1) {
-					snake.direction_tick = Coords2D{-1,0};
+					snake.direction_tick = Soil::Coords2D{-1,0};
 				}
 				else if (snake.directional_keys[1] && !snake.holdN && snake.direction_frame.y != 1) {
-					snake.direction_tick = Coords2D{0,-1};
+					snake.direction_tick = Soil::Coords2D{0,-1};
 				}
 				else if (snake.directional_keys[2] && !snake.holdE && snake.direction_frame.x != -1) {
-					snake.direction_tick = Coords2D{1,0};
+					snake.direction_tick = Soil::Coords2D{1,0};
 				}
 				else if (snake.directional_keys[3] && !snake.holdS && snake.direction_frame.y != -1) {
-					snake.direction_tick = Coords2D{0,1};
+					snake.direction_tick = Soil::Coords2D{0,1};
 				}
 			}
 		}
@@ -250,7 +250,7 @@ void SnakeGame::play() {
 		for (Snake& snake : this->snakes) {
 
 			if (snake.direction_tick.x == -1 && snake.holdW == false && snake.direction_frame.x != 1) {
-				snake.direction_frame = Coords2D{ -1,0 };
+				snake.direction_frame = Soil::Coords2D{ -1,0 };
 
 				snake.holdW = true;
 				snake.holdE = false;
@@ -259,7 +259,7 @@ void SnakeGame::play() {
 			}
 
 			else if (snake.direction_tick.y == -1 && snake.holdN == false && snake.direction_frame.y != 1) {
-				snake.direction_frame = Coords2D{ 0,-1 };
+				snake.direction_frame = Soil::Coords2D{ 0,-1 };
 
 				snake.holdN = true;
 				snake.holdE = false;
@@ -268,7 +268,7 @@ void SnakeGame::play() {
 			}
 
 			else if (snake.direction_tick.x == 1 && snake.holdE == false && snake.direction_frame.x != -1) {
-				snake.direction_frame = Coords2D{ 1,0 };
+				snake.direction_frame = Soil::Coords2D{ 1,0 };
 
 				snake.holdE = true;
 				snake.holdW = false;
@@ -277,7 +277,7 @@ void SnakeGame::play() {
 			}
 
 			else if (snake.direction_tick.y == 1 && snake.holdS == false && snake.direction_frame.y != -1) {
-				snake.direction_frame = Coords2D{ 0,1 };
+				snake.direction_frame = Soil::Coords2D{ 0,1 };
 
 				snake.holdS = true;
 				snake.holdE = false;
@@ -447,7 +447,7 @@ void SnakeGame::play() {
 		//             //
 		for (Snake& snake : this->snakes) {
 
-			if (snake.direction_frame == Coords2D{ 1,0 }) {
+			if (snake.direction_frame == Soil::Coords2D{ 1,0 }) {
 				snake.head.x++;
 
 				if (snake.action_keys) {
@@ -455,7 +455,7 @@ void SnakeGame::play() {
 				}
 			}
 
-			else if (snake.direction_frame == Coords2D{ -1,0 }) {
+			else if (snake.direction_frame == Soil::Coords2D{ -1,0 }) {
 				snake.head.x--;
 
 				if (snake.action_keys) {
@@ -463,7 +463,7 @@ void SnakeGame::play() {
 				}
 			}
 
-			else if (snake.direction_frame == Coords2D{ 0,1 }) {
+			else if (snake.direction_frame == Soil::Coords2D{ 0,1 }) {
 				snake.head.y++;
 
 				if (snake.action_keys) {
@@ -471,7 +471,7 @@ void SnakeGame::play() {
 				}
 			}
 
-			else if (snake.direction_frame == Coords2D{ 0,-1 }) {
+			else if (snake.direction_frame == Soil::Coords2D{ 0,-1 }) {
 				snake.head.y--;
 
 				if (snake.action_keys) {
@@ -1117,7 +1117,7 @@ void SnakeGame::play() {
 		asciiGraphics->fillColor(colorPalette.hud, 25, 0, 25, asciiGraphics->height - 1);
 		asciiGraphics->fillText(25, 0, 25, asciiGraphics->height - 1, '|');
 
-		asciiGraphics->drawTextSprite(32, 0, ASCIISprite(
+		asciiGraphics->drawTextSprite(32, 0, Soil::ASCIISprite(
 			"       __    _    _              _  __   ____\n"
 			"      / /   | \\  | |     /\\     | |/ /  |  __|\n"
 			"      \\ \\   |  \\ | |    /  \\    | | /   | |__\n"
@@ -1142,47 +1142,47 @@ void SnakeGame::play() {
 
 		if (highestCurrentLength >= 11) {
 			if (playerCount == 1) {
-				asciiGraphics->drawTextSprite(43, 14, ASCIISprite("Press Z to lunge!", colorPalette.player_1));
+				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press Z to lunge!", colorPalette.player_1));
 			}
 			else if (playerCount == 2) {
-				asciiGraphics->drawTextSprite(43, 14, ASCIISprite("Press P to lunge!", colorPalette.player_1));
-				asciiGraphics->drawTextSprite(43, 16, ASCIISprite("Press V to lunge!", colorPalette.player_2));
+				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press P to lunge!", colorPalette.player_1));
+				asciiGraphics->drawTextSprite(43, 16, Soil::ASCIISprite("Press V to lunge!", colorPalette.player_2));
 			}
 		}
 
 		for (Snake& snake : this->snakes) {
 
 			if (snake.justDied) {
-				asciiGraphics->drawTextSprite(snake.head.x, snake.head.y, ASCIISprite("X", colorPalette.white));
+				asciiGraphics->drawTextSprite(snake.head.x, snake.head.y, Soil::ASCIISprite("X", colorPalette.white));
 			}
 			else {
 				std::string snakeHeadText;
-				if (snake.direction_frame == Coords2D{ 0,-1 }) {
+				if (snake.direction_frame == Soil::Coords2D{ 0,-1 }) {
 					snakeHeadText = "^";
 				}
-				else if (snake.direction_frame == Coords2D{ 0,1 }) {
+				else if (snake.direction_frame == Soil::Coords2D{ 0,1 }) {
 					snakeHeadText = "v";
 				}
-				else if (snake.direction_frame == Coords2D{ 1,0 }) {
+				else if (snake.direction_frame == Soil::Coords2D{ 1,0 }) {
 					snakeHeadText = ">";
 				}
-				else if (snake.direction_frame == Coords2D{ -1,0 }) {
+				else if (snake.direction_frame == Soil::Coords2D{ -1,0 }) {
 					snakeHeadText = "<";
 				}
 				else {
 					snakeHeadText = "_";
 				}
-				asciiGraphics->drawTextSprite(snake.head, ASCIISprite(snakeHeadText, snake.color));
+				asciiGraphics->drawTextSprite(snake.head, Soil::ASCIISprite(snakeHeadText, snake.color));
 			}
 		}
 
 		if (portalCount) {
-			asciiGraphics->drawTextSprite(portalCoordinates[0][0], portalCoordinates[0][1], ASCIISprite("O", colorPalette.portal));
-			asciiGraphics->drawTextSprite(portalCoordinates[1][0], portalCoordinates[1][1], ASCIISprite("O", colorPalette.portal));
+			asciiGraphics->drawTextSprite(portalCoordinates[0][0], portalCoordinates[0][1], Soil::ASCIISprite("O", colorPalette.portal));
+			asciiGraphics->drawTextSprite(portalCoordinates[1][0], portalCoordinates[1][1], Soil::ASCIISprite("O", colorPalette.portal));
 		}
 
 		if (wasPreviousHighScoreFound) {
-			asciiGraphics->drawTextSprite(63, 6, ASCIISprite(
+			asciiGraphics->drawTextSprite(63, 6, Soil::ASCIISprite(
 				" -------------\n"
 				"|             |\n"
 				" -------------",
@@ -1192,7 +1192,7 @@ void SnakeGame::play() {
 
 		if (playerCount == 2 && currentFrame == 1) {
 
-			asciiGraphics->drawTextSprite(14, 8, ASCIISprite(
+			asciiGraphics->drawTextSprite(14, 8, Soil::ASCIISprite(
 				"Player 1\n"
 				"   |    \n"
 				"   |    \n"
@@ -1200,7 +1200,7 @@ void SnakeGame::play() {
 				colorPalette.player_1
 			));
 
-			asciiGraphics->drawTextSprite(4, 8, ASCIISprite(
+			asciiGraphics->drawTextSprite(4, 8, Soil::ASCIISprite(
 				"Player 2\n"
 				"   |    \n"
 				"   |    \n"
@@ -1242,7 +1242,7 @@ void SnakeGame::play() {
 			}
 			else {
 				snakes[0].justGotNewFruit = false;
-				for (Coords2D& segment : snakes[0].body) {
+				for (Soil::Coords2D& segment : snakes[0].body) {
 					asciiGraphics->fillColor(snakes[0].color, segment.x, segment.y);
 				}
 				if (snakes[0].snekSwallowTimer == 0) {
@@ -1253,7 +1253,7 @@ void SnakeGame::play() {
 		}
 		else {
 			asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = colorPalette.white;
-			for (Coords2D& segment : snakes[0].body) {
+			for (Soil::Coords2D& segment : snakes[0].body) {
 				asciiGraphics->fillColor(colorPalette.white, segment.x, segment.y);
 				//asciiGraphics->attributeBuffer[snakes[0].body[l].x + (snakes[0].body[l].y * 80)] = colorPalette.white;
 			}
@@ -1277,7 +1277,7 @@ void SnakeGame::play() {
 				}
 				else {
 					snakes[1].justGotNewFruit = false;
-					for (Coords2D& segment : snakes[1].body) {
+					for (Soil::Coords2D& segment : snakes[1].body) {
 						asciiGraphics->fillColor(snakes[1].color, segment.x, segment.y);
 					}
 					if (snakes[1].snekSwallowTimer == 0) {
