@@ -1,7 +1,5 @@
 #include "ASCIIOutputCMD.h"
 
-#include "boost/nowide/convert.hpp"
-
 ASCIIOutputCMD::ASCIIOutputCMD() {
 
 	// store reference to console buffer that launched the game
@@ -41,7 +39,7 @@ void ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics) {
 	DWORD dwBytesWritten;
 	for (short y = 0; y < asciiGraphics.height; y++) {
 		WriteConsoleOutputAttribute(this->gameConsoleHandle, &asciiGraphics.attributeBuffer[y * asciiGraphics.width], asciiGraphics.width, { 0,y }, &dwBytesWritten);
-		WriteConsoleOutputCharacterW(this->gameConsoleHandle, boost::nowide::widen(asciiGraphics.textBuffer).c_str() + y * asciiGraphics.width, asciiGraphics.width, { 0,y }, &dwBytesWritten);
+		WriteConsoleOutputCharacter(this->gameConsoleHandle, asciiGraphics.textBuffer.c_str() + y * asciiGraphics.width, asciiGraphics.width, { 0,y }, &dwBytesWritten);
 
 		// using VTS to draw the screen
 		//wprintf(CSI L"%d;%dH", y, x);	// position the cursor

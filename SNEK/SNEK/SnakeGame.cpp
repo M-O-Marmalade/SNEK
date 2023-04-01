@@ -210,7 +210,7 @@ void SnakeGame::play() {
 				else if (snake.directional_keys[2] && !snake.holdE && snake.direction_frame.x != -1) {
 					snake.direction_tick = Coords2D{1,0};
 				}
-				else {
+				else if (snake.directional_keys[3] && !snake.holdS && snake.direction_frame.y != -1) {
 					snake.direction_tick = Coords2D{0,1};
 				}
 			}
@@ -1140,6 +1140,16 @@ void SnakeGame::play() {
 		asciiGraphics->drawText(33, 9, "STYLE: " + std::to_string(styleCounter));
 		asciiGraphics->drawText(47, 9, "HIGH STYLE: " + std::to_string(styleHighScore));
 
+		if (highestCurrentLength >= 11) {
+			if (playerCount == 1) {
+				asciiGraphics->drawTextSprite(43, 14, ASCIISprite("Press Z to lunge!", colorPalette.player_1));
+			}
+			else if (playerCount == 2) {
+				asciiGraphics->drawTextSprite(43, 14, ASCIISprite("Press P to lunge!", colorPalette.player_1));
+				asciiGraphics->drawTextSprite(43, 16, ASCIISprite("Press V to lunge!", colorPalette.player_2));
+			}
+		}
+
 		for (Snake& snake : this->snakes) {
 
 			if (snake.justDied) {
@@ -1284,7 +1294,18 @@ void SnakeGame::play() {
 			}
 		}
 
-		asciiGraphics->drawText(0, 24, "{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
+		// FOR DEBUG
+		/*asciiGraphics->drawText(0, 24, 
+			"frame{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
+
+		asciiGraphics->drawText(20, 24, 
+			"tick{" + std::to_string(snakes[0].direction_tick.x) + "," + std::to_string(snakes[0].direction_tick.y) + "}");
+
+		asciiGraphics->drawText(0, 23, 
+			"holdN:" + std::to_string(snakes[0].holdN) + 
+			" holdE" + std::to_string(snakes[0].holdE) + 
+			" holdS" + std::to_string(snakes[0].holdS) + 
+			" holdW" + std::to_string(snakes[0].holdW));*/
 
 		asciiOutput->pushOutput(*asciiGraphics);
 
@@ -1323,6 +1344,7 @@ void SnakeGame::play() {
 		asciiGraphics->fillText(65, 7, 76, 7, ' ');
 
 		//..display the keyboard..
+		asciiGraphics->fillText(43, 13, 79, 16, ' ');
 		for (int y = 0; y < 32; y++) {
 			if (y < 8) {
 				asciiGraphics->textBuffer[40 + (13 * 80) + (y * 2)] = keyboard[y];

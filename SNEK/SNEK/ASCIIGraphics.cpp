@@ -44,7 +44,7 @@ void ASCIIGraphics::drawText(Coords2D coordinates, std::string stringToWrite) {
 	this->drawText(coordinates.x, coordinates.y, stringToWrite);
 }
 
-void ASCIIGraphics::fillText(int left, int top, int right, int bottom, wchar_t charToWrite) {
+void ASCIIGraphics::fillText(int left, int top, int right, int bottom, char charToWrite) {
 	int x = left, y = top;
 	for (int y = top; y <= bottom; y++) {
 		for (int x = left; x <= right; x++) {
