@@ -4,7 +4,6 @@
 #include <vector>
 #include <chrono>
 #include <fstream>
-#include <thread>
 
 #include "Snake.h"
 #include "ASCIIOutputCMD.h"
@@ -19,8 +18,11 @@ private:
 	Soil::ColorPalette colorPalette;
 	
 	void readScoreFile();
+	void processFruitPickups();
+	void processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit);
+	void gameOverScreen();
+	void drawDebugMenu();
 
-public:
 	std::vector<Snake> snakes;
 	std::vector<std::vector<char>> gameGrid; //char display[25][25]{ 'z' };		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
 	
@@ -30,8 +32,6 @@ public:
 	bool gotNewFruit = false;
 	
 	bool gameLose = false;				//current Game Lose state
-	bool playAgain = true;					//decides whether or not to play again after losing
-	int playerCount = 1;			//amount of players, can be increased at start screen
 	int highestCurrentLength = 0;	//highest length out of all current players/sneks
 	bool wasPreviousHighScoreFound;
 	int oldHighScore;
@@ -82,7 +82,10 @@ public:
 	"Instruments+FX/BPMs/bpm200"
 	};
 
-	
+public:
+	bool playAgain = true;					//decides whether or not to play again after losing
+	int playerCount = 1;			//amount of players, can be increased at start screen
+
 	SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem);
 	void play();
 };

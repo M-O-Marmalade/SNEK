@@ -1,5 +1,7 @@
 #include "SnakeGame.h"
 
+#include "Sleep.h"
+
 ///////////////////////
 // PROGRAM STRUCTURE //
 ///////////////////////
@@ -17,6 +19,9 @@
 
 //audio timeline (FMOD Studio) calculations are done in milliseconds (0.001 second, or 1e-3 second).
 //BPM to ms (beats-per-minute to milliseconds) conversions are done as 60,000ms/xBPM.
+
+
+
 
 void SnakeGame::readScoreFile() {
 	std::ifstream scoreFileRead;
@@ -532,80 +537,7 @@ void SnakeGame::play() {
 		}
 
 
-		//								  //
-		// DETECT IF PLAYER HAS HIT FRUIT //
-		//								//
-		gotNewFruit = false;
-
-		for (Snake& snake : this->snakes) {
-
-			if (snake.head.x == currentFruit.x && snake.head.y == currentFruit.y) {
-
-				snake.body.push_back({ snake.head });
-				snake.justGotNewFruit = true;
-				gotNewFruit = true;
-				snake.snekSwallowTimer = 0;
-
-				for (int e = 0; e < 300; e++) {
-					currentFruit.x = rand() % 25;		//create a potential fruit spot
-					currentFruit.y = rand() % 25;
-
-					//check if that spot is currently filled//
-					if ((currentFruit.x != snake.head.x && currentFruit.y != snake.head.y) && gameGrid[currentFruit.x][currentFruit.y] != '8' && gameGrid[currentFruit.x][currentFruit.y] != 'X' && gameGrid[currentFruit.x][currentFruit.y] != 'O') {
-
-						//a temp proximity to use in the for loop for the new fruit//
-						int proximityToFruitTemp = (abs(snake.head.x - currentFruit.x) + abs(snake.head.y - currentFruit.y));
-
-						//calculate snek's potential spots to be on the beat
-						if (i16thNote == 1) {
-							snake.potentialFruitSpot1 = 17;
-						}
-						else {
-							snake.potentialFruitSpot1 = 17 - i16thNote;
-						}
-
-						if (i16thNote >= 5) {
-							snake.potentialFruitSpot2 = 16 - (i16thNote - 5);
-						}
-						else {
-							snake.potentialFruitSpot2 = 5 - i16thNote;
-						}
-
-						if (i16thNote >= 13) {
-							snake.potentialFruitSpot3 = 16 - (i16thNote - 13);
-						}
-						else {
-							snake.potentialFruitSpot3 = 13 - i16thNote;
-						}
-
-						//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
-						if (proximityToFruitTemp % 16 == snake.potentialFruitSpot1 || proximityToFruitTemp % 16 == snake.potentialFruitSpot2 || proximityToFruitTemp % 16 == snake.potentialFruitSpot3) {
-							break;
-						}
-					}
-				}
-
-				if (snake.body.size() >= 11) {
-					isScoreUnder11 = false;
-				}
-
-				//					  //
-				// SET NEW HIGH SCORE //
-				//					//
-				if (snake.body.size() > highestCurrentLength) {		//update current highest length
-					highestCurrentLength = snake.body.size();
-
-					if (highestCurrentLength > highScore) {				//update high score
-						highScore = highestCurrentLength;
-
-						if (highScore == oldHighScore + 1) {
-							gotNewHighScore = true;
-							gotNewHighScoreSoundPlay = true;
-						}
-					}
-				}
-			}
-		}
+		processFruitPickups();
 
 		//				  //
 		// CREATE PORTALS //
@@ -670,408 +602,14 @@ void SnakeGame::play() {
 		//								//
 		gameGrid[currentFruit.x][currentFruit.y] = '+';
 
+		  //               //
+		 // PROCESS AUDIO //
+		//               //
+		processAudioFrame(firstFrameOfTheGame, closestProximityToFruit);
 
-		//				    //
-		// AUDIO PROCESSING //
-		//				  //		
-
-		//play the death sound if the game is lost
-		if (gameLose) {
-			snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM], true);
-			snekAudioSystem->startEventInstance("Instruments+FX/Death");
-		}
-
-		if (firstFrameOfTheGame) {
-			firstFrameOfTheGame = false;
-			snekAudioSystem->startEventInstance(bpmNames[0]);
-		}
-
-		if (gotNewFruit) {				//if someone gets a new fruit..
-			for (Snake& snake : this->snakes) {		//..check each player..
-				if (snake.justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
-					if (gotNewHighScoreSoundPlay) {
-						snekAudioSystem->startEventInstance("Instruments+FX/newHighScore");
-						gotNewHighScoreSoundPlay = false;
-					}
-					else if (snake.body.size() == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
-						snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit11");		//..if they did, then play the 11th fruit sound..
-					}
-					else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
-						snekAudioSystem->startEventInstance("Instruments+FX/Triangle");			//if they got a fruit on an offbeat, play triangle sound
-					}
-					else if (i16thNote == 5 || i16thNote == 13) {
-						snekAudioSystem->startEventInstance("Instruments+FX/Snare1");			//if they got a fruit on an offbeat, play triangle sound
-					}
-					else if (i16thNote == 1) {
-						snekAudioSystem->startEventInstance("Instruments+FX/KickTight");
-						snekAudioSystem->startEventInstance("Instruments+FX/Triangle");
-						snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
-					}
-					else {	//..otherwise, play the default fruit eating sound
-						snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
-					}
-				}
-			}
-
-			switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
-			case 1:
-				snekAudioSystem->stopEventInstance(bpmNames[0], true);
-				currentChordBPM = 1;
-				if (switchChordsCounter == 0) {
-					switchChordsCounter = 1;
-				}
-				break;
-
-			case 7:
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.09f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.7f);
-				currentChordBPM = 2;
-				if (switchChordsCounter == 1) {
-					switchChords = true;
-					switchChordsCounter = 7;
-				}
-				break;
-
-			case 11:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.125f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.14f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.9f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 1.0f);
-				hiHatToggle = true;
-				currentChordBPM = 3;
-				if (switchChordsCounter == 7) {
-					switchChords = true;
-					switchChordsCounter = 11;
-				}
-				break;
-
-			case 20:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.250f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.17f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.9f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.8f);
-				currentChordBPM = 4;
-				if (switchChordsCounter == 11) {
-					switchChords = true;
-					switchChordsCounter = 20;
-				}
-				break;
-
-			case 30:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.375f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.5f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.2f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.88f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.5f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 1.0f);
-				currentChordBPM = 5;
-				if (switchChordsCounter == 20) {
-					switchChords = true;
-					switchChordsCounter = 30;
-				}
-				break;
-
-			case 40:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.5f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.64f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.3f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.25f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.7f);
-				currentChordBPM = 6;
-				if (switchChordsCounter == 30) {
-					switchChords = true;
-					switchChordsCounter = 40;
-				}
-				break;
-
-			case 50:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.625f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.72f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.2f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.15f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.3f);
-				currentChordBPM = 7;
-				if (switchChordsCounter == 40) {
-					switchChords = true;
-					switchChordsCounter = 50;
-				}
-				break;
-
-			case 60:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.750f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.8f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.1f);
-				snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.0f);
-				currentChordBPM = 8;
-				if (switchChordsCounter == 50) {
-					switchChords = true;
-					switchChordsCounter = 60;
-				}
-				break;
-
-			case 70:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 0.875f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.35f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.6f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
-				currentChordBPM = 9;
-				if (switchChordsCounter == 60) {
-					switchChords = true;
-					switchChordsCounter = 70;
-				}
-				break;
-
-			case 80:
-				snekMoveTimelinePositionMax += 200;
-				snakeMoveReverbLevel = 1.0f;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.20f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
-				currentChordBPM = 10;
-				if (switchChordsCounter == 70) {
-					switchChords = true;
-					switchChordsCounter = 80;
-				}
-				break;
-
-			case 90:
-				currentChordBPM = 11;
-				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.0f);
-				snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.0f);
-				if (switchChordsCounter == 80) {
-					switchChords = true;
-					switchChordsCounter = 90;
-				}
-				break;
-			}
-		}
-
-		//if nobody got any fruits, then check if either snake is using the action keys..
-		else if (snakes[0].action_keys || snakes.size() > 1 && snakes[1].action_keys) {
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
-			snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
-			if (!actionKeyHeld) {
-				snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
-				actionKeyHeld = true;
-			}
-		}
-
-		//if nobody got a fruit, and nobody is holding any action keys, then..
-		else {
-
-			if (highestCurrentLength == 0) {
-				snekAudioSystem->fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", closestProximityToFruit);
-			}
-
-			actionKeyHeld = false;		//nobody is holding any action keys anymore
-
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(closestProximityToFruit);
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setTimelinePosition(snekMoveTimelinePosition);
-			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
-			snekAudioSystem->startEventInstance("Instruments+FX/SnakeMove");
-
-
-			snekMoveTimelinePosition += 200;
-			if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
-				snekMoveTimelinePosition = 0;
-			}
-		}
-
-		//CHORDS//			
-		if (highestCurrentLength >= 1) {
-			if (i16thNote == 1) {
-				switch (currentChord) {
-				case 1:
-					currentChord++;
-					break;
-				case 2:
-					currentChord++;
-					break;
-				case 3:
-					currentChord++;
-					break;
-				case 4:
-					currentChord = 1;
-					break;
-				}
-			}
-
-			if (!hasFirstSwitchHappened && currentChordBPM == 1) {
-				snekAudioSystem->startEventInstance(bpmNames[1]);
-				i16thNote = 1;
-				currentChord = 1;
-				hasFirstSwitchHappened = true;
-			}
-
-			if (switchChordsCounter > 6 && currentChordBPM > 0) {
-
-				if (switchChords == true) {
-					int oldPlaybackPosition;
-					int newPlaybackPosition;
-					snekAudioSystem->fmodEventInstances[bpmNames[currentChordBPM - 1]]->getTimelinePosition(&oldPlaybackPosition);
-					snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM - 1]);
-
-					newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
-
-					snekAudioSystem->startEventInstance(bpmNames[currentChordBPM]);
-					snekAudioSystem->fmodEventInstances[bpmNames[currentChordBPM]]->setTimelinePosition(newPlaybackPosition);
-				}
-
-				switchChords = false;
-			}
-
-			if (currentChord == 1 && i16thNote == 1) {
-				snekAudioSystem->startEventInstance(bpmNames[currentChordBPM]);
-			}
-
-			//ARP//
-			switch (currentChord) {
-			case 1:
-				switch (i16thNote) {
-				case 1:
-					snekAudioSystem->startEventInstance("Instruments+FX/arp");
-					break;
-				case 3:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(170);
-					break;
-				case 5:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(338);
-					break;
-				case 7:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(507);
-					break;
-				case 9:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(675);
-					break;
-				case 11:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(844);
-					break;
-				case 13:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1012);
-					break;
-				case 15:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1181);
-					break;
-				}
-				break;
-
-			case 2:
-				switch (i16thNote) {
-				case 1:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2023);
-					break;
-				case 3:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2192);
-					break;
-				case 5:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2361);
-					break;
-				case 7:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2529);
-					break;
-				case 9:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2698);
-					break;
-				case 11:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2866);
-					break;
-				case 13:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3035);
-					break;
-				case 15:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3203);
-					break;
-				}
-				break;
-
-			case 3:
-				switch (i16thNote) {
-				case 1:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4046);
-					break;
-				case 3:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4214);
-					break;
-				case 5:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4383);
-					break;
-				case 7:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4552);
-					break;
-				case 9:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4720);
-					break;
-				case 11:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4889);
-					break;
-				case 13:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5057);
-					break;
-				case 15:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5226);
-					break;
-				}
-				break;
-
-			case 4:
-				switch (i16thNote) {
-				case 1:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6068);
-					break;
-				case 3:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6237);
-					break;
-				case 5:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6405);
-					break;
-				case 7:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6574);
-					break;
-				case 9:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6743);
-					break;
-				case 11:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6911);
-					break;
-				case 13:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7080);
-					break;
-				case 15:
-					snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7248);
-					break;
-				}
-				break;
-			}
-
-		}
-
-		//Update 16th note counter//			
-		i16thNote++;
-		if (i16thNote == 17) {
-			i16thNote = 1;
-		}
-
-		snekAudioSystem->fmodUpdate(); //update FMOD system	
-
-		//			 //
-		// DRAW SCREEN //	
-		//			   //
+		  //             //
+		 // DRAW SCREEN //	
+		//             //
 
 		// blank the game grid
 		asciiGraphics->fillText(0, 0, gameGrid.size() - 1, gameGrid[0].size() - 1, ' ');
@@ -1079,38 +617,9 @@ void SnakeGame::play() {
 
 		for (int t = 0; t < this->gameGrid.size(); t++) {
 			for (int q = 0; q < this->gameGrid[0].size(); q++) {
-
-				if (gameGrid[q][t] == ' ') {
-					asciiGraphics->drawText(q, t, " ");
-				}
-
-				else if (gameGrid[q][t] == '8') {
-					asciiGraphics->drawText(q, t, "8");
-				}
-
-				/*else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'n') {
-					asciiGraphics->drawText(q, t, "^");
-				}
-
-				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 's') {
-					asciiGraphics->drawText(q, t, "v");
-				}
-
-				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'w') {
-					asciiGraphics->drawText(q, t, "<");
-				}
-
-				else if (gameGrid[q][t] == 'h' && snakes[0].direction_frame == 'e') {
-					asciiGraphics->drawText(q, t, ">");
-				}*/
-
-				/*else if (gameGrid[q][t] == 'O') {
-					asciiGraphics->drawText(q, t, "O");
-				}*/
-
-				else {
-					asciiGraphics->drawText(q, t, "+");
-				}
+				std::string temp;
+				temp.push_back(gameGrid[q][t]);
+				asciiGraphics->drawText(q, t, temp);
 			}
 		}
 
@@ -1209,119 +718,545 @@ void SnakeGame::play() {
 			));
 		}
 
-		//				  //
-		// COLOR THE SCREEN //
-		//				    //
+		  //                 //
+		 // COLOR THE FRUIT //
+		//                 //
+		asciiGraphics->fillColor(colorPalette.fruit, currentFruit.x, currentFruit.y);
 
-		//reset entire display color to green//
-		//drawColor(colorPalette.green, attributes, 0, 0, nScreenWidth - 1, nScreenHeight - 1);
-		/*for (int yt = 0; yt < nScreenWidth * nScreenHeight; yt++) {
-			attributes[yt] = FOREGROUND_GREEN;
-		}*/
+		  //              //
+		 // COLOR SNAKES //
+		//              //
+		for (Snake& snake : this->snakes) {
+			if (!snake.justDied) {
+				asciiGraphics->attributeBuffer[snake.head.x + (snake.head.y * 80)] = snake.color;
 
-		//					  //
-		// COLOR THE FRUIT PINK //
-	//						//
-		asciiGraphics->fillColor(colorPalette.fruit, currentFruit.x, currentFruit.y, currentFruit.x, currentFruit.y);
-
-		//					  //
-		// COLOR PLAYER 1 GREEN //
-		//						//			
-
-		if (!snakes[0].justDied) {
-			asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = snakes[0].color;
-
-			if (!snakes[0].justGotNewFruit) {
-				for (int i = 0; i < snakes[0].body.size(); i++) {
-					asciiGraphics->attributeBuffer[snakes[0].body[i].x + (snakes[0].body[i].y * 80)] = snakes[0].color;
-				}
-				if (snakes[0].snekSwallowTimer <= snakes[0].body.size()) {
-					asciiGraphics->attributeBuffer[snakes[0].body[snakes[0].snekSwallowTimer - 1].x + (snakes[0].body[snakes[0].snekSwallowTimer - 1].y * 80)] = colorPalette.fruit_swallowed;
-					snakes[0].snekSwallowTimer++;
-				}
-			}
-			else {
-				snakes[0].justGotNewFruit = false;
-				for (Soil::Coords2D& segment : snakes[0].body) {
-					asciiGraphics->fillColor(snakes[0].color, segment.x, segment.y);
-				}
-				if (snakes[0].snekSwallowTimer == 0) {
-					asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = colorPalette.fruit_swallowed;
-					snakes[0].snekSwallowTimer++;
-				}
-			}
-		}
-		else {
-			asciiGraphics->attributeBuffer[snakes[0].head.x + (snakes[0].head.y * 80)] = colorPalette.white;
-			for (Soil::Coords2D& segment : snakes[0].body) {
-				asciiGraphics->fillColor(colorPalette.white, segment.x, segment.y);
-				//asciiGraphics->attributeBuffer[snakes[0].body[l].x + (snakes[0].body[l].y * 80)] = colorPalette.white;
-			}
-		}
-
-		//					//
-		// COLOR PLAYER 2 RED //
-		//					  //
-		if (playerCount == 2) {
-			if (!snakes[1].justDied) {
-				asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = snakes[1].color;
-
-				if (!snakes[1].justGotNewFruit) {
-					for (int l = 0; l < snakes[1].body.size(); l++) {
-						asciiGraphics->attributeBuffer[snakes[1].body[l].x + (snakes[1].body[l].y * 80)] = snakes[1].color;
+				if (!snake.justGotNewFruit) {
+					for (Soil::Coords2D& segment : snake.body) {
+						asciiGraphics->fillColor(snake.color, segment.x, segment.y);
 					}
-					if (snakes[1].snekSwallowTimer <= snakes[1].body.size()) {
-						asciiGraphics->attributeBuffer[snakes[1].body[snakes[1].snekSwallowTimer - 1].x + (snakes[1].body[snakes[1].snekSwallowTimer - 1].y * 80)] = colorPalette.fruit_swallowed;
-						snakes[1].snekSwallowTimer++;
+					if (snake.snekSwallowTimer <= snake.body.size()) {
+						asciiGraphics->fillColor(colorPalette.fruit_swallowed, snake.body[snake.snekSwallowTimer - 1].x, snake.body[snake.snekSwallowTimer - 1].y);
+						snake.snekSwallowTimer++;
 					}
 				}
 				else {
-					snakes[1].justGotNewFruit = false;
-					for (Soil::Coords2D& segment : snakes[1].body) {
-						asciiGraphics->fillColor(snakes[1].color, segment.x, segment.y);
+					snake.justGotNewFruit = false;
+					for (Soil::Coords2D& segment : snake.body) {
+						asciiGraphics->fillColor(snake.color, segment.x, segment.y);
 					}
-					if (snakes[1].snekSwallowTimer == 0) {
-						asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = colorPalette.fruit_swallowed;
-						snakes[1].snekSwallowTimer++;
+					if (snake.snekSwallowTimer == 0) {
+						asciiGraphics->fillColor(colorPalette.fruit_swallowed, snake.head.x, snake.head.y);
+						snake.snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				asciiGraphics->attributeBuffer[snakes[1].head.x + (snakes[1].head.y * 80)] = colorPalette.white;
-				for (int l = 0; l < snakes[1].body.size() - 1; l++) {
-					asciiGraphics->attributeBuffer[snakes[1].body[l].x + (snakes[1].body[l].y * 80)] = colorPalette.white;
+				asciiGraphics->fillColor(colorPalette.white, snake.head.x, snake.head.y);
+				for (Soil::Coords2D& segment : snake.body) {
+					asciiGraphics->fillColor(colorPalette.white, segment.x, segment.y);
 				}
 			}
 		}
 
-		// FOR DEBUG
-		/*asciiGraphics->drawText(0, 24, 
-			"frame{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
+		// DRAW DEBUG //
+		//drawDebugMenu();
 
-		asciiGraphics->drawText(20, 24, 
-			"tick{" + std::to_string(snakes[0].direction_tick.x) + "," + std::to_string(snakes[0].direction_tick.y) + "}");
-
-		asciiGraphics->drawText(0, 23, 
-			"holdN:" + std::to_string(snakes[0].holdN) + 
-			" holdE" + std::to_string(snakes[0].holdE) + 
-			" holdS" + std::to_string(snakes[0].holdS) + 
-			" holdW" + std::to_string(snakes[0].holdW));*/
-
+		// PUSH GRAPHICS TO OUTPUT //
 		asciiOutput->pushOutput(*asciiGraphics);
 
 		// delay for first frame if in 2 player mode //
 		if (playerCount == 2 && currentFrame == 1)
-			std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+			Soil::sleep_for_ms(3000);
 	}
 
-	//				  //
-	// GAME OVER SCREEN //
-	//					//
+	  //                  //
+	 // GAME OVER SCREEN //
+	//                  //
+	gameOverScreen();
+
+}
+
+void SnakeGame::processFruitPickups()
+{
+	gotNewFruit = false;
+	for (Snake& snake : this->snakes) {
+		if (snake.head.x == currentFruit.x && snake.head.y == currentFruit.y) {
+
+			snake.body.push_back({ snake.head });
+			snake.justGotNewFruit = true;
+			gotNewFruit = true;
+			snake.snekSwallowTimer = 0;
+
+			for (int e = 0; e < 300; e++) {
+				currentFruit.x = rand() % 25;		//create a potential fruit spot
+				currentFruit.y = rand() % 25;
+
+				//check if that spot is currently filled//
+				if ((currentFruit.x != snake.head.x && currentFruit.y != snake.head.y) && gameGrid[currentFruit.x][currentFruit.y] != '8' && gameGrid[currentFruit.x][currentFruit.y] != 'X' && gameGrid[currentFruit.x][currentFruit.y] != 'O') {
+
+					//a temp proximity to use in the for loop for the new fruit//
+					int proximityToFruitTemp = (abs(snake.head.x - currentFruit.x) + abs(snake.head.y - currentFruit.y));
+
+					//calculate snek's potential spots to be on the beat
+					if (i16thNote == 1) {
+						snake.potentialFruitSpot1 = 17;
+					}
+					else {
+						snake.potentialFruitSpot1 = 17 - i16thNote;
+					}
+
+					if (i16thNote >= 5) {
+						snake.potentialFruitSpot2 = 16 - (i16thNote - 5);
+					}
+					else {
+						snake.potentialFruitSpot2 = 5 - i16thNote;
+					}
+
+					if (i16thNote >= 13) {
+						snake.potentialFruitSpot3 = 16 - (i16thNote - 13);
+					}
+					else {
+						snake.potentialFruitSpot3 = 13 - i16thNote;
+					}
+
+					//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
+					if (proximityToFruitTemp % 16 == snake.potentialFruitSpot1 || proximityToFruitTemp % 16 == snake.potentialFruitSpot2 || proximityToFruitTemp % 16 == snake.potentialFruitSpot3) {
+						break;
+					}
+				}
+			}
+
+			if (snake.body.size() >= 11) {
+				isScoreUnder11 = false;
+			}
+
+			  //                   //
+			 // UPDATE HIGH SCORE //
+			//                   //
+
+			// update current highest length
+			if (snake.body.size() > highestCurrentLength) {
+				highestCurrentLength = snake.body.size();
+
+				// update high score
+				if (highestCurrentLength > highScore) {
+					highScore = highestCurrentLength;
+
+					if (highScore == oldHighScore + 1) {
+						gotNewHighScore = true;
+						gotNewHighScoreSoundPlay = true;
+					}
+				}
+			}
+		}
+	}
+}
+
+void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit)
+{
+
+	// play the death sound if the game is lost
+	if (gameLose) {
+		snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM], true);
+		snekAudioSystem->startEventInstance("Instruments+FX/Death");
+	}
+
+	if (firstFrameOfTheGame) {
+		firstFrameOfTheGame = false;
+		snekAudioSystem->startEventInstance(bpmNames[0]);
+	}
+
+	if (gotNewFruit) {				//if someone gets a new fruit..
+		for (Snake& snake : this->snakes) {		//..check each player..
+			if (snake.justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
+				if (gotNewHighScoreSoundPlay) {
+					snekAudioSystem->startEventInstance("Instruments+FX/newHighScore");
+					gotNewHighScoreSoundPlay = false;
+				}
+				else if (snake.body.size() == 11) {		//..if they did get a fruit, see if they just got their 11th fruit..
+					snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit11");		//..if they did, then play the 11th fruit sound..
+				}
+				else if (gotNewFruit && (i16thNote == 3 || i16thNote == 7 || i16thNote == 11 || i16thNote == 15)) {
+					snekAudioSystem->startEventInstance("Instruments+FX/Triangle");			//if they got a fruit on an offbeat, play triangle sound
+				}
+				else if (i16thNote == 5 || i16thNote == 13) {
+					snekAudioSystem->startEventInstance("Instruments+FX/Snare1");			//if they got a fruit on an offbeat, play triangle sound
+				}
+				else if (i16thNote == 1) {
+					snekAudioSystem->startEventInstance("Instruments+FX/KickTight");
+					snekAudioSystem->startEventInstance("Instruments+FX/Triangle");
+					snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
+				}
+				else {	//..otherwise, play the default fruit eating sound
+					snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
+				}
+			}
+		}
+
+		switch (highestCurrentLength) {					//update reverb level and max timeline position from the current highest length
+		case 1:
+			snekAudioSystem->stopEventInstance(bpmNames[0], true);
+			currentChordBPM = 1;
+			if (switchChordsCounter == 0) {
+				switchChordsCounter = 1;
+			}
+			break;
+
+		case 7:
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.09f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.7f);
+			currentChordBPM = 2;
+			if (switchChordsCounter == 1) {
+				switchChords = true;
+				switchChordsCounter = 7;
+			}
+			break;
+
+		case 11:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.125f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.14f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 1.0f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.9f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 1.0f);
+			hiHatToggle = true;
+			currentChordBPM = 3;
+			if (switchChordsCounter == 7) {
+				switchChords = true;
+				switchChordsCounter = 11;
+			}
+			break;
+
+		case 20:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.250f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.17f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.9f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.8f);
+			currentChordBPM = 4;
+			if (switchChordsCounter == 11) {
+				switchChords = true;
+				switchChordsCounter = 20;
+			}
+			break;
+
+		case 30:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.375f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.5f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.2f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.88f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.5f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 1.0f);
+			currentChordBPM = 5;
+			if (switchChordsCounter == 20) {
+				switchChords = true;
+				switchChordsCounter = 30;
+			}
+			break;
+
+		case 40:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.5f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.64f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.3f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.25f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.7f);
+			currentChordBPM = 6;
+			if (switchChordsCounter == 30) {
+				switchChords = true;
+				switchChordsCounter = 40;
+			}
+			break;
+
+		case 50:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.625f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.72f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.2f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.15f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.3f);
+			currentChordBPM = 7;
+			if (switchChordsCounter == 40) {
+				switchChords = true;
+				switchChordsCounter = 50;
+			}
+			break;
+
+		case 60:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.750f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.8f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.45f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.4f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.1f);
+			snekAudioSystem->fmodResult = snekAudioSystem->fmodSystem->setParameterByName("ChordsReverb", 0.0f);
+			currentChordBPM = 8;
+			if (switchChordsCounter == 50) {
+				switchChords = true;
+				switchChordsCounter = 60;
+			}
+			break;
+
+		case 70:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 0.875f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.4f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.35f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("SnakeMoveVolume", 0.6f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
+			currentChordBPM = 9;
+			if (switchChordsCounter == 60) {
+				switchChords = true;
+				switchChordsCounter = 70;
+			}
+			break;
+
+		case 80:
+			snekMoveTimelinePositionMax += 200;
+			snakeMoveReverbLevel = 1.0f;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.2f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.20f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Triangle"]->setParameterByName("TriangleDecay", 0.05f);
+			currentChordBPM = 10;
+			if (switchChordsCounter == 70) {
+				switchChords = true;
+				switchChordsCounter = 80;
+			}
+			break;
+
+		case 90:
+			currentChordBPM = 11;
+			snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setParameterByName("ArpVolume", 0.0f);
+			snekAudioSystem->fmodEventInstances["Instruments+FX/Snare1"]->setParameterByName("SnareReverb", 0.0f);
+			if (switchChordsCounter == 80) {
+				switchChords = true;
+				switchChordsCounter = 90;
+			}
+			break;
+		}
+	}
+
+	//if nobody got any fruits, then check if either snake is using the action keys..
+	else if (snakes[0].action_keys || snakes.size() > 1 && snakes[1].action_keys) {
+		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
+		snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
+		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
+		if (!actionKeyHeld) {
+			snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
+			actionKeyHeld = true;
+		}
+	}
+
+	//if nobody got a fruit, and nobody is holding any action keys, then..
+	else {
+
+		if (highestCurrentLength == 0) {
+			snekAudioSystem->fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", closestProximityToFruit);
+		}
+
+		actionKeyHeld = false;		//nobody is holding any action keys anymore
+
+		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(closestProximityToFruit);
+		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setTimelinePosition(snekMoveTimelinePosition);
+		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", snakeMoveReverbLevel);
+		snekAudioSystem->startEventInstance("Instruments+FX/SnakeMove");
+
+
+		snekMoveTimelinePosition += 200;
+		if (snekMoveTimelinePosition >= snekMoveTimelinePositionMax) {
+			snekMoveTimelinePosition = 0;
+		}
+	}
+
+	//CHORDS//			
+	if (highestCurrentLength >= 1) {
+		if (i16thNote == 1) {
+			switch (currentChord) {
+			case 1:
+				currentChord++;
+				break;
+			case 2:
+				currentChord++;
+				break;
+			case 3:
+				currentChord++;
+				break;
+			case 4:
+				currentChord = 1;
+				break;
+			}
+		}
+
+		if (!hasFirstSwitchHappened && currentChordBPM == 1) {
+			snekAudioSystem->startEventInstance(bpmNames[1]);
+			i16thNote = 1;
+			currentChord = 1;
+			hasFirstSwitchHappened = true;
+		}
+
+		if (switchChordsCounter > 6 && currentChordBPM > 0) {
+
+			if (switchChords == true) {
+				int oldPlaybackPosition;
+				int newPlaybackPosition;
+				snekAudioSystem->fmodEventInstances[bpmNames[currentChordBPM - 1]]->getTimelinePosition(&oldPlaybackPosition);
+				snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM - 1]);
+
+				newPlaybackPosition = (oldPlaybackPosition / (60000.0f / bpmValues[currentChordBPM - 1])) * (60000.0f / bpmValues[currentChordBPM]);
+
+				snekAudioSystem->startEventInstance(bpmNames[currentChordBPM]);
+				snekAudioSystem->fmodEventInstances[bpmNames[currentChordBPM]]->setTimelinePosition(newPlaybackPosition);
+			}
+
+			switchChords = false;
+		}
+
+		if (currentChord == 1 && i16thNote == 1) {
+			snekAudioSystem->startEventInstance(bpmNames[currentChordBPM]);
+		}
+
+		//ARP//
+		switch (currentChord) {
+		case 1:
+			switch (i16thNote) {
+			case 1:
+				snekAudioSystem->startEventInstance("Instruments+FX/arp");
+				break;
+			case 3:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(170);
+				break;
+			case 5:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(338);
+				break;
+			case 7:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(507);
+				break;
+			case 9:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(675);
+				break;
+			case 11:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(844);
+				break;
+			case 13:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1012);
+				break;
+			case 15:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(1181);
+				break;
+			}
+			break;
+
+		case 2:
+			switch (i16thNote) {
+			case 1:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2023);
+				break;
+			case 3:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2192);
+				break;
+			case 5:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2361);
+				break;
+			case 7:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2529);
+				break;
+			case 9:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2698);
+				break;
+			case 11:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(2866);
+				break;
+			case 13:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3035);
+				break;
+			case 15:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(3203);
+				break;
+			}
+			break;
+
+		case 3:
+			switch (i16thNote) {
+			case 1:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4046);
+				break;
+			case 3:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4214);
+				break;
+			case 5:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4383);
+				break;
+			case 7:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4552);
+				break;
+			case 9:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4720);
+				break;
+			case 11:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(4889);
+				break;
+			case 13:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5057);
+				break;
+			case 15:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(5226);
+				break;
+			}
+			break;
+
+		case 4:
+			switch (i16thNote) {
+			case 1:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6068);
+				break;
+			case 3:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6237);
+				break;
+			case 5:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6405);
+				break;
+			case 7:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6574);
+				break;
+			case 9:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6743);
+				break;
+			case 11:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(6911);
+				break;
+			case 13:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7080);
+				break;
+			case 15:
+				snekAudioSystem->fmodEventInstances["Instruments+FX/arp"]->setTimelinePosition(7248);
+				break;
+			}
+			break;
+		}
+
+	}
+
+	//Update 16th note counter//			
+	i16thNote++;
+	if (i16thNote == 17) {
+		i16thNote = 1;
+	}
+
+	snekAudioSystem->fmodUpdate(); //update FMOD system	
+}
+
+void SnakeGame::gameOverScreen()
+{
 
 	snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM]);
 	snekAudioSystem->fmodUpdate(); //update FMOD system	
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(700));
+	Soil::sleep_for_ms(700);
 
 	//			//
 	// NAME ENTRY //
@@ -1525,9 +1460,9 @@ void SnakeGame::play() {
 		asciiGraphics->drawText(32, 9, "           HIGH SCORE SAVED!    ");
 	}
 
-	//					 //
-	// "TRY AGAIN?" SCREEN //
-	//					   //
+	  //                     //
+	 // "TRY AGAIN?" SCREEN //
+	//                     //
 
 	asciiGraphics->fillText(40, 13, 79, 20, ' ');
 
@@ -1535,7 +1470,7 @@ void SnakeGame::play() {
 	// color the whole right side of the screen green
 	asciiGraphics->fillColor(colorPalette.hud, 26, 0, asciiGraphics->width, asciiGraphics->height);
 
-	Sleep(100);
+	Soil::sleep_for_ms(100);
 
 	if (playerCount == 2) {
 		asciiGraphics->drawText(44, 12, "PLAYER " + std::to_string(snakes[0].justDied ? 1 : 2) + " DIED!");
@@ -1559,9 +1494,9 @@ void SnakeGame::play() {
 	bool gameOverMessage = true;
 
 	bool zKey = false, xKey = false, holdKey = false;
-	bool arrowKeys[4] = {false, false, false, false};
+	bool arrowKeys[4] = { false, false, false, false };
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(527));
+	Soil::sleep_for_ms(527);
 
 	while (gameOverMessage) {
 
@@ -1598,7 +1533,7 @@ void SnakeGame::play() {
 			snekAudioSystem->stopEventInstance("Menu+Songs/FancyBoss");		//(FMOD)
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
 			snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
-			
+
 		}
 
 		if (xKey = (0x8000 & GetAsyncKeyState((unsigned char)("X"[0]))) != 0) {
@@ -1609,12 +1544,26 @@ void SnakeGame::play() {
 			snekAudioSystem->startEventInstance("Menu+Songs/ExitGame");
 
 			snekAudioSystem->fmodUpdate();
-			std::this_thread::sleep_for(std::chrono::milliseconds(2671));
+			Soil::sleep_for_ms(2671);
 		}
 
 		asciiOutput->pushOutput(*asciiGraphics);
 		snekAudioSystem->fmodUpdate();
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		Soil::sleep_for_ms(10);
 	}
+}
 
+void SnakeGame::drawDebugMenu()
+{
+	asciiGraphics->drawText(0, 24,
+			"frame{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
+
+	asciiGraphics->drawText(20, 24,
+		"tick{" + std::to_string(snakes[0].direction_tick.x) + "," + std::to_string(snakes[0].direction_tick.y) + "}");
+
+	asciiGraphics->drawText(0, 23,
+		"holdN:" + std::to_string(snakes[0].holdN) +
+		" holdE" + std::to_string(snakes[0].holdE) +
+		" holdS" + std::to_string(snakes[0].holdS) +
+		" holdW" + std::to_string(snakes[0].holdW));
 }

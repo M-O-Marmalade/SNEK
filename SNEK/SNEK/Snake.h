@@ -1,10 +1,10 @@
 #pragma once
+#define NOMINMAX
+#include <Windows.h>
 #include <utility>
 #include <vector>
 
 #include "Coords2D.h"
-#define NOMINMAX
-#include <Windows.h>
 
 
 class Snake {

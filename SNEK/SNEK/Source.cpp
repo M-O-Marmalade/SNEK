@@ -18,20 +18,15 @@
 #include <codecvt>
 #include <fstream>
 #include <string>
-#include <thread>
 #include <vector>
 
+#include "Sleep.h"
 #include "AudioSystem.h"
 #include "ASCIIGraphics.h"
 #include "ASCIIOutputCMD.h"
 #include "ColorPalette.h"
 
 #include "SnakeGame.h"
-
-
-//INPUT VARIABLES
-bool arrowKeys[4];				//stores input from arrow keys
-bool zKey;						//stores input from Z key
 
 
 int main() {	
@@ -101,9 +96,9 @@ int main() {
 		u++;
 		asciiOutputCMD.pushOutput(asciiGraphics);
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(77));
+		Soil::sleep_for_ms(77);
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(222));
+	Soil::sleep_for_ms(222);
 	
 
 	//Erase Splash Screen
@@ -116,9 +111,9 @@ int main() {
 		
 		asciiOutputCMD.pushOutput(asciiGraphics);
 		
-		std::this_thread::sleep_for(std::chrono::milliseconds(77));	
+		Soil::sleep_for_ms(77);
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(222));
+	Soil::sleep_for_ms(222);
 
 
 	  //			  //
@@ -128,7 +123,7 @@ int main() {
 	bool startScreenToggle = true;
 	int startScreenFrameCount = 111;
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(777));
+	Soil::sleep_for_ms(777);
 
 	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
 	snekAudioSystem.fmodUpdate();
@@ -199,7 +194,10 @@ int main() {
 
 		startScreenFrameCount++;
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(7));
+		Soil::sleep_for_ms(7);
+
+		bool arrowKeys[4];	//stores input from arrow keys
+		bool zKey;			//stores input from Z key
 
 		for (int o = 0; o < 4; o++) {
 			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;						
@@ -255,7 +253,7 @@ int main() {
 			for (auto& animFrame : pressedStartAnimFrames) {
 				asciiGraphics.drawText(31, 18, animFrame.first);
 				asciiOutputCMD.pushOutput(asciiGraphics);
-				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
+				Soil::sleep_for_ms(animFrame.second);
 			}
 		}
 

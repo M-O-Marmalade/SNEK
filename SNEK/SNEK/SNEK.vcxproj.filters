@@ -36,6 +36,9 @@
     <ClCompile Include="SnakeGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="soil\Sleep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soil\AudioSystem.h">
@@ -63,6 +66,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soil\Coords2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil\Soil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil\Sleep.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
