@@ -1,5 +1,5 @@
 # SNEK
-+ A classic game, brought to the Windows Command Prompt!
+A game for the Windows Command Prompt!
 + Includes music and SFX!
 
 ![SNEK GIF](Screenshots/snekgameplay.apng)
