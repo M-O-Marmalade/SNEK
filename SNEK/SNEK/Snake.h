@@ -4,18 +4,19 @@
 #include <utility>
 #include <vector>
 
+#include "SnakeControlScheme.h"
 #include "Coords2D.h"
 
 
 class Snake {
 public:
+	SnakeControlScheme controls;
+
 	WORD color = FOREGROUND_GREEN;
 
 	Soil::Coords2D head;					//the snek's head position on the play grid
 	std::vector<Soil::Coords2D> body;		//the snek's body segments on the play grid
 	
-	bool directional_keys[4];		//stores input from directional keys
-	bool action_keys;				//stores input from action keys
 	Soil::Coords2D direction_tick;			//tick-resolution direction of player movement (north = n, south = s, east = e, west = w)
 	Soil::Coords2D direction_frame;			//frame-resolution direction of player movement (north = n, south = s, east = e, west = w)
 	bool holdW = false;				//tick-resolution storage of which arrow keys have been previously held
@@ -31,6 +32,6 @@ public:
 	int potentialFruitSpot3;
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 
-	Snake(WORD color, Soil::Coords2D startPosition, Soil::Coords2D startDirection);
+	Snake(WORD color, Soil::Coords2D startPosition, Soil::Coords2D startDirection, SnakeControlScheme controlScheme);
 };
 

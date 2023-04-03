@@ -9,12 +9,14 @@
 #include "ASCIIOutputCMD.h"
 #include "AudioSystem.h"
 #include "ColorPalette.h"
+#include "InputManager.h"
 
 class SnakeGame {
 private:
 	Soil::ASCIIGraphics* asciiGraphics;
 	Soil::ASCIIOutputCMD* asciiOutput;
 	Soil::AudioSystem* snekAudioSystem;
+	Soil::InputManager* inputManager;
 	Soil::ColorPalette colorPalette;
 	
 	void readScoreFile();
@@ -86,7 +88,7 @@ public:
 	bool playAgain = true;					//decides whether or not to play again after losing
 	int playerCount = 1;			//amount of players, can be increased at start screen
 
-	SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem);
+	SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager);
 	void play();
 };
 

@@ -20,11 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "Sleep.h"
-#include "AudioSystem.h"
-#include "ASCIIGraphics.h"
-#include "ASCIIOutputCMD.h"
-#include "ColorPalette.h"
+#include "Soil.h"
 
 #include "SnakeGame.h"
 
@@ -68,16 +64,20 @@ int main() {
 	  //			   //
 	 // DISPLAY SETUP //
 	//			  	 //
-
 	Soil::ColorPalette colorPalette;
 	Soil::ASCIIGraphics asciiGraphics(80, 25);
 	Soil::ASCIIOutputCMD asciiOutputCMD;
 
 
+	  //             //
+	 // INPUT SETUP //
+	//             //
+	Soil::InputManager inputManager;
+
+
 	  //						 //
 	 // SPLASH SCREEN ANIMATION //
 	//						   //
-
 	snekAudioSystem.startEventInstance("Menu+Songs/SplashJingle");
 	snekAudioSystem.fmodUpdate();
 
@@ -123,6 +123,8 @@ int main() {
 	bool startScreenToggle = true;
 	int startScreenFrameCount = 111;
 
+	inputManager.addKeys("Z" + std::string(1,VK_RIGHT) + std::string(1,VK_LEFT));
+
 	Soil::sleep_for_ms(777);
 
 	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
@@ -132,6 +134,9 @@ int main() {
 
 	bool holdKey = false;
 	while (startScreen) {
+
+		// get input state for this frame
+		inputManager.getBufferState();
 
 		// draw logo
 		asciiGraphics.drawTextSprite(19, 7, Soil::ASCIISprite(
@@ -196,32 +201,25 @@ int main() {
 
 		Soil::sleep_for_ms(7);
 
-		bool arrowKeys[4];	//stores input from arrow keys
-		bool zKey;			//stores input from Z key
-
-		for (int o = 0; o < 4; o++) {
-			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;						
-		}
-
-		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
+		if (inputManager.isKeyPressed(VK_RIGHT) && playerCount < 2 && !holdKey) {
 			playerCount++;
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.77f);
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 			holdKey = true;
 		}
-		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
+		else if (inputManager.isKeyPressed(VK_LEFT) && playerCount > 1 && !holdKey) {
 			playerCount--;
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.64f);
 			snekAudioSystem.fmodEventInstances["Instruments+FX/SnakeFruit"]->setVolume(1.0f);
 			snekAudioSystem.startEventInstance("Instruments+FX/SnakeFruit");
 			holdKey = true;
 		}
-		else if (holdKey && !arrowKeys[0] && !arrowKeys[2]) {
+		else if (holdKey && !inputManager.isKeyPressed(VK_RIGHT) && !inputManager.isKeyPressed(VK_LEFT)) {
 			holdKey = false;
 		}
 
-		if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
+		if (inputManager.isKeyPressed('Z')) {
 
 			startScreen = false;	//begin to exit start screen when Z key is pressed
 
@@ -260,10 +258,10 @@ int main() {
 		snekAudioSystem.fmodUpdate();
 	}
 	
-	SnakeGame currentGame(playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem);
+	SnakeGame currentGame(playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 	currentGame.play();
 	while (currentGame.playAgain) {
-		currentGame = SnakeGame(currentGame.playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem);
+		currentGame = SnakeGame(currentGame.playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 		currentGame.play();
 	}
 

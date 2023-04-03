@@ -144,6 +144,7 @@
     <ClCompile Include="soil\AudioSystem.cpp" />
     <ClCompile Include="Snake.cpp" />
     <ClCompile Include="SnakeGame.cpp" />
+    <ClCompile Include="soil\InputManager.cpp" />
     <ClCompile Include="Source.cpp">
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseUnicodeForAssemblerListing>
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</UseUnicodeForAssemblerListing>
@@ -156,6 +157,8 @@
     <ClCompile Include="soil\Sleep.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SnakeControlScheme.h" />
+    <ClInclude Include="soil\InputManager.h" />
     <ClInclude Include="soil\Soil.h" />
     <ClInclude Include="soil\AudioSystem.h" />
     <ClInclude Include="soil\ASCIIGraphics.h" />

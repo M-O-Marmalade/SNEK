@@ -39,6 +39,9 @@
     <ClCompile Include="soil\Sleep.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="soil\InputManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soil\AudioSystem.h">
@@ -72,6 +75,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soil\Sleep.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil\InputManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SnakeControlScheme.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

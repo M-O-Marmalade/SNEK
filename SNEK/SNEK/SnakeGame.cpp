@@ -50,16 +50,22 @@ void SnakeGame::readScoreFile() {
 	oldHighScore = highScore;
 }
 
-SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem) : playerCount{ playerCount }, asciiGraphics { asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem } {
+SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager) : playerCount{ playerCount }, asciiGraphics{ asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem }, inputManager{ inputManager } {
 	
 	// initialize/resize `gameGrid`
 	this->gameGrid = std::vector<std::vector<char>>(gridWidth,std::vector<char>(gridHeight, ' '));
 
+	// register keys to input system
+	this->inputManager->addKeys("\x25\x26\x27\x28WASDZPV");
+
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<Snake>();
-	this->snakes.push_back(Snake(colorPalette.player_1, { playerCount == 1 ? 13 : 17, 12 }, { 0,1 }));
-	if (playerCount > 1) {
-		this->snakes.push_back(Snake(colorPalette.player_2, { 7, 12 }, { 0,1 }));
+	if (playerCount == 1) {
+		this->snakes.push_back(Snake(colorPalette.player_1, { 13, 12 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
+	}
+	if (playerCount == 2) {
+		this->snakes.push_back(Snake(colorPalette.player_1, { 17, 12 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
+		this->snakes.push_back(Snake(colorPalette.player_2, { 7, 12 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
 	}
 
 	// load the saved high score
@@ -118,6 +124,8 @@ void SnakeGame::play() {
 	//				   //
 	while (gameLose == false) {
 
+		this->inputManager->getBufferState();
+
 		if (playerCount == 2 && currentFrame == 1) {
 			frameTime = std::chrono::steady_clock::now();
 		}
@@ -168,54 +176,22 @@ void SnakeGame::play() {
 		//			//
 		while (std::chrono::steady_clock::now() < frameTime + fps) {
 
-			//				     //
-			// READ PLAYER INPUT //
-			//				   //
-			for (int k = 0; k < 4; k++) {	//player 1
-				snakes[0].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
-
-			}
-
-			if (playerCount > 1) {
-				for (int k = 0; k < 4; k++) {	//player 2
-					snakes[1].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("AWDS"[k]))) != 0;
-
-				}
-			}
-
-			if (highestCurrentLength > 10) {
-				if (playerCount == 1) {
-					snakes[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
-				}
-				else {
-					snakes[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("P"[0]))) != 0);
-					snakes[1].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("V"[0]))) != 0);
-				}
-
-			}
-			else {
-				snakes[0].action_keys = false;
-				if (playerCount > 1) {
-					snakes[1].action_keys = false;
-				}
-			}
-
 
 			//										   //
 			// CHECK + SET DIRECTION [TICK RESOLUTION] //
 			//										 //
 
 			for (Snake& snake : this->snakes) {
-				if (snake.directional_keys[0] && !snake.holdW && snake.direction_frame.x != 1) {
+				if (inputManager->isKeyPressed(snake.controls.left) && !snake.holdW && snake.direction_frame.x != 1) {
 					snake.direction_tick = Soil::Coords2D{-1,0};
 				}
-				else if (snake.directional_keys[1] && !snake.holdN && snake.direction_frame.y != 1) {
+				else if (inputManager->isKeyPressed(snake.controls.up) && !snake.holdN && snake.direction_frame.y != 1) {
 					snake.direction_tick = Soil::Coords2D{0,-1};
 				}
-				else if (snake.directional_keys[2] && !snake.holdE && snake.direction_frame.x != -1) {
+				else if (inputManager->isKeyPressed(snake.controls.right) && !snake.holdE && snake.direction_frame.x != -1) {
 					snake.direction_tick = Soil::Coords2D{1,0};
 				}
-				else if (snake.directional_keys[3] && !snake.holdS && snake.direction_frame.y != -1) {
+				else if (inputManager->isKeyPressed(snake.controls.down) && !snake.holdS && snake.direction_frame.y != -1) {
 					snake.direction_tick = Soil::Coords2D{0,1};
 				}
 			}
@@ -451,37 +427,9 @@ void SnakeGame::play() {
 		 // MOVE PLAYER //
 		//             //
 		for (Snake& snake : this->snakes) {
-
-			if (snake.direction_frame == Soil::Coords2D{ 1,0 }) {
-				snake.head.x++;
-
-				if (snake.action_keys) {
-					snake.head.x++;
-				}
-			}
-
-			else if (snake.direction_frame == Soil::Coords2D{ -1,0 }) {
-				snake.head.x--;
-
-				if (snake.action_keys) {
-					snake.head.x--;
-				}
-			}
-
-			else if (snake.direction_frame == Soil::Coords2D{ 0,1 }) {
-				snake.head.y++;
-
-				if (snake.action_keys) {
-					snake.head.y++;
-				}
-			}
-
-			else if (snake.direction_frame == Soil::Coords2D{ 0,-1 }) {
-				snake.head.y--;
-
-				if (snake.action_keys) {
-					snake.head.y--;
-				}
+			snake.head += snake.direction_frame;
+			if (snake.controls.action) {
+				snake.head += snake.direction_frame;
 			}
 		}
 
@@ -1042,7 +990,7 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 	}
 
 	//if nobody got any fruits, then check if either snake is using the action keys..
-	else if (snakes[0].action_keys || snakes.size() > 1 && snakes[1].action_keys) {
+	else if (inputManager->isKeyPressed(snakes[0].controls.action) || snakes.size() > 1 && inputManager->isKeyPressed(snakes[1].controls.action)) {
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
 		snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
@@ -1300,16 +1248,14 @@ void SnakeGame::gameOverScreen()
 		//..and let them enter their name..
 		while (nameEntry) {
 
+
 			//CHECK INPUT//
-			for (int k = 0; k < 4; k++) {
-				snakes[0].directional_keys[k] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[k]))) != 0;
-			}
-			snakes[0].action_keys = ((0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0);
+			this->inputManager->getBufferState();
 
 			//APPLY INPUT//
 
 			//..if they press the left arrow key..
-			if (!holdNameEntryLeft && snakes[0].directional_keys[0]) {
+			if (!holdNameEntryLeft && this->inputManager->isKeyPressed(VK_LEFT)) {
 				if (currentSelChar - 1 > -1) {
 					currentSelChar--;
 					snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
@@ -1318,12 +1264,12 @@ void SnakeGame::gameOverScreen()
 				holdNameEntryLeft = true;
 			}
 			//..if they release the left arrow key..
-			else if (!snakes[0].directional_keys[0]) {
+			else if (!this->inputManager->isKeyPressed(VK_LEFT)) {
 				holdNameEntryLeft = false;
 			}
 
 			//..if they press the right arrow key..
-			if (!holdNameEntryRight && snakes[0].directional_keys[2]) {
+			if (!holdNameEntryRight && this->inputManager->isKeyPressed(VK_RIGHT)) {
 				if (currentSelChar + 1 < 34) {
 					currentSelChar++;
 					snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
@@ -1332,12 +1278,12 @@ void SnakeGame::gameOverScreen()
 				holdNameEntryRight = true;
 			}
 			//..if they release the right arrow key..
-			else if (!snakes[0].directional_keys[2]) {
+			else if (!this->inputManager->isKeyPressed(VK_RIGHT)) {
 				holdNameEntryRight = false;
 			}
 
 			//..if they press the up arrow key..
-			if (!holdNameEntryUp && snakes[0].directional_keys[1]) {
+			if (!holdNameEntryUp && this->inputManager->isKeyPressed(VK_UP)) {
 				if (currentSelChar - 8 > -1) {
 					currentSelChar -= 8;
 					snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(2.0f);
@@ -1346,12 +1292,12 @@ void SnakeGame::gameOverScreen()
 				holdNameEntryUp = true;
 			}
 			//..if they release the up arrow key..
-			else if (!snakes[0].directional_keys[1]) {
+			else if (!this->inputManager->isKeyPressed(VK_UP)) {
 				holdNameEntryUp = false;
 			}
 
 			//..if they press the down arrow key..
-			if (!holdNameEntryDown && snakes[0].directional_keys[3]) {
+			if (!holdNameEntryDown && this->inputManager->isKeyPressed(VK_DOWN)) {
 				if (currentSelChar < 32) {
 					if (currentSelChar <= 22) {
 						currentSelChar += 8;
@@ -1365,12 +1311,12 @@ void SnakeGame::gameOverScreen()
 				holdNameEntryDown = true;
 			}
 			//..if they release the down arrow key..
-			else if (!snakes[0].directional_keys[3]) {
+			else if (!this->inputManager->isKeyPressed(VK_DOWN)) {
 				holdNameEntryDown = false;
 			}
 
 			//..if they press the Z key..
-			if (!holdNameEntryZ && snakes[0].action_keys) {
+			if (!holdNameEntryZ && this->inputManager->isKeyPressed('Z')) {
 				if (currentSelChar < 31 && highScoreName.length() < 11) {
 					highScoreName.append(1, keyboard[currentSelChar]);
 					snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.0f);
@@ -1396,7 +1342,7 @@ void SnakeGame::gameOverScreen()
 				holdNameEntryZ = true;
 			}
 			// ..if they release the Z key..
-			else if (!snakes[0].action_keys) {
+			else if (!this->inputManager->isKeyPressed('Z')) {
 				holdNameEntryZ = false;
 			}
 
