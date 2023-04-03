@@ -154,7 +154,6 @@
     <ClCompile Include="soil\ASCIIGraphics.cpp" />
     <ClCompile Include="soil\ASCIIOutputCMD.cpp" />
     <ClCompile Include="soil\ASCIISprite.cpp" />
-    <ClCompile Include="soil\Sleep.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SnakeControlScheme.h" />
@@ -169,7 +168,6 @@
     <ClInclude Include="soil\Coords2D.h" />
     <ClInclude Include="Snake.h" />
     <ClInclude Include="SnakeGame.h" />
-    <ClInclude Include="soil\Sleep.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

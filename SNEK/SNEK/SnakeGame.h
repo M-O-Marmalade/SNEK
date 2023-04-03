@@ -45,7 +45,8 @@ private:
 	std::string highScoreName;
 	std::vector<double> bpmValues = { 54.5f, 62.5f, 75.5f, 89.0f, 100.0f, 127.0f, 137.0f, 152.0f, 164.0f, 172.0f, 181.0f, 200.0f };
 
-	std::chrono::duration<long double, std::nano> fps;
+	std::vector<int> fpsScoreThresholds = { 0, 1, 7, 11, 20, 30, 40, 50, 60, 70, 80, 90 };
+	std::chrono::microseconds fps;
 	std::chrono::steady_clock::time_point frameTime;
 	std::chrono::steady_clock::time_point tickTime;
 

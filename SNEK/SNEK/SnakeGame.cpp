@@ -1,6 +1,6 @@
 #include "SnakeGame.h"
 
-#include "Sleep.h"
+using namespace std::chrono_literals;
 
 ///////////////////////
 // PROGRAM STRUCTURE //
@@ -72,7 +72,7 @@ SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCII
 	this->readScoreFile();
 	
 	// reset the framerate
-	fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);
+	//fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);
 
 	// seed the RNG using system time, and make a new fruit location
 	srand(time(0));
@@ -119,99 +119,97 @@ void SnakeGame::play() {
 	frameTime = std::chrono::steady_clock::now();
 	bool firstFrameOfTheGame = true;
 
+	// clear the input buffer
+	this->inputManager->getBufferState();
+
 	//				     //
 	// [GAME LOOP START] //
 	//				   //
 	while (gameLose == false) {
 
+		  //               //
+		 // SET FRAMERATE //
+		//               //
+		for (int i = 0; i < this->fpsScoreThresholds.size(); i++) {
+			if (this->highestCurrentLength < this->fpsScoreThresholds[i]) {
+				fps = std::chrono::microseconds ((int)(15000000 / bpmValues[i - 1]));
+				break;
+			}
+		}
+
+		std::this_thread::sleep_until(frameTime + fps);
+		frameTime += fps;
+
 		this->inputManager->getBufferState();
 
-		if (playerCount == 2 && currentFrame == 1) {
+		  //                                          //
+		 // CHECK + SET DIRECTION [FRAME RESOLUTION] //
+		//                                          //
+		for (Snake& snake : this->snakes) {
+			if (inputManager->isKeyPressed(snake.controls.left) && snake.direction_frame.x == 0) {
+				snake.direction_frame = Soil::Coords2D{ -1,0 };
+			}
+
+			else if (inputManager->isKeyPressed(snake.controls.up) && snake.direction_frame.y == 0) {
+				snake.direction_frame = Soil::Coords2D{ 0,-1 };
+			}
+
+			else if (inputManager->isKeyPressed(snake.controls.right) && snake.direction_frame.x == 0) {
+				snake.direction_frame = Soil::Coords2D{ 1,0 };
+			}
+
+			else if (inputManager->isKeyPressed(snake.controls.down) && snake.direction_frame.y == 0) {
+				snake.direction_frame = Soil::Coords2D{ 0,1 };
+			}
+		}
+
+		/*if (playerCount == 2 && firstFrameOfTheGame) {
 			frameTime = std::chrono::steady_clock::now();
-		}
-
-		//			     //
-		// SET FRAMERATE //
-		//			   //
-		if (gotNewFruit) {
-			switch (highestCurrentLength) {
-			case 1:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[1]);
-				break;
-			case 7:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[2]);
-				break;
-			case 11:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[3]);
-				break;
-			case 20:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[4]);
-				break;
-			case 30:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[5]);
-				break;
-			case 40:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[6]);
-				break;
-			case 50:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[7]);
-				break;
-			case 60:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[8]);
-				break;
-			case 70:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[9]);
-				break;
-			case 80:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[10]);
-				break;
-			case 90:
-				fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[11]);
-				break;
-			}
-		}
-
-		//			  //
-		// TICK CLOCK //
-		//			//
-		while (std::chrono::steady_clock::now() < frameTime + fps) {
+		}*/
 
 
-			//										   //
-			// CHECK + SET DIRECTION [TICK RESOLUTION] //
-			//										 //
+		////			  //
+		//// TICK CLOCK //
+		////			//
+		//while (std::chrono::steady_clock::now() < frameTime + fps) {
 
-			for (Snake& snake : this->snakes) {
-				if (inputManager->isKeyPressed(snake.controls.left) && !snake.holdW && snake.direction_frame.x != 1) {
-					snake.direction_tick = Soil::Coords2D{-1,0};
-				}
-				else if (inputManager->isKeyPressed(snake.controls.up) && !snake.holdN && snake.direction_frame.y != 1) {
-					snake.direction_tick = Soil::Coords2D{0,-1};
-				}
-				else if (inputManager->isKeyPressed(snake.controls.right) && !snake.holdE && snake.direction_frame.x != -1) {
-					snake.direction_tick = Soil::Coords2D{1,0};
-				}
-				else if (inputManager->isKeyPressed(snake.controls.down) && !snake.holdS && snake.direction_frame.y != -1) {
-					snake.direction_tick = Soil::Coords2D{0,1};
-				}
-			}
-		}
 
-		currentFrame++;
-		frameTime += std::chrono::duration_cast<std::chrono::nanoseconds>(fps);
+		//	  //                                         //
+		//	 // CHECK + SET DIRECTION [TICK RESOLUTION] //
+		//	//                                         //
 
-		//				   //
-		// REFRESH DISPLAY //
-		//				 //
+		//	for (Snake& snake : this->snakes) {
+		//		if (inputManager->isKeyPressed(snake.controls.left) && !snake.holdW && snake.direction_frame.x != 1) {
+		//			snake.direction_tick = Soil::Coords2D{-1,0};
+		//		}
+		//		else if (inputManager->isKeyPressed(snake.controls.up) && !snake.holdN && snake.direction_frame.y != 1) {
+		//			snake.direction_tick = Soil::Coords2D{0,-1};
+		//		}
+		//		else if (inputManager->isKeyPressed(snake.controls.right) && !snake.holdE && snake.direction_frame.x != -1) {
+		//			snake.direction_tick = Soil::Coords2D{1,0};
+		//		}
+		//		else if (inputManager->isKeyPressed(snake.controls.down) && !snake.holdS && snake.direction_frame.y != -1) {
+		//			snake.direction_tick = Soil::Coords2D{0,1};
+		//		}
+		//	}
+		//}
+
+
+		//firstFrameOfTheGame = false;
+		//frameTime += std::chrono::duration_cast<std::chrono::nanoseconds>(fps);
+
+		  //                 //
+		 // REFRESH DISPLAY //
+		//                 //
 		for (int x = 0; x < 25; x++) {
 			for (int y = 0; y < 25; y++) {
 				gameGrid[x][y] = ' ';
 			}
 		}
 
-		//					  //
-		// MOVE BODY SEGMENTS //
-		//					//
+		  //                    //
+		 // MOVE BODY SEGMENTS //
+		//                    //
 		for (Snake& snake : snakes) {
 			for (int i = snake.body.size() - 1; i >= 0; i--) {
 				if (i > 0) {
@@ -222,48 +220,6 @@ void SnakeGame::play() {
 					//move the segment right before the head
 					snake.body[i] = snake.head;
 				}
-			}
-		}
-
-		//										    //
-		// CHECK + SET DIRECTION [FRAME RESOLUTION] //
-		//										  //
-		for (Snake& snake : this->snakes) {
-
-			if (snake.direction_tick.x == -1 && snake.holdW == false && snake.direction_frame.x != 1) {
-				snake.direction_frame = Soil::Coords2D{ -1,0 };
-
-				snake.holdW = true;
-				snake.holdE = false;
-				snake.holdS = false;
-				snake.holdN = false;
-			}
-
-			else if (snake.direction_tick.y == -1 && snake.holdN == false && snake.direction_frame.y != 1) {
-				snake.direction_frame = Soil::Coords2D{ 0,-1 };
-
-				snake.holdN = true;
-				snake.holdE = false;
-				snake.holdS = false;
-				snake.holdW = false;
-			}
-
-			else if (snake.direction_tick.x == 1 && snake.holdE == false && snake.direction_frame.x != -1) {
-				snake.direction_frame = Soil::Coords2D{ 1,0 };
-
-				snake.holdE = true;
-				snake.holdW = false;
-				snake.holdS = false;
-				snake.holdN = false;
-			}
-
-			else if (snake.direction_tick.y == 1 && snake.holdS == false && snake.direction_frame.y != -1) {
-				snake.direction_frame = Soil::Coords2D{ 0,1 };
-
-				snake.holdS = true;
-				snake.holdE = false;
-				snake.holdW = false;
-				snake.holdN = false;
 			}
 		}
 
@@ -428,7 +384,7 @@ void SnakeGame::play() {
 		//             //
 		for (Snake& snake : this->snakes) {
 			snake.head += snake.direction_frame;
-			if (snake.controls.action) {
+			if (highestCurrentLength >= 11 && this->inputManager->isKeyPressed(snake.controls.action)) {
 				snake.head += snake.direction_frame;
 			}
 		}
@@ -647,7 +603,7 @@ void SnakeGame::play() {
 			asciiGraphics->drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 		}
 
-		if (playerCount == 2 && currentFrame == 1) {
+		if (playerCount == 2 && firstFrameOfTheGame) {
 
 			asciiGraphics->drawTextSprite(14, 8, Soil::ASCIISprite(
 				"Player 1\n"
@@ -713,8 +669,11 @@ void SnakeGame::play() {
 		asciiOutput->pushOutput(*asciiGraphics);
 
 		// delay for first frame if in 2 player mode //
-		if (playerCount == 2 && currentFrame == 1)
-			Soil::sleep_for_ms(3000);
+		if (playerCount == 2 && firstFrameOfTheGame) {
+			std::this_thread::sleep_for(3s);
+		}
+
+		firstFrameOfTheGame = false;
 	}
 
 	  //                  //
@@ -810,7 +769,6 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 	}
 
 	if (firstFrameOfTheGame) {
-		firstFrameOfTheGame = false;
 		snekAudioSystem->startEventInstance(bpmNames[0]);
 	}
 
@@ -990,7 +948,7 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 	}
 
 	//if nobody got any fruits, then check if either snake is using the action keys..
-	else if (inputManager->isKeyPressed(snakes[0].controls.action) || snakes.size() > 1 && inputManager->isKeyPressed(snakes[1].controls.action)) {
+	else if (highestCurrentLength >= 11 && (inputManager->isKeyPressed(snakes[0].controls.action) || snakes.size() > 1 && inputManager->isKeyPressed(snakes[1].controls.action))) {
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
 		snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
@@ -1204,7 +1162,7 @@ void SnakeGame::gameOverScreen()
 	snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM]);
 	snekAudioSystem->fmodUpdate(); //update FMOD system	
 
-	Soil::sleep_for_ms(700);
+	std::this_thread::sleep_for(700ms);
 
 	//			//
 	// NAME ENTRY //
@@ -1416,7 +1374,7 @@ void SnakeGame::gameOverScreen()
 	// color the whole right side of the screen green
 	asciiGraphics->fillColor(colorPalette.hud, 26, 0, asciiGraphics->width, asciiGraphics->height);
 
-	Soil::sleep_for_ms(100);
+	std::this_thread::sleep_for(100ms);
 
 	if (playerCount == 2) {
 		asciiGraphics->drawText(44, 12, "PLAYER " + std::to_string(snakes[0].justDied ? 1 : 2) + " DIED!");
@@ -1442,7 +1400,7 @@ void SnakeGame::gameOverScreen()
 	bool zKey = false, xKey = false, holdKey = false;
 	bool arrowKeys[4] = { false, false, false, false };
 
-	Soil::sleep_for_ms(527);
+	std::this_thread::sleep_for(527ms);
 
 	while (gameOverMessage) {
 
@@ -1490,12 +1448,12 @@ void SnakeGame::gameOverScreen()
 			snekAudioSystem->startEventInstance("Menu+Songs/ExitGame");
 
 			snekAudioSystem->fmodUpdate();
-			Soil::sleep_for_ms(2671);
+			std::this_thread::sleep_for(2671ms);
 		}
 
 		asciiOutput->pushOutput(*asciiGraphics);
 		snekAudioSystem->fmodUpdate();
-		Soil::sleep_for_ms(10);
+		std::this_thread::sleep_for(10ms);
 	}
 }
 

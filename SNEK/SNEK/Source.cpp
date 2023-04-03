@@ -24,6 +24,8 @@
 
 #include "SnakeGame.h"
 
+using namespace std::chrono_literals;
+
 
 int main() {	
 
@@ -96,9 +98,10 @@ int main() {
 		u++;
 		asciiOutputCMD.pushOutput(asciiGraphics);
 
-		Soil::sleep_for_ms(77);
+		std::this_thread::sleep_for(77ms);
 	}
-	Soil::sleep_for_ms(222);
+
+	std::this_thread::sleep_for(222ms);
 	
 
 	//Erase Splash Screen
@@ -111,9 +114,10 @@ int main() {
 		
 		asciiOutputCMD.pushOutput(asciiGraphics);
 		
-		Soil::sleep_for_ms(77);
+		std::this_thread::sleep_for(77ms);
 	}
-	Soil::sleep_for_ms(222);
+
+	std::this_thread::sleep_for(1s);
 
 
 	  //			  //
@@ -124,8 +128,6 @@ int main() {
 	int startScreenFrameCount = 111;
 
 	inputManager.addKeys("Z" + std::string(1,VK_RIGHT) + std::string(1,VK_LEFT));
-
-	Soil::sleep_for_ms(777);
 
 	snekAudioSystem.startEventInstance("Menu+Songs/ANewChip");	//begin start screen playback	(FMOD)
 	snekAudioSystem.fmodUpdate();
@@ -199,7 +201,7 @@ int main() {
 
 		startScreenFrameCount++;
 
-		Soil::sleep_for_ms(7);
+		std::this_thread::sleep_for(7ms);
 
 		if (inputManager.isKeyPressed(VK_RIGHT) && playerCount < 2 && !holdKey) {
 			playerCount++;
@@ -251,7 +253,7 @@ int main() {
 			for (auto& animFrame : pressedStartAnimFrames) {
 				asciiGraphics.drawText(31, 18, animFrame.first);
 				asciiOutputCMD.pushOutput(asciiGraphics);
-				Soil::sleep_for_ms(animFrame.second);
+				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}
 
