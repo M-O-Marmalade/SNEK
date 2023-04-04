@@ -26,7 +26,7 @@ private:
 	void drawDebugMenu();
 
 	std::vector<Snake> snakes;
-	std::vector<std::vector<char>> gameGrid; //char display[25][25]{ 'z' };		//the Play Grid [x][y] {'z' empty space, '8' snek head, '7' snek body, 'o' fruit, 'X' trap, 'p' portal}		
+	std::vector<std::vector<char>> gameGrid; //char display[x][y]{ ' ' };		//the Play Grid [x][y] {' ' empty space, '^v<>' snek head, '8' snek body, '+' fruit, 'X' trap, 'O' portal}		
 	
 	Soil::Coords2D currentFruit;			//location of the current fruit on the game grid [x,y]
 	int portalCount = 0;			//amount of portals on the map

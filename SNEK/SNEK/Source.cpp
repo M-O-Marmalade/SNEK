@@ -19,6 +19,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "Soil.h"
 
@@ -66,6 +67,7 @@ int main() {
 	  //			   //
 	 // DISPLAY SETUP //
 	//			  	 //
+
 	Soil::ColorPalette colorPalette;
 	Soil::ASCIIGraphics asciiGraphics(80, 25);
 	Soil::ASCIIOutputCMD asciiOutputCMD;
@@ -161,7 +163,7 @@ int main() {
 			asciiGraphics.fillColor(colorPalette.player_1, 36, 14, 80, 16);
 			asciiGraphics.drawText(15, 14, 
 				"--------------------      --------------------------\n"
-				"| P2: WASD + B-Key |      | P1: Arrow Keys + P-Key |\n"
+				"| P2: WASD + V-Key |      | P1: Arrow Keys + P-Key |\n"
 				"--------------------      --------------------------");
 			
 		}
@@ -260,10 +262,10 @@ int main() {
 		snekAudioSystem.fmodUpdate();
 	}
 	
-	SnakeGame currentGame(playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+	SnakeGame currentGame(playerCount, 23, 23, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 	currentGame.play();
 	while (currentGame.playAgain) {
-		currentGame = SnakeGame(currentGame.playerCount, 25, 25, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+		currentGame = SnakeGame(currentGame.playerCount, 23, 23, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 		currentGame.play();
 	}
 

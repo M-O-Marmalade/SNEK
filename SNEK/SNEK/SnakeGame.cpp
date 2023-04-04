@@ -61,11 +61,11 @@ SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCII
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<Snake>();
 	if (playerCount == 1) {
-		this->snakes.push_back(Snake(colorPalette.player_1, { 13, 12 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
+		this->snakes.push_back(Snake(colorPalette.player_1, { (int)gameGrid.size() / 2, (int)gameGrid[0].size() / 2}, {0,1}, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
 	}
 	if (playerCount == 2) {
-		this->snakes.push_back(Snake(colorPalette.player_1, { 17, 12 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
-		this->snakes.push_back(Snake(colorPalette.player_2, { 7, 12 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
+		this->snakes.push_back(Snake(colorPalette.player_1, { 2 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
+		this->snakes.push_back(Snake(colorPalette.player_2, { 1 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
 	}
 
 	// load the saved high score
@@ -87,9 +87,9 @@ SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCII
 	}
 
 	//Reset the Game Grid Display//
-	for (int x = 0; x < 25; x++) {
-		for (int y = 0; y < 25; y++) {
-			gameGrid[x][y] = ' ';
+	for (auto& column : gameGrid) {
+		for (auto& character : column) {
+			character = ' ';
 		}
 	}
 
@@ -201,9 +201,9 @@ void SnakeGame::play() {
 		  //                 //
 		 // REFRESH DISPLAY //
 		//                 //
-		for (int x = 0; x < 25; x++) {
-			for (int y = 0; y < 25; y++) {
-				gameGrid[x][y] = ' ';
+		for (auto& column : gameGrid) {
+			for (auto& character : column) {
+				character = ' ';
 			}
 		}
 
@@ -393,22 +393,12 @@ void SnakeGame::play() {
 		// DETECT IF PLAYER HAS HIT MAP EDGE //
 		//								   //
 		for (Snake& snake : this->snakes) {
-			if (snake.head.x < 0 || snake.head.x > 24 || snake.head.y < 0 || snake.head.y > 24) {
+			if (snake.head.x < 0 || snake.head.x >= gameGrid.size() || snake.head.y < 0 || snake.head.y >= gameGrid[0].size()) {
 				snake.justDied = true;
 				gameLose = true;
 
-				if (snake.head.x > 24) {
-					snake.head.x = 24;
-				}
-				else if (snake.head.x < 0) {
-					snake.head.x = 0;
-				}
-				else if (snake.head.y > 24) {
-					snake.head.y = 24;
-				}
-				else if (snake.head.y < 0) {
-					snake.head.y = 0;
-				}
+				snake.head.x = std::min((int)gameGrid.size() - 1, std::max(0, snake.head.x));
+				snake.head.y = std::min((int)gameGrid[0].size() - 1, std::max(0, snake.head.y));
 			}
 		}
 
@@ -453,8 +443,8 @@ void SnakeGame::play() {
 			while (!portalsFarEnoughApart) {
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[0][0] = (rand() % 21) + 2;
-					portalCoordinates[0][1] = (rand() % 21) + 2;
+					portalCoordinates[0][0] = (rand() % gameGrid.size() - 3) + 2;
+					portalCoordinates[0][1] = (rand() % gameGrid[0].size() - 3) + 2;
 
 					if (portalCoordinates[0][0] != snakes[0].head.x && portalCoordinates[0][1] != snakes[0].head.y) {
 						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '8' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'O') {
@@ -464,8 +454,8 @@ void SnakeGame::play() {
 				}
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[1][0] = (rand() % 21) + 2;
-					portalCoordinates[1][1] = (rand() % 21) + 2;
+					portalCoordinates[1][0] = (rand() % (gameGrid.size() - 3)) + 2;
+					portalCoordinates[1][1] = (rand() % (gameGrid[0].size() - 3)) + 2;
 
 					if (portalCoordinates[1][0] != snakes[0].head.x && portalCoordinates[1][1] != snakes[0].head.y) {
 						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '8' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'O') {
@@ -511,24 +501,134 @@ void SnakeGame::play() {
 		//               //
 		processAudioFrame(firstFrameOfTheGame, closestProximityToFruit);
 
-		  //             //
-		 // DRAW SCREEN //	
-		//             //
+
+		  //                    //
+		 // DRAW THE GAME GRID //
+		//                    //
+
+		// calculate the grid origin (top-left corner)
+		int smallestDimension = std::min(asciiGraphics->width, asciiGraphics->height);
+		int gridOX = (smallestDimension - gameGrid.size()) / 2;
+		int gridOY = (smallestDimension - gameGrid[0].size()) / 2;
+
+		// calculate the border origin (top-left corner)
+		int borderLeft = gridOX - 1;
+		int borderTop = gridOY - 1;
+		int borderRight = gameGrid.size() + borderLeft + 1;
+		int borderBottom = gameGrid[0].size() + borderTop + 1;
 
 		// blank the game grid
-		asciiGraphics->fillText(0, 0, gameGrid.size() - 1, gameGrid[0].size() - 1, ' ');
+		//asciiGraphics->fillText(marginX, marginY, gameGrid.size() + marginX, marginY, ' ');
+
+		// draw the border
+		asciiGraphics->fillText(borderLeft, borderTop, borderRight, borderTop, '-');	// top
+		asciiGraphics->fillText(borderLeft, borderBottom, borderRight, borderBottom, '-');	// bottom
+		asciiGraphics->fillText(borderLeft, borderTop, borderLeft, borderBottom, '|');	// left
+		asciiGraphics->fillText(borderRight, borderTop, borderRight, borderBottom, '|');	// right
+		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderTop, borderRight, borderTop);	// top
+		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
+		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderTop, borderLeft, borderBottom);	// left
+		asciiGraphics->fillColor(colorPalette.hud, borderRight, borderTop, borderRight, borderBottom);	// right
 
 
 		for (int t = 0; t < this->gameGrid.size(); t++) {
 			for (int q = 0; q < this->gameGrid[0].size(); q++) {
 				std::string temp;
 				temp.push_back(gameGrid[q][t]);
-				asciiGraphics->drawText(q, t, temp);
+				asciiGraphics->drawText(gridOX + q, gridOY + t, temp);
 			}
 		}
 
-		asciiGraphics->fillColor(colorPalette.hud, 25, 0, 25, asciiGraphics->height - 1);
-		asciiGraphics->fillText(25, 0, 25, asciiGraphics->height - 1, '|');
+		for (Snake& snake : this->snakes) {
+
+			if (snake.justDied) {
+				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", colorPalette.white));
+			}
+			else {
+				std::string snakeHeadText;
+				if (snake.direction_frame == Soil::Coords2D{ 0,-1 }) {
+					snakeHeadText = "^";
+				}
+				else if (snake.direction_frame == Soil::Coords2D{ 0,1 }) {
+					snakeHeadText = "v";
+				}
+				else if (snake.direction_frame == Soil::Coords2D{ 1,0 }) {
+					snakeHeadText = ">";
+				}
+				else if (snake.direction_frame == Soil::Coords2D{ -1,0 }) {
+					snakeHeadText = "<";
+				}
+				else {
+					snakeHeadText = "_";
+				}
+				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite(snakeHeadText, snake.color));
+			}
+		}
+
+		if (portalCount) {
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[0][0], gridOY + portalCoordinates[0][1], Soil::ASCIISprite("O", colorPalette.portal));
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[1][0], gridOY + portalCoordinates[1][1], Soil::ASCIISprite("O", colorPalette.portal));
+		}
+
+		if (playerCount == 2 && firstFrameOfTheGame) {
+
+			asciiGraphics->drawTextSprite(gridOX + snakes[0].head.x - 3, gridOY + snakes[0].head.y - 4, Soil::ASCIISprite(
+				"Player 1\n"
+				"   |    \n"
+				"   |    \n"
+				"   V    ",
+				colorPalette.player_1
+			));
+
+			asciiGraphics->drawTextSprite(gridOX + snakes[1].head.x - 3, gridOY + snakes[1].head.y - 4, Soil::ASCIISprite(
+				"Player 2\n"
+				"   |    \n"
+				"   |    \n"
+				"   V    ",
+				colorPalette.player_2
+			));
+		}
+
+
+		asciiGraphics->fillColor(colorPalette.fruit, gridOX + currentFruit.x, gridOY + currentFruit.y);
+
+
+		for (Snake& snake : this->snakes) {
+			if (!snake.justDied) {
+				asciiGraphics->attributeBuffer[gridOX + snake.head.x + (gridOY + snake.head.y) * 80] = snake.color;
+
+				if (!snake.justGotNewFruit) {
+					for (Soil::Coords2D& segment : snake.body) {
+						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
+					}
+					if (snake.snekSwallowTimer <= snake.body.size()) {
+						asciiGraphics->fillColor(colorPalette.fruit_swallowed, gridOX + snake.body[snake.snekSwallowTimer - 1].x, gridOY + snake.body[snake.snekSwallowTimer - 1].y);
+						snake.snekSwallowTimer++;
+					}
+				}
+				else {
+					snake.justGotNewFruit = false;
+					for (Soil::Coords2D& segment : snake.body) {
+						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
+					}
+					if (snake.snekSwallowTimer == 0) {
+						asciiGraphics->fillColor(colorPalette.fruit_swallowed, gridOX + snake.head.x, gridOY + snake.head.y);
+						snake.snekSwallowTimer++;
+					}
+				}
+			}
+			else {
+				asciiGraphics->fillColor(colorPalette.white, gridOX + snake.head.x, gridOY + snake.head.y);
+				for (Soil::Coords2D& segment : snake.body) {
+					asciiGraphics->fillColor(colorPalette.white, gridOX + segment.x, gridOY + segment.y);
+				}
+			}
+		}
+
+
+		  //              //
+		 // DRAW THE HUD //
+		//              //
 
 		asciiGraphics->drawTextSprite(32, 0, Soil::ASCIISprite(
 			"       __    _    _              _  __   ____\n"
@@ -563,37 +663,6 @@ void SnakeGame::play() {
 			}
 		}
 
-		for (Snake& snake : this->snakes) {
-
-			if (snake.justDied) {
-				asciiGraphics->drawTextSprite(snake.head.x, snake.head.y, Soil::ASCIISprite("X", colorPalette.white));
-			}
-			else {
-				std::string snakeHeadText;
-				if (snake.direction_frame == Soil::Coords2D{ 0,-1 }) {
-					snakeHeadText = "^";
-				}
-				else if (snake.direction_frame == Soil::Coords2D{ 0,1 }) {
-					snakeHeadText = "v";
-				}
-				else if (snake.direction_frame == Soil::Coords2D{ 1,0 }) {
-					snakeHeadText = ">";
-				}
-				else if (snake.direction_frame == Soil::Coords2D{ -1,0 }) {
-					snakeHeadText = "<";
-				}
-				else {
-					snakeHeadText = "_";
-				}
-				asciiGraphics->drawTextSprite(snake.head, Soil::ASCIISprite(snakeHeadText, snake.color));
-			}
-		}
-
-		if (portalCount) {
-			asciiGraphics->drawTextSprite(portalCoordinates[0][0], portalCoordinates[0][1], Soil::ASCIISprite("O", colorPalette.portal));
-			asciiGraphics->drawTextSprite(portalCoordinates[1][0], portalCoordinates[1][1], Soil::ASCIISprite("O", colorPalette.portal));
-		}
-
 		if (wasPreviousHighScoreFound) {
 			asciiGraphics->drawTextSprite(63, 6, Soil::ASCIISprite(
 				" -------------\n"
@@ -603,67 +672,9 @@ void SnakeGame::play() {
 			asciiGraphics->drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 		}
 
-		if (playerCount == 2 && firstFrameOfTheGame) {
-
-			asciiGraphics->drawTextSprite(14, 8, Soil::ASCIISprite(
-				"Player 1\n"
-				"   |    \n"
-				"   |    \n"
-				"   V    ",
-				colorPalette.player_1
-			));
-
-			asciiGraphics->drawTextSprite(4, 8, Soil::ASCIISprite(
-				"Player 2\n"
-				"   |    \n"
-				"   |    \n"
-				"   V    ",
-				colorPalette.player_2
-			));
-		}
-
-		  //                 //
-		 // COLOR THE FRUIT //
-		//                 //
-		asciiGraphics->fillColor(colorPalette.fruit, currentFruit.x, currentFruit.y);
-
-		  //              //
-		 // COLOR SNAKES //
-		//              //
-		for (Snake& snake : this->snakes) {
-			if (!snake.justDied) {
-				asciiGraphics->attributeBuffer[snake.head.x + (snake.head.y * 80)] = snake.color;
-
-				if (!snake.justGotNewFruit) {
-					for (Soil::Coords2D& segment : snake.body) {
-						asciiGraphics->fillColor(snake.color, segment.x, segment.y);
-					}
-					if (snake.snekSwallowTimer <= snake.body.size()) {
-						asciiGraphics->fillColor(colorPalette.fruit_swallowed, snake.body[snake.snekSwallowTimer - 1].x, snake.body[snake.snekSwallowTimer - 1].y);
-						snake.snekSwallowTimer++;
-					}
-				}
-				else {
-					snake.justGotNewFruit = false;
-					for (Soil::Coords2D& segment : snake.body) {
-						asciiGraphics->fillColor(snake.color, segment.x, segment.y);
-					}
-					if (snake.snekSwallowTimer == 0) {
-						asciiGraphics->fillColor(colorPalette.fruit_swallowed, snake.head.x, snake.head.y);
-						snake.snekSwallowTimer++;
-					}
-				}
-			}
-			else {
-				asciiGraphics->fillColor(colorPalette.white, snake.head.x, snake.head.y);
-				for (Soil::Coords2D& segment : snake.body) {
-					asciiGraphics->fillColor(colorPalette.white, segment.x, segment.y);
-				}
-			}
-		}
-
-		// DRAW DEBUG //
+		// DRAW DEBUG MENU //
 		//drawDebugMenu();
+
 
 		// PUSH GRAPHICS TO OUTPUT //
 		asciiOutput->pushOutput(*asciiGraphics);
@@ -671,6 +682,7 @@ void SnakeGame::play() {
 		// delay for first frame if in 2 player mode //
 		if (playerCount == 2 && firstFrameOfTheGame) {
 			std::this_thread::sleep_for(3s);
+			this->frameTime = std::chrono::steady_clock::now();
 		}
 
 		firstFrameOfTheGame = false;
@@ -695,8 +707,8 @@ void SnakeGame::processFruitPickups()
 			snake.snekSwallowTimer = 0;
 
 			for (int e = 0; e < 300; e++) {
-				currentFruit.x = rand() % 25;		//create a potential fruit spot
-				currentFruit.y = rand() % 25;
+				currentFruit.x = rand() % gameGrid.size();		//create a potential fruit spot
+				currentFruit.y = rand() % gameGrid[0].size();
 
 				//check if that spot is currently filled//
 				if ((currentFruit.x != snake.head.x && currentFruit.y != snake.head.y) && gameGrid[currentFruit.x][currentFruit.y] != '8' && gameGrid[currentFruit.x][currentFruit.y] != 'X' && gameGrid[currentFruit.x][currentFruit.y] != 'O') {
