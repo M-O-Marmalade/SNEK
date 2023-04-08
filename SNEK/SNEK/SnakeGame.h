@@ -5,11 +5,14 @@
 #include <chrono>
 #include <fstream>
 
-#include "Snake.h"
 #include "ASCIIOutputCMD.h"
 #include "AudioSystem.h"
 #include "ColorPalette.h"
 #include "InputManager.h"
+
+#include "Snake.h"
+#include "SnakeGameOptions.h"
+
 
 class SnakeGame {
 private:
@@ -17,13 +20,8 @@ private:
 	Soil::ASCIIOutputCMD* asciiOutput;
 	Soil::AudioSystem* snekAudioSystem;
 	Soil::InputManager* inputManager;
-	Soil::ColorPalette colorPalette;
-	
-	void readScoreFile();
-	void processFruitPickups();
-	void processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit);
-	void gameOverScreen();
-	void drawDebugMenu();
+	SnakeGameOptions options;
+
 
 	std::vector<Snake> snakes;
 	std::vector<std::vector<char>> gameGrid; //char display[x][y]{ ' ' };		//the Play Grid [x][y] {' ' empty space, '^v<>' snek head, '8' snek body, '+' fruit, 'X' trap, 'O' portal}		
@@ -85,11 +83,21 @@ private:
 	"Instruments+FX/BPMs/bpm200"
 	};
 
-public:
-	bool playAgain = true;					//decides whether or not to play again after losing
-	int playerCount = 1;			//amount of players, can be increased at start screen
 
-	SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager);
+	void readScoreFile();
+	void processFruitPickups();
+	void processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit);
+	void gameOverScreen();
+	void drawDebugMenu();
+	bool anyActionKeysHeld();
+	void placeNewFruit();
+	void clearGameGrid();
+
+public:
+	bool playAgain = true;
+	int playerCount = 1;
+
+	SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager);
 	void play();
 };
 

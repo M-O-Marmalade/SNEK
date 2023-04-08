@@ -5,6 +5,16 @@ Soil::ASCIIGraphics::ASCIIGraphics(int width, int height) : width{ width }, heig
 	this->attributeBuffer = std::vector<WORD>(width * height, FOREGROUND_RED);
 }
 
+void Soil::ASCIIGraphics::clearAll()
+{
+	for (auto& character : this->textBuffer) {
+		character = ' ';
+	}
+	for (auto& attribute : this->attributeBuffer) {
+		attribute = 0;
+	}
+}
+
 void Soil::ASCIIGraphics::drawTextSprite(int x, int y, ASCIISprite sprite) {
 	int i = 0, x1 = x, y1 = y;
 	while (i < sprite.text.size() && x1 >= 0 && y1 >= 0 && x1 < this->width && y1 < this->height) {

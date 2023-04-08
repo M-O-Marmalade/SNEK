@@ -1,4 +1,4 @@
-#include "SnakeGame.h"
+﻿#include "SnakeGame.h"
 
 using namespace std::chrono_literals;
 
@@ -50,51 +50,25 @@ void SnakeGame::readScoreFile() {
 	oldHighScore = highScore;
 }
 
-SnakeGame::SnakeGame(int playerCount, int gridWidth, int gridHeight, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager) : playerCount{ playerCount }, asciiGraphics{ asciiGraphics }, asciiOutput{ asciiOutput }, snekAudioSystem{ audioSystem }, inputManager{ inputManager } {
-	
-	// initialize/resize `gameGrid`
-	this->gameGrid = std::vector<std::vector<char>>(gridWidth,std::vector<char>(gridHeight, ' '));
+SnakeGame::SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager) : options{options}, asciiGraphics{asciiGraphics}, asciiOutput{asciiOutput}, snekAudioSystem{audioSystem}, inputManager{inputManager} {
 
-	// register keys to input system
+	this->gameGrid = std::vector<std::vector<char>>(options.gridSize.x,std::vector<char>(options.gridSize.y, ' '));
 	this->inputManager->addKeys("\x25\x26\x27\x28WASDZPV");
+	this->readScoreFile();
+	this->clearGameGrid();
+	this->asciiGraphics->clearAll();
 
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<Snake>();
-	if (playerCount == 1) {
-		this->snakes.push_back(Snake(colorPalette.player_1, { (int)gameGrid.size() / 2, (int)gameGrid[0].size() / 2}, {0,1}, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
+	if (options.playerCount == 1) {
+		this->snakes.push_back(Snake(options.colors.player_1, { (int)gameGrid.size() / 2, (int)gameGrid[0].size() / 2}, {0,1}, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
 	}
-	if (playerCount == 2) {
-		this->snakes.push_back(Snake(colorPalette.player_1, { 2 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
-		this->snakes.push_back(Snake(colorPalette.player_2, { 1 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
-	}
-
-	// load the saved high score
-	this->readScoreFile();
-	
-	// reset the framerate
-	//fps = std::chrono::duration<long double, std::nano>(15000000000 / bpmValues[0]);
-
-	// seed the RNG using system time, and make a new fruit location
-	srand(time(0));
-	for (bool inLoop = true; inLoop;) {
-
-		currentFruit.x = rand() % 13 + 6;
-		currentFruit.y = rand() % 13 + 6;
-
-		if (currentFruit.x != 13) {
-			inLoop = false;
-		}
+	if (options.playerCount == 2) {
+		this->snakes.push_back(Snake(options.colors.player_1, { 2 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
+		this->snakes.push_back(Snake(options.colors.player_2, { 1 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
 	}
 
-	//Reset the Game Grid Display//
-	for (auto& column : gameGrid) {
-		for (auto& character : column) {
-			character = ' ';
-		}
-	}
-
-	//Reset the Screen String Buffer//
-	asciiGraphics->fillText(0, 0, asciiGraphics->width - 1, asciiGraphics->height - 1, ' ');
+	this->placeNewFruit();
 
 	// Load the required FMOD soundbanks
 	for (std::string& name : bpmNames) {
@@ -163,7 +137,7 @@ void SnakeGame::play() {
 			}
 		}
 
-		/*if (playerCount == 2 && firstFrameOfTheGame) {
+		/*if (options.playerCount == 2 && firstFrameOfTheGame) {
 			frameTime = std::chrono::steady_clock::now();
 		}*/
 
@@ -443,8 +417,8 @@ void SnakeGame::play() {
 			while (!portalsFarEnoughApart) {
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[0][0] = (rand() % gameGrid.size() - 3) + 2;
-					portalCoordinates[0][1] = (rand() % gameGrid[0].size() - 3) + 2;
+					portalCoordinates[0][0] = (rand() % (gameGrid.size() - 2)) + 1;
+					portalCoordinates[0][1] = (rand() % (gameGrid[0].size() - 2)) + 1;
 
 					if (portalCoordinates[0][0] != snakes[0].head.x && portalCoordinates[0][1] != snakes[0].head.y) {
 						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '8' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'O') {
@@ -454,8 +428,8 @@ void SnakeGame::play() {
 				}
 
 				for (int e = 0; e == 0;) {
-					portalCoordinates[1][0] = (rand() % (gameGrid.size() - 3)) + 2;
-					portalCoordinates[1][1] = (rand() % (gameGrid[0].size() - 3)) + 2;
+					portalCoordinates[1][0] = (rand() % (gameGrid.size() - 2)) + 1;
+					portalCoordinates[1][1] = (rand() % (gameGrid[0].size() - 2)) + 1;
 
 					if (portalCoordinates[1][0] != snakes[0].head.x && portalCoordinates[1][1] != snakes[0].head.y) {
 						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '8' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'O') {
@@ -464,7 +438,7 @@ void SnakeGame::play() {
 					}
 				}
 
-				if (abs(portalCoordinates[0][0] - portalCoordinates[1][0]) + abs(portalCoordinates[0][1] - portalCoordinates[1][1]) > 14) {
+				if (abs(portalCoordinates[0][0] - portalCoordinates[1][0]) + abs(portalCoordinates[0][1] - portalCoordinates[1][1]) > std::min(gameGrid.size(), gameGrid[0].size()) / 3) {
 					portalsFarEnoughApart = true;
 				}
 			}
@@ -521,14 +495,14 @@ void SnakeGame::play() {
 		//asciiGraphics->fillText(marginX, marginY, gameGrid.size() + marginX, marginY, ' ');
 
 		// draw the border
-		asciiGraphics->fillText(borderLeft, borderTop, borderRight, borderTop, '-');	// top
-		asciiGraphics->fillText(borderLeft, borderBottom, borderRight, borderBottom, '-');	// bottom
-		asciiGraphics->fillText(borderLeft, borderTop, borderLeft, borderBottom, '|');	// left
-		asciiGraphics->fillText(borderRight, borderTop, borderRight, borderBottom, '|');	// right
-		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderTop, borderRight, borderTop);	// top
-		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
-		asciiGraphics->fillColor(colorPalette.hud, borderLeft, borderTop, borderLeft, borderBottom);	// left
-		asciiGraphics->fillColor(colorPalette.hud, borderRight, borderTop, borderRight, borderBottom);	// right
+		//asciiGraphics->fillText(borderLeft, borderTop, borderRight, borderTop, '-');	// top
+		//asciiGraphics->fillText(borderLeft, borderBottom, borderRight, borderBottom, '-');	// bottom
+		//asciiGraphics->fillText(borderLeft, borderTop, borderLeft, borderBottom, '|');	// left
+		//asciiGraphics->fillText(borderRight, borderTop, borderRight, borderBottom, '|');	// right
+		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderTop, borderRight, borderTop);	// top
+		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
+		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderTop, borderLeft, borderBottom);	// left
+		asciiGraphics->fillColor(BACKGROUND_GREEN, borderRight, borderTop, borderRight, borderBottom);	// right
 
 
 		for (int t = 0; t < this->gameGrid.size(); t++) {
@@ -542,7 +516,7 @@ void SnakeGame::play() {
 		for (Snake& snake : this->snakes) {
 
 			if (snake.justDied) {
-				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", colorPalette.white));
+				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", options.colors.white));
 			}
 			else {
 				std::string snakeHeadText;
@@ -566,18 +540,18 @@ void SnakeGame::play() {
 		}
 
 		if (portalCount) {
-			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[0][0], gridOY + portalCoordinates[0][1], Soil::ASCIISprite("O", colorPalette.portal));
-			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[1][0], gridOY + portalCoordinates[1][1], Soil::ASCIISprite("O", colorPalette.portal));
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[0][0], gridOY + portalCoordinates[0][1], Soil::ASCIISprite("O", options.colors.portal));
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[1][0], gridOY + portalCoordinates[1][1], Soil::ASCIISprite("O", options.colors.portal));
 		}
 
-		if (playerCount == 2 && firstFrameOfTheGame) {
+		if (options.playerCount == 2 && firstFrameOfTheGame) {
 
 			asciiGraphics->drawTextSprite(gridOX + snakes[0].head.x - 3, gridOY + snakes[0].head.y - 4, Soil::ASCIISprite(
 				"Player 1\n"
 				"   |    \n"
 				"   |    \n"
 				"   V    ",
-				colorPalette.player_1
+				options.colors.player_1
 			));
 
 			asciiGraphics->drawTextSprite(gridOX + snakes[1].head.x - 3, gridOY + snakes[1].head.y - 4, Soil::ASCIISprite(
@@ -585,12 +559,12 @@ void SnakeGame::play() {
 				"   |    \n"
 				"   |    \n"
 				"   V    ",
-				colorPalette.player_2
+				options.colors.player_2
 			));
 		}
 
 
-		asciiGraphics->fillColor(colorPalette.fruit, gridOX + currentFruit.x, gridOY + currentFruit.y);
+		asciiGraphics->fillColor(options.colors.fruit, gridOX + currentFruit.x, gridOY + currentFruit.y);
 
 
 		for (Snake& snake : this->snakes) {
@@ -602,7 +576,7 @@ void SnakeGame::play() {
 						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
 					}
 					if (snake.snekSwallowTimer <= snake.body.size()) {
-						asciiGraphics->fillColor(colorPalette.fruit_swallowed, gridOX + snake.body[snake.snekSwallowTimer - 1].x, gridOY + snake.body[snake.snekSwallowTimer - 1].y);
+						asciiGraphics->fillColor(options.colors.fruit_swallowed, gridOX + snake.body[snake.snekSwallowTimer - 1].x, gridOY + snake.body[snake.snekSwallowTimer - 1].y);
 						snake.snekSwallowTimer++;
 					}
 				}
@@ -612,15 +586,15 @@ void SnakeGame::play() {
 						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
 					}
 					if (snake.snekSwallowTimer == 0) {
-						asciiGraphics->fillColor(colorPalette.fruit_swallowed, gridOX + snake.head.x, gridOY + snake.head.y);
+						asciiGraphics->fillColor(options.colors.fruit_swallowed, gridOX + snake.head.x, gridOY + snake.head.y);
 						snake.snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				asciiGraphics->fillColor(colorPalette.white, gridOX + snake.head.x, gridOY + snake.head.y);
+				asciiGraphics->fillColor(options.colors.white, gridOX + snake.head.x, gridOY + snake.head.y);
 				for (Soil::Coords2D& segment : snake.body) {
-					asciiGraphics->fillColor(colorPalette.white, gridOX + segment.x, gridOY + segment.y);
+					asciiGraphics->fillColor(options.colors.white, gridOX + segment.x, gridOY + segment.y);
 				}
 			}
 		}
@@ -637,29 +611,29 @@ void SnakeGame::play() {
 			"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|\n"
 			"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__\n"
 			"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|",
-			colorPalette.hud
+			options.colors.hud
 		));
 
-		if (playerCount == 1) {
-			asciiGraphics->drawText(33, 7, "SCORE: " + std::to_string(highestCurrentLength));
+		if (options.playerCount == 1) {
+			asciiGraphics->drawTextSprite(33, 7, Soil::ASCIISprite("SCORE: " + std::to_string(highestCurrentLength), this->options.colors.hud));
 		}
 		else {
-			asciiGraphics->drawText(30, 7, "P1 SCORE: " + std::to_string(snakes[0].body.size()));
-			asciiGraphics->drawText(30, 8, "P2 SCORE: " + std::to_string(snakes[1].body.size()));
+			asciiGraphics->drawTextSprite(30, 7, Soil::ASCIISprite("P1 SCORE: " + std::to_string(snakes[0].body.size()), this->options.colors.hud));
+			asciiGraphics->drawTextSprite(30, 8, Soil::ASCIISprite("P2 SCORE: " + std::to_string(snakes[1].body.size()), this->options.colors.hud));
 		}
 
-		asciiGraphics->drawText(47, 7, "HIGH SCORE: " + std::to_string(highScore));
+		asciiGraphics->drawTextSprite(47, 7, Soil::ASCIISprite("HIGH SCORE: " + std::to_string(highScore), this->options.colors.hud));
 
-		asciiGraphics->drawText(33, 9, "STYLE: " + std::to_string(styleCounter));
-		asciiGraphics->drawText(47, 9, "HIGH STYLE: " + std::to_string(styleHighScore));
+		asciiGraphics->drawTextSprite(33, 9, Soil::ASCIISprite("STYLE: " + std::to_string(styleCounter), this->options.colors.hud));
+		asciiGraphics->drawTextSprite(47, 9, Soil::ASCIISprite("HIGH STYLE: " + std::to_string(styleHighScore), this->options.colors.hud));
 
 		if (highestCurrentLength >= 11) {
-			if (playerCount == 1) {
-				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press Z to lunge!", colorPalette.player_1));
+			if (options.playerCount == 1) {
+				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press Z to lunge!", options.colors.player_1));
 			}
-			else if (playerCount == 2) {
-				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press P to lunge!", colorPalette.player_1));
-				asciiGraphics->drawTextSprite(43, 16, Soil::ASCIISprite("Press V to lunge!", colorPalette.player_2));
+			else if (options.playerCount == 2) {
+				asciiGraphics->drawTextSprite(43, 14, Soil::ASCIISprite("Press P to lunge!", options.colors.player_1));
+				asciiGraphics->drawTextSprite(43, 16, Soil::ASCIISprite("Press V to lunge!", options.colors.player_2));
 			}
 		}
 
@@ -668,7 +642,7 @@ void SnakeGame::play() {
 				" -------------\n"
 				"|             |\n"
 				" -------------",
-				colorPalette.hud));
+				options.colors.hud));
 			asciiGraphics->drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 		}
 
@@ -680,7 +654,7 @@ void SnakeGame::play() {
 		asciiOutput->pushOutput(*asciiGraphics);
 
 		// delay for first frame if in 2 player mode //
-		if (playerCount == 2 && firstFrameOfTheGame) {
+		if (options.playerCount == 2 && firstFrameOfTheGame) {
 			std::this_thread::sleep_for(3s);
 			this->frameTime = std::chrono::steady_clock::now();
 		}
@@ -706,44 +680,7 @@ void SnakeGame::processFruitPickups()
 			gotNewFruit = true;
 			snake.snekSwallowTimer = 0;
 
-			for (int e = 0; e < 300; e++) {
-				currentFruit.x = rand() % gameGrid.size();		//create a potential fruit spot
-				currentFruit.y = rand() % gameGrid[0].size();
-
-				//check if that spot is currently filled//
-				if ((currentFruit.x != snake.head.x && currentFruit.y != snake.head.y) && gameGrid[currentFruit.x][currentFruit.y] != '8' && gameGrid[currentFruit.x][currentFruit.y] != 'X' && gameGrid[currentFruit.x][currentFruit.y] != 'O') {
-
-					//a temp proximity to use in the for loop for the new fruit//
-					int proximityToFruitTemp = (abs(snake.head.x - currentFruit.x) + abs(snake.head.y - currentFruit.y));
-
-					//calculate snek's potential spots to be on the beat
-					if (i16thNote == 1) {
-						snake.potentialFruitSpot1 = 17;
-					}
-					else {
-						snake.potentialFruitSpot1 = 17 - i16thNote;
-					}
-
-					if (i16thNote >= 5) {
-						snake.potentialFruitSpot2 = 16 - (i16thNote - 5);
-					}
-					else {
-						snake.potentialFruitSpot2 = 5 - i16thNote;
-					}
-
-					if (i16thNote >= 13) {
-						snake.potentialFruitSpot3 = 16 - (i16thNote - 13);
-					}
-					else {
-						snake.potentialFruitSpot3 = 13 - i16thNote;
-					}
-
-					//accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit//
-					if (proximityToFruitTemp % 16 == snake.potentialFruitSpot1 || proximityToFruitTemp % 16 == snake.potentialFruitSpot2 || proximityToFruitTemp % 16 == snake.potentialFruitSpot3) {
-						break;
-					}
-				}
-			}
+			this->placeNewFruit();
 
 			if (snake.body.size() >= 11) {
 				isScoreUnder11 = false;
@@ -964,9 +901,8 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeLunge"]->setPitch(closestProximityToFruit);
 		snekAudioSystem->startEventInstance("Instruments+FX/SnakeLunge");
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setParameterByName("Reverb Wet", 1.0f);		//set the reverb level high for the move sound
-		if (!actionKeyHeld) {
+		if (!anyActionKeysHeld()) {
 			snekMoveTimelinePosition = (200 + snekMoveTimelinePositionMax);
-			actionKeyHeld = true;
 		}
 	}
 
@@ -976,8 +912,6 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 		if (highestCurrentLength == 0) {
 			snekAudioSystem->fmodEventInstances[bpmNames[0]]->setParameterByName("HeartRateDryLevel", closestProximityToFruit);
 		}
-
-		actionKeyHeld = false;		//nobody is holding any action keys anymore
 
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setPitch(closestProximityToFruit);
 		snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeMove"]->setTimelinePosition(snekMoveTimelinePosition);
@@ -1336,26 +1270,26 @@ void SnakeGame::gameOverScreen()
 			}
 
 			//color the whole right side of the screen green
-			asciiGraphics->fillColor(colorPalette.hud, 26, 0, asciiGraphics->width - 1, asciiGraphics->height - 1);
+			asciiGraphics->fillColor(options.colors.hud, 26, 0, asciiGraphics->width - 1, asciiGraphics->height - 1);
 
 			//invert the color of the currently selected keyboard character
 			if (currentSelChar < 8) {
-				asciiGraphics->attributeBuffer[40 + (13 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+				asciiGraphics->attributeBuffer[40 + (13 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
 			}
 			else if (currentSelChar < 16) {
-				asciiGraphics->attributeBuffer[24 + (15 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+				asciiGraphics->attributeBuffer[24 + (15 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
 			}
 			else if (currentSelChar < 24) {
-				asciiGraphics->attributeBuffer[8 + (17 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+				asciiGraphics->attributeBuffer[8 + (17 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
 			}
 			else if (currentSelChar < 32) {
-				asciiGraphics->attributeBuffer[-8 + (19 * 80) + (currentSelChar * 2)] = colorPalette.keyboard_selected;
+				asciiGraphics->attributeBuffer[-8 + (19 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
 			}
 			else if (currentSelChar == 32) {
-				asciiGraphics->fillColor(colorPalette.keyboard_selected, 40, 21, 43, 21);
+				asciiGraphics->fillColor(options.colors.keyboard_selected, 40, 21, 43, 21);
 			}
 			else {
-				asciiGraphics->fillColor(colorPalette.keyboard_selected, 52, 21, 54, 21);
+				asciiGraphics->fillColor(options.colors.keyboard_selected, 52, 21, 54, 21);
 			}
 
 			//DISPLAY THE SCREEN//
@@ -1384,11 +1318,11 @@ void SnakeGame::gameOverScreen()
 
 
 	// color the whole right side of the screen green
-	asciiGraphics->fillColor(colorPalette.hud, 26, 0, asciiGraphics->width, asciiGraphics->height);
+	asciiGraphics->fillColor(options.colors.hud, 26, 0, asciiGraphics->width, asciiGraphics->height);
 
 	std::this_thread::sleep_for(100ms);
 
-	if (playerCount == 2) {
+	if (options.playerCount == 2) {
 		asciiGraphics->drawText(44, 12, "PLAYER " + std::to_string(snakes[0].justDied ? 1 : 2) + " DIED!");
 	}
 	else {
@@ -1401,7 +1335,7 @@ void SnakeGame::gameOverScreen()
 	snekAudioSystem->fmodUpdate();	//begin FMOD sound generation/song playback
 
 	asciiGraphics->drawText(47, 15, "GAME OVER");
-	asciiGraphics->drawText(46, 18, "Players: <" + std::to_string(playerCount) + ">");
+	asciiGraphics->drawText(46, 18, "Players: <" + std::to_string(options.playerCount) + ">");
 	asciiGraphics->drawText(40, 20, ">Press [Z] to play again");
 	asciiGraphics->drawText(40, 21, ">Press [X] to quit");
 
@@ -1420,15 +1354,15 @@ void SnakeGame::gameOverScreen()
 			arrowKeys[o] = (0x8000 & GetAsyncKeyState((unsigned char)("\x25\x26\x27\x28"[o]))) != 0;
 		}
 
-		if (arrowKeys[2] && playerCount < 2 && !holdKey) {
-			playerCount++;
+		if (arrowKeys[2] && options.playerCount < 2 && !holdKey) {
+			options.playerCount++;
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(1.77f);
 			snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
 			holdKey = true;
 		}
 
-		else if (arrowKeys[0] && playerCount > 1 && !holdKey) {
-			playerCount--;
+		else if (arrowKeys[0] && options.playerCount > 1 && !holdKey) {
+			options.playerCount--;
 			snekAudioSystem->fmodEventInstances["Instruments+FX/SnakeFruit"]->setPitch(0.64f);
 			snekAudioSystem->startEventInstance("Instruments+FX/SnakeFruit");
 			holdKey = true;
@@ -1438,8 +1372,8 @@ void SnakeGame::gameOverScreen()
 			holdKey = false;
 		}
 
-		asciiGraphics->drawText(46, 18, "Players: <" + std::to_string(playerCount) + ">");
-		//screenString.replace((18 * 80) + 46, 12, "Players: <" + std::to_string(playerCount) + ">");
+		asciiGraphics->drawText(46, 18, "Players: <" + std::to_string(options.playerCount) + ">");
+		//screenString.replace((18 * 80) + 46, 12, "Players: <" + std::to_string(options.playerCount) + ">");
 
 
 		if (zKey = (0x8000 & GetAsyncKeyState((unsigned char)("Z"[0]))) != 0) {
@@ -1482,4 +1416,102 @@ void SnakeGame::drawDebugMenu()
 		" holdE" + std::to_string(snakes[0].holdE) +
 		" holdS" + std::to_string(snakes[0].holdS) +
 		" holdW" + std::to_string(snakes[0].holdW));
+}
+
+bool SnakeGame::anyActionKeysHeld()
+{
+	for (Snake& snake : this->snakes) {
+		if (this->inputManager->isKeyPressed(snake.controls.action)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void SnakeGame::placeNewFruit()
+{
+	Snake* snakeThatGotTheFruit = &snakes[0];
+	for (Snake& snake : snakes) {
+		if (snake.justGotNewFruit) {
+			snakeThatGotTheFruit = &snake;
+		}
+	}
+
+	int tries = 300;
+	bool foundGoodSpot = false;
+	while (tries > 0 && !foundGoodSpot) {
+		// create a potential fruit spot
+		currentFruit.x = rand() % gameGrid.size();
+		currentFruit.y = rand() % gameGrid[0].size();
+
+		// check if that spot is currently filled
+		bool spotIsEmpty = true;
+		for (Snake& snake : this->snakes) {
+			if (currentFruit.x == snake.head.x && currentFruit.y == snake.head.y) {
+				spotIsEmpty = false;
+				break;
+			}
+		}
+		if (gameGrid[currentFruit.x][currentFruit.y] == 'h') {
+			spotIsEmpty = false;
+		}
+		if (gameGrid[currentFruit.x][currentFruit.y] == '8') {
+			spotIsEmpty = false;
+		}
+		if (gameGrid[currentFruit.x][currentFruit.y] == 'X') {
+			spotIsEmpty = false;
+		}
+
+		// if that spot is currently filled, try again
+		if (!spotIsEmpty) {
+			continue;
+		}
+
+
+		//a temp proximity to use in the for loop for the new fruit//
+		int proximityToFruitTemp = (abs(snakeThatGotTheFruit->head.x - currentFruit.x) + abs(snakeThatGotTheFruit->head.y - currentFruit.y));
+
+
+		//calculate snek's potential spots to be on the beat when it reaches the new fruit
+		std::vector<int> potentialFruitSpots(3,0);
+		if (i16thNote == 1) {
+			potentialFruitSpots[0] = 17;
+		}
+		else {
+			potentialFruitSpots[0] = 17 - i16thNote;
+		}
+
+		if (i16thNote >= 5) {
+			potentialFruitSpots[1] = 16 - (i16thNote - 5);
+		}
+		else {
+			potentialFruitSpots[1] = 5 - i16thNote;
+		}
+
+		if (i16thNote >= 13) {
+			potentialFruitSpots[2] = 16 - (i16thNote - 13);
+		}
+		else {
+			potentialFruitSpots[2] = 13 - i16thNote;
+		}
+
+		// accept new fruit position if it lands the appropriate distance from the snek who just got the last fruit
+		for (int spot : potentialFruitSpots) {
+			if (proximityToFruitTemp % 16 == spot) {
+				foundGoodSpot = true;
+				break;
+			}
+		}
+
+		tries--;
+	}
+}
+
+void SnakeGame::clearGameGrid()
+{
+	for (auto& column : this->gameGrid) {
+		for (auto& character : column) {
+			character = ' ';
+		}
+	}
 }

@@ -17,6 +17,7 @@ namespace Soil {
 
 		ASCIIGraphics(int width, int height);
 
+		void clearAll();
 		void drawTextSprite(int x, int y, ASCIISprite sprite);
 		void drawTextSprite(Coords2D coordinates, ASCIISprite sprite);
 		void drawText(int x, int y, std::string stringToWrite);

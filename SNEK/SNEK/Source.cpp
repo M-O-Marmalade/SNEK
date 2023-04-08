@@ -28,7 +28,10 @@
 using namespace std::chrono_literals;
 
 
-int main() {	
+int main() {
+
+	// seed the RNG using system time
+	srand(time(0));
 
 	 //									 //
 	// AUDIO SYSTEM SETUP (FMOD Studio) //
@@ -262,10 +265,12 @@ int main() {
 		snekAudioSystem.fmodUpdate();
 	}
 	
-	SnakeGame currentGame(playerCount, 23, 23, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+	SnakeGameOptions options(playerCount, { 23,23 }, colorPalette);
+
+	SnakeGame currentGame(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 	currentGame.play();
 	while (currentGame.playAgain) {
-		currentGame = SnakeGame(currentGame.playerCount, 23, 23, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+		currentGame = SnakeGame(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 		currentGame.play();
 	}
 

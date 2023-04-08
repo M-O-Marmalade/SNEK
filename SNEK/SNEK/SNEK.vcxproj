@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="SnakeGameOptions.cpp" />
     <ClCompile Include="soil\AudioSystem.cpp" />
     <ClCompile Include="Snake.cpp" />
     <ClCompile Include="SnakeGame.cpp" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SnakeControlScheme.h" />
+    <ClInclude Include="SnakeGameOptions.h" />
     <ClInclude Include="soil\InputManager.h" />
     <ClInclude Include="soil\Soil.h" />
     <ClInclude Include="soil\AudioSystem.h" />
