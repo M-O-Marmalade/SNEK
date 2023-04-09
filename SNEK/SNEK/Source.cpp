@@ -92,33 +92,21 @@ int main() {
 	asciiGraphics.fillColor(colorPalette.standard, 0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1);
 
 	// Draw Splash Screen
-	bool animation = true;
-	int u = 0;
-	int charToOverwrite = 996;
 	asciiGraphics.fillColor(colorPalette.bright_cyan, 30, 10, 50, 20);
-	while (charToOverwrite <= 1005) {
-
-		asciiGraphics.textBuffer[charToOverwrite] = "Citrus 64"[u];
-		charToOverwrite++;
-		u++;
+	std::u32string logoString = U"Citrus 64";
+	int startingXCoord = asciiGraphics.width / 2 - (logoString.size() / 2);
+	for (int i = 0; i < logoString.size(); i++) {
+		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, logoString[i]);
 		asciiOutputCMD.pushOutput(asciiGraphics);
-
 		std::this_thread::sleep_for(77ms);
 	}
 
 	std::this_thread::sleep_for(222ms);
-	
 
 	//Erase Splash Screen
-	animation = true;
-	charToOverwrite = 992;	
-	while (charToOverwrite <= 1006) {
-		
-		asciiGraphics.textBuffer[charToOverwrite] = char(32);
-		charToOverwrite++;
-		
+	for (int i = 0; i < logoString.size(); i++) {
+		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, U' ');
 		asciiOutputCMD.pushOutput(asciiGraphics);
-		
 		std::this_thread::sleep_for(77ms);
 	}
 

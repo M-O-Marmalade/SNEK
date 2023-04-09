@@ -421,7 +421,7 @@ void SnakeGame::play() {
 					portalCoordinates[0][1] = (rand() % (gameGrid[0].size() - 2)) + 1;
 
 					if (portalCoordinates[0][0] != snakes[0].head.x && portalCoordinates[0][1] != snakes[0].head.y) {
-						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '8' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'o' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'O') {
+						if (gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != '8' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'X' && gameGrid[portalCoordinates[0][0]][portalCoordinates[0][1]] != 'O') {
 							e = 1;
 						}
 					}
@@ -432,7 +432,7 @@ void SnakeGame::play() {
 					portalCoordinates[1][1] = (rand() % (gameGrid[0].size() - 2)) + 1;
 
 					if (portalCoordinates[1][0] != snakes[0].head.x && portalCoordinates[1][1] != snakes[0].head.y) {
-						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '8' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'o' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'O') {
+						if (gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != '8' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'X' && gameGrid[portalCoordinates[1][0]][portalCoordinates[1][1]] != 'O') {
 							e = 1;
 						}
 					}
@@ -445,9 +445,9 @@ void SnakeGame::play() {
 
 		}
 
-		//							   //
-		// PASS PLAYER THROUGH PORTALS //
-		//							 //
+		  //                             //
+		 // PASS PLAYER THROUGH PORTALS //
+		//                             //
 		for (Snake& snake : this->snakes) {
 			for (int hh = 0; hh < portalCount * 2; hh++) {
 				if (snake.head.x == portalCoordinates[hh][0] && snake.head.y == portalCoordinates[hh][1]) {
@@ -458,16 +458,16 @@ void SnakeGame::play() {
 			}
 		}
 
-		//								   //
-		// PLACE PLAYER INTO DISPLAY ARRAY //
-		//								 //
+		  //                                 //
+		 // PLACE PLAYER INTO DISPLAY ARRAY //
+		//                                 //
 		for (Snake& snake : this->snakes) {
 			gameGrid[snake.head.x][snake.head.y] = 'h';
 		}
 
-		//								  //
-		// PLACE FRUIT INTO DISPLAY ARRAY //
-		//								//
+		  //                                //
+		 // PLACE FRUIT INTO DISPLAY ARRAY //
+		//                                //
 		gameGrid[currentFruit.x][currentFruit.y] = '+';
 
 		  //               //
@@ -495,14 +495,20 @@ void SnakeGame::play() {
 		//asciiGraphics->fillText(marginX, marginY, gameGrid.size() + marginX, marginY, ' ');
 
 		// draw the border
-		//asciiGraphics->fillText(borderLeft, borderTop, borderRight, borderTop, '-');	// top
-		//asciiGraphics->fillText(borderLeft, borderBottom, borderRight, borderBottom, '-');	// bottom
-		//asciiGraphics->fillText(borderLeft, borderTop, borderLeft, borderBottom, '|');	// left
-		//asciiGraphics->fillText(borderRight, borderTop, borderRight, borderBottom, '|');	// right
-		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderTop, borderRight, borderTop);	// top
-		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
-		asciiGraphics->fillColor(BACKGROUND_GREEN, borderLeft, borderTop, borderLeft, borderBottom);	// left
-		asciiGraphics->fillColor(BACKGROUND_GREEN, borderRight, borderTop, borderRight, borderBottom);	// right
+		asciiGraphics->fillText(borderLeft+1, borderTop, borderRight-1, borderTop, U'─');	// top
+		asciiGraphics->fillText(borderLeft+1, borderBottom, borderRight-1, borderBottom, U'─');	// bottom
+		asciiGraphics->fillText(borderLeft, borderTop+1, borderLeft, borderBottom-1, U'│');	// left
+		asciiGraphics->fillText(borderRight, borderTop+1, borderRight, borderBottom-1, U'│');	// right
+
+		asciiGraphics->fillText(borderLeft, borderTop, borderLeft, borderTop, U'╭');	// top-left
+		asciiGraphics->fillText(borderRight, borderTop, borderRight, borderTop, U'╮');	// top-right
+		asciiGraphics->fillText(borderLeft, borderBottom, borderLeft, borderBottom, U'╰');	// bottom-left
+		asciiGraphics->fillText(borderRight, borderBottom, borderRight, borderBottom, U'╯');	// bottom-right
+
+		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderTop, borderRight, borderTop);	// top
+		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
+		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderTop, borderLeft, borderBottom);	// left
+		asciiGraphics->fillColor(options.colors.hud, borderRight, borderTop, borderRight, borderBottom);	// right
 
 
 		for (int t = 0; t < this->gameGrid.size(); t++) {
@@ -540,27 +546,27 @@ void SnakeGame::play() {
 		}
 
 		if (portalCount) {
-			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[0][0], gridOY + portalCoordinates[0][1], Soil::ASCIISprite("O", options.colors.portal));
-			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[1][0], gridOY + portalCoordinates[1][1], Soil::ASCIISprite("O", options.colors.portal));
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[0][0], gridOY + portalCoordinates[0][1], Soil::ASCIISprite(U"◯", options.colors.portal));
+			asciiGraphics->drawTextSprite(gridOX + portalCoordinates[1][0], gridOY + portalCoordinates[1][1], Soil::ASCIISprite(U"◯", options.colors.portal));
 		}
 
 		if (options.playerCount == 2 && firstFrameOfTheGame) {
 
-			asciiGraphics->drawTextSprite(gridOX + snakes[0].head.x - 3, gridOY + snakes[0].head.y - 4, Soil::ASCIISprite(
-				"Player 1\n"
-				"   |    \n"
-				"   |    \n"
-				"   V    ",
-				options.colors.player_1
-			));
+			asciiGraphics->drawTextSprite(gridOX + snakes[0].head.x - 3, 
+			                              gridOY + snakes[0].head.y - 4, 
+			                              Soil::ASCIISprite(U"   P1\n"
+			                                                U"   │    \n"
+			                                                U"   │    \n"
+			                                                U"   ▼    ",
+			                                                 options.colors.player_1));
 
-			asciiGraphics->drawTextSprite(gridOX + snakes[1].head.x - 3, gridOY + snakes[1].head.y - 4, Soil::ASCIISprite(
-				"Player 2\n"
-				"   |    \n"
-				"   |    \n"
-				"   V    ",
-				options.colors.player_2
-			));
+			asciiGraphics->drawTextSprite(gridOX + snakes[1].head.x - 3, 
+			                              gridOY + snakes[1].head.y - 4, 
+			                              Soil::ASCIISprite(U"  P2\n"
+			                                                U"   │    \n"
+			                                                U"   │    \n"
+			                                                U"   ▼    ",
+			                                                options.colors.player_2));
 		}
 
 
@@ -604,15 +610,13 @@ void SnakeGame::play() {
 		 // DRAW THE HUD //
 		//              //
 
-		asciiGraphics->drawTextSprite(32, 0, Soil::ASCIISprite(
-			"       __    _    _              _  __   ____\n"
-			"      / /   | \\  | |     /\\     | |/ /  |  __|\n"
-			"      \\ \\   |  \\ | |    /  \\    | | /   | |__\n"
-			"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|\n"
-			"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__\n"
-			"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|",
-			options.colors.hud
-		));
+		asciiGraphics->drawTextSprite(32, 0, Soil::ASCIISprite(U"       __    _    _              _  __   ____\n"
+		                                                       U"      / /   | \\  | |     /\\     | |/ /  |  __|\n"
+		                                                       U"      \\ \\   |  \\ | |    /  \\    | | /   | |__\n"
+		                                                       U"       \\ \\  | | \\| |   / /\\ \\   |   \\   |  __|\n"
+		                                                       U"       / /  | |\\ \\ |  /  __  \\  | |\\ \\  | |__\n"
+		                                                       U"      /_/   |_| \\__| /__/  \\__\\ |_| \\_\\ |____|",
+		                                                       options.colors.hud));
 
 		if (options.playerCount == 1) {
 			asciiGraphics->drawTextSprite(33, 7, Soil::ASCIISprite("SCORE: " + std::to_string(highestCurrentLength), this->options.colors.hud));
@@ -638,11 +642,10 @@ void SnakeGame::play() {
 		}
 
 		if (wasPreviousHighScoreFound) {
-			asciiGraphics->drawTextSprite(63, 6, Soil::ASCIISprite(
-				" -------------\n"
-				"|             |\n"
-				" -------------",
-				options.colors.hud));
+			asciiGraphics->drawTextSprite(63, 6, Soil::ASCIISprite(U"╭─────────────╮\n"
+			                                                       U"│             │\n"
+			                                                       U"╰─────────────╯",
+			                                                       options.colors.hud));
 			asciiGraphics->drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 		}
 
@@ -1134,16 +1137,16 @@ void SnakeGame::gameOverScreen()
 		asciiGraphics->fillText(43, 13, 79, 16, ' ');
 		for (int y = 0; y < 32; y++) {
 			if (y < 8) {
-				asciiGraphics->textBuffer[40 + (13 * 80) + (y * 2)] = keyboard[y];
+				asciiGraphics->drawText(40, 13 + (y * 2), keyboard[y]);
 			}
 			else if (y < 16) {
-				asciiGraphics->textBuffer[24 + (15 * 80) + (y * 2)] = keyboard[y];
+				asciiGraphics->drawText(24, 15 + (y * 2), keyboard[y]);
 			}
 			else if (y < 24) {
-				asciiGraphics->textBuffer[8 + (17 * 80) + (y * 2)] = keyboard[y];
+				asciiGraphics->drawText(8, 17 + (y * 2), keyboard[y]);
 			}
 			else {
-				asciiGraphics->textBuffer[-8 + (19 * 80) + (y * 2)] = keyboard[y];
+				asciiGraphics->drawText(-8, 19 + (y * 2), keyboard[y]);
 			}
 		}
 		asciiGraphics->drawText(40, 21, "BACK");
@@ -1256,17 +1259,17 @@ void SnakeGame::gameOverScreen()
 
 
 			// display their name as they type it
-			asciiGraphics->drawText(63, 6,
-				" -------------\n"
-				"|             |\n"
-				" -------------");
+			asciiGraphics->drawTextSprite(63, 6, Soil::ASCIISprite(U"╭─────────────╮\n"
+			                                                       U"│             │\n"
+			                                                       U"╰─────────────╯",
+			                                                       options.colors.hud));
 
 
 			if (highScoreName.length() == 11) {
-				asciiGraphics->textBuffer.replace(65 + (80 * 7), highScoreName.length(), highScoreName);
+				asciiGraphics->drawText(65, 7, highScoreName);
 			}
 			else {
-				asciiGraphics->textBuffer.replace(((11 - highScoreName.length()) / 2) + 65 + (80 * 7), highScoreName.length() + 1, highScoreName + " ");
+				asciiGraphics->drawText(((11 - highScoreName.length()) / 2) + 65, 7, highScoreName + " ");
 			}
 
 			//color the whole right side of the screen green
@@ -1274,16 +1277,16 @@ void SnakeGame::gameOverScreen()
 
 			//invert the color of the currently selected keyboard character
 			if (currentSelChar < 8) {
-				asciiGraphics->attributeBuffer[40 + (13 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
+				asciiGraphics->fillColor(40, 13 + (currentSelChar * 2), options.colors.keyboard_selected);
 			}
 			else if (currentSelChar < 16) {
-				asciiGraphics->attributeBuffer[24 + (15 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
+				asciiGraphics->fillColor(24, 15 + (currentSelChar * 2), options.colors.keyboard_selected);
 			}
 			else if (currentSelChar < 24) {
-				asciiGraphics->attributeBuffer[8 + (17 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
+				asciiGraphics->fillColor(8, 17 + (currentSelChar * 2), options.colors.keyboard_selected);
 			}
 			else if (currentSelChar < 32) {
-				asciiGraphics->attributeBuffer[-8 + (19 * 80) + (currentSelChar * 2)] = options.colors.keyboard_selected;
+				asciiGraphics->fillColor(-8, 19 + (currentSelChar * 2), options.colors.keyboard_selected);
 			}
 			else if (currentSelChar == 32) {
 				asciiGraphics->fillColor(options.colors.keyboard_selected, 40, 21, 43, 21);

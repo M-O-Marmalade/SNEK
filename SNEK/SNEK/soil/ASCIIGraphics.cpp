@@ -1,14 +1,17 @@
 #include "ASCIIGraphics.h"
 
+#include "utfcpp/source/utf8.h"
+
 Soil::ASCIIGraphics::ASCIIGraphics(int width, int height) : width{ width }, height{ height } {
-	this->textBuffer = std::string(width * height, ' ');
+	this->textBuffer = std::vector<std::u32string>(height, std::u32string(width, U' '));
 	this->attributeBuffer = std::vector<WORD>(width * height, FOREGROUND_RED);
 }
 
-void Soil::ASCIIGraphics::clearAll()
-{
-	for (auto& character : this->textBuffer) {
-		character = ' ';
+void Soil::ASCIIGraphics::clearAll() {
+	for (auto& vec : this->textBuffer) {
+		for (auto& character : vec) {
+			character = U' ';
+		}
 	}
 	for (auto& attribute : this->attributeBuffer) {
 		attribute = 0;
@@ -18,12 +21,12 @@ void Soil::ASCIIGraphics::clearAll()
 void Soil::ASCIIGraphics::drawTextSprite(int x, int y, ASCIISprite sprite) {
 	int i = 0, x1 = x, y1 = y;
 	while (i < sprite.text.size() && x1 >= 0 && y1 >= 0 && x1 < this->width && y1 < this->height) {
-		if (sprite.text[i] == '\n') {
+		if (sprite.text[i] == U'\n') {
 			x1 = x;
 			y1++;
 		}
 		else {
-			this->textBuffer[x1 + y1 * this->width] = sprite.text[i];
+			this->textBuffer[y1][x1] = sprite.text[i];
 			this->attributeBuffer[x1 + y1 * this->width] = sprite.color;
 			x1++;
 		}
@@ -35,15 +38,24 @@ void Soil::ASCIIGraphics::drawTextSprite(Coords2D coordinates, ASCIISprite sprit
 	drawTextSprite(coordinates.x, coordinates.y, sprite);
 }
 
+void Soil::ASCIIGraphics::drawText(int x, int y, char32_t charToWrite) {
+	this->textBuffer[y][x] = charToWrite;
+}
+
+void Soil::ASCIIGraphics::drawText(int x, int y, char charToWrite) {
+	Soil::ASCIIGraphics::drawText(x, y, utf8::utf8to32(std::string(1, charToWrite))[0]);
+}
+
 void Soil::ASCIIGraphics::drawText(int x, int y, std::string stringToWrite) {
+	std::u32string stringToWrite32 = utf8::utf8to32(stringToWrite);
 	int i = 0, x1 = x, y1 = y;
-	while (i < stringToWrite.size() && x1 >= 0 && y1 >= 0 && x1 < this->width && y1 < this->height) {
-		if (stringToWrite[i] == '\n') {
+	while (i < stringToWrite32.size() && x1 >= 0 && y1 >= 0 && x1 < this->width && y1 < this->height) {
+		if (stringToWrite32[i] == U'\n') {
 			x1 = x;
 			y1++;
 		}
 		else {
-			this->textBuffer[x1 + y1 * this->width] = stringToWrite[i];
+			this->textBuffer[y1][x1] = stringToWrite32[i];
 			x1++;
 		}
 		i++;
@@ -55,10 +67,14 @@ void Soil::ASCIIGraphics::drawText(Coords2D coordinates, std::string stringToWri
 }
 
 void Soil::ASCIIGraphics::fillText(int left, int top, int right, int bottom, char charToWrite) {
+	Soil::ASCIIGraphics::fillText(left, top, right, bottom, utf8::utf8to32(std::string(1, charToWrite))[0]);
+}
+
+void Soil::ASCIIGraphics::fillText(int left, int top, int right, int bottom, char32_t charToWrite) {
 	int x = left, y = top;
 	for (int y = top; y <= bottom; y++) {
 		for (int x = left; x <= right; x++) {
-			this->textBuffer[x + y * this->width] = charToWrite;
+			this->textBuffer[y][x] = charToWrite;
 		}
 	}
 }

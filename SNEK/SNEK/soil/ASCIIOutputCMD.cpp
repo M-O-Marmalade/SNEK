@@ -1,5 +1,7 @@
 #include "ASCIIOutputCMD.h"
 
+#include "utfcpp/source/utf8.h"
+
 Soil::ASCIIOutputCMD::ASCIIOutputCMD() {
 
 	// store reference to console buffer that launched the game
@@ -68,20 +70,18 @@ void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics) {
 
 	DWORD dwBytesWritten;
 	for (short y = 0; y < asciiGraphics.height; y++) {
-		WriteConsoleOutputAttribute(
-			this->gameConsoleHandle, 
-			&asciiGraphics.attributeBuffer[y * asciiGraphics.width], 
-			asciiGraphics.width, 
-			{ xOrigin, yOrigin + y }, 
-			&dwBytesWritten
-		);
-		
-		WriteConsoleOutputCharacter(
-			this->gameConsoleHandle, 
-			asciiGraphics.textBuffer.c_str() + y * asciiGraphics.width, 
-			asciiGraphics.width, 
-			{ xOrigin, yOrigin + y }, 
-			&dwBytesWritten
-		);
+		std::u16string outputLine = utf8::utf8to16(utf8::utf32to8(asciiGraphics.textBuffer[y]));
+
+		WriteConsoleOutputCharacterW(this->gameConsoleHandle, 
+		                             (LPCWSTR)outputLine.c_str(),
+		                             outputLine.length(),
+		                             { xOrigin, yOrigin + y }, 
+		                             &dwBytesWritten);
+
+		WriteConsoleOutputAttribute(this->gameConsoleHandle, 
+		                            &asciiGraphics.attributeBuffer[y * asciiGraphics.width], 
+		                            asciiGraphics.width,
+		                            { xOrigin, yOrigin + y }, 
+		                            &dwBytesWritten);
 	}
 }

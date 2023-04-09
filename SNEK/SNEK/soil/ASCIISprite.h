@@ -8,8 +8,9 @@ namespace Soil {
 	private:
 
 	public:
-		std::string text;
+		std::u32string text;
 		WORD color;
 		ASCIISprite(std::string text, WORD color);
+		ASCIISprite(std::u32string text, WORD color);
 	};
 }
