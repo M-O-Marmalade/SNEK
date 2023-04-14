@@ -5,6 +5,8 @@
 Soil::ASCIIGraphics::ASCIIGraphics(int width, int height) : width{ width }, height{ height } {
 	this->textBuffer = std::vector<std::u32string>(height, std::u32string(width, U' '));
 	this->attributeBuffer = std::vector<WORD>(width * height, FOREGROUND_RED);
+	this->textChanged = std::vector<std::vector<bool>>(height, std::vector<bool>(width, false));
+	this->attributeChanged = std::vector<std::vector<bool>>(height, std::vector<bool>(width, false));
 }
 
 void Soil::ASCIIGraphics::clearAll() {
@@ -13,8 +15,26 @@ void Soil::ASCIIGraphics::clearAll() {
 			character = U' ';
 		}
 	}
+	resetTextObserver(true);
 	for (auto& attribute : this->attributeBuffer) {
 		attribute = 0;
+	}
+	resetAttributeObserver(true);
+}
+
+void Soil::ASCIIGraphics::resetTextObserver(bool val) {
+	for (int i = 0; i < this->textChanged.size(); i++) {
+		for (int j = 0; j < this->textChanged[0].size(); j++) {
+			this->textChanged[i][j] = val;
+		}
+	}
+}
+
+void Soil::ASCIIGraphics::resetAttributeObserver(bool val) {
+	for (int i = 0; i < this->attributeChanged.size(); i++) {
+		for (int j = 0; j < this->attributeChanged[0].size(); j++) {
+			this->attributeChanged[i][j] = val;
+		}
 	}
 }
 
@@ -27,7 +47,9 @@ void Soil::ASCIIGraphics::drawTextSprite(int x, int y, ASCIISprite sprite) {
 		}
 		else {
 			this->textBuffer[y1][x1] = sprite.text[i];
+			this->textChanged[y1][x1] = true;
 			this->attributeBuffer[x1 + y1 * this->width] = sprite.color;
+			this->attributeChanged[y1][x1] = true;
 			x1++;
 		}
 		i++;
@@ -39,7 +61,10 @@ void Soil::ASCIIGraphics::drawTextSprite(Coords2D coordinates, ASCIISprite sprit
 }
 
 void Soil::ASCIIGraphics::drawText(int x, int y, char32_t charToWrite) {
-	this->textBuffer[y][x] = charToWrite;
+	if (x >= 0 && x < this->width && y >= 0 && y < this->height) {
+		this->textBuffer[y][x] = charToWrite;
+		this->textChanged[y][x] = true;
+	}
 }
 
 void Soil::ASCIIGraphics::drawText(int x, int y, char charToWrite) {
@@ -56,6 +81,7 @@ void Soil::ASCIIGraphics::drawText(int x, int y, std::string stringToWrite) {
 		}
 		else {
 			this->textBuffer[y1][x1] = stringToWrite32[i];
+			this->textChanged[y1][x1] = true;
 			x1++;
 		}
 		i++;
@@ -75,14 +101,16 @@ void Soil::ASCIIGraphics::fillText(int left, int top, int right, int bottom, cha
 	for (int y = top; y <= bottom; y++) {
 		for (int x = left; x <= right; x++) {
 			this->textBuffer[y][x] = charToWrite;
+			this->textChanged[y][x] = true;
 		}
 	}
 }
 
-void Soil::ASCIIGraphics::fillColor(WORD colorToDraw, int left, int top, int right, int bottom) {
+void Soil::ASCIIGraphics::fillColor(int left, int top, int right, int bottom, WORD colorToDraw) {
 	int x = std::max(left, 0), y = std::max(top, 0);
 	while (y <= bottom && y < this->height) {
 		this->attributeBuffer[x + y * this->width] = colorToDraw; // color foreground & background
+		this->attributeChanged[y][x] = true;
 		if (x < right && x < this->width - 1) {
 			x++;
 		}
@@ -93,15 +121,19 @@ void Soil::ASCIIGraphics::fillColor(WORD colorToDraw, int left, int top, int rig
 	}
 }
 
-void Soil::ASCIIGraphics::fillColor(WORD colorToDraw, int x, int y) {
+void Soil::ASCIIGraphics::fillColor(int x, int y, WORD colorToDraw) {
+	if (x >= 0 && x < this->width && y >= 0 && y < this->height) {
 		this->attributeBuffer[x + y * this->width] = colorToDraw; // color foreground & background
+		this->attributeChanged[y][x] = true;
+	}
 }
 
-void Soil::ASCIIGraphics::fillColorBackground(WORD colorToDraw, int left, int top, int right, int bottom) {
+void Soil::ASCIIGraphics::fillColorBackground(int left, int top, int right, int bottom, WORD colorToDraw) {
 	WORD backgroundColorMask = BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_RED | BACKGROUND_INTENSITY;
 	int x = std::max(left, 0), y = std::max(top, 0);
 	while (y <= bottom && y < this->height) {
 		this->attributeBuffer[x + y * this->width] |= colorToDraw & backgroundColorMask;
+		this->attributeChanged[y][x] = true;
 		if (x < right && x < this->width - 1) {
 			x++;
 		}

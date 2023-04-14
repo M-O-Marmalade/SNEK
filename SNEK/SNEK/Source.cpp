@@ -89,10 +89,10 @@ int main() {
 	snekAudioSystem.fmodUpdate();
 
 	// reset the color of the whole screen
-	asciiGraphics.fillColor(colorPalette.standard, 0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1);
+	asciiGraphics.fillColor(0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1, colorPalette.standard);
 
 	// Draw Splash Screen
-	asciiGraphics.fillColor(colorPalette.bright_cyan, 30, 10, 50, 20);
+	asciiGraphics.fillColor(30, 10, 50, 20, colorPalette.bright_cyan);
 	std::u32string logoString = U"Citrus 64";
 	int startingXCoord = asciiGraphics.width / 2 - (logoString.size() / 2);
 	for (int i = 0; i < logoString.size(); i++) {
@@ -144,14 +144,14 @@ int main() {
 			colorPalette.hud));
 
 		// draw player count
-		asciiGraphics.fillColor(colorPalette.grey, 34, 20, 42, 20);
-		asciiGraphics.fillColor(colorPalette.white, 43, 20, 45, 20);
+		asciiGraphics.fillColor(34, 20, 42, 20, colorPalette.grey);
+		asciiGraphics.fillColor(43, 20, 45, 20, colorPalette.white);
 		asciiGraphics.drawText(34, 20, "Players: <" + std::to_string(playerCount) + ">");
 
 		if (playerCount == 2) {
 
-			asciiGraphics.fillColor(colorPalette.player_2, 15, 14, 35, 16);
-			asciiGraphics.fillColor(colorPalette.player_1, 36, 14, 80, 16);
+			asciiGraphics.fillColor(15, 14, 35, 16, colorPalette.player_2);
+			asciiGraphics.fillColor(36, 14, 80, 16, colorPalette.player_1);
 			asciiGraphics.drawText(15, 14, 
 				"--------------------      --------------------------\n"
 				"| P2: WASD + V-Key |      | P1: Arrow Keys + P-Key |\n"

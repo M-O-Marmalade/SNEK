@@ -505,10 +505,10 @@ void SnakeGame::play() {
 		asciiGraphics->fillText(borderLeft, borderBottom, borderLeft, borderBottom, U'╰');	// bottom-left
 		asciiGraphics->fillText(borderRight, borderBottom, borderRight, borderBottom, U'╯');	// bottom-right
 
-		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderTop, borderRight, borderTop);	// top
-		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderBottom, borderRight, borderBottom);	// bottom
-		asciiGraphics->fillColor(options.colors.hud, borderLeft, borderTop, borderLeft, borderBottom);	// left
-		asciiGraphics->fillColor(options.colors.hud, borderRight, borderTop, borderRight, borderBottom);	// right
+		asciiGraphics->fillColor(borderLeft, borderTop, borderRight, borderTop, options.colors.hud);	// top
+		asciiGraphics->fillColor(borderLeft, borderBottom, borderRight, borderBottom, options.colors.hud);	// bottom
+		asciiGraphics->fillColor(borderLeft, borderTop, borderLeft, borderBottom, options.colors.hud);	// left
+		asciiGraphics->fillColor(borderRight, borderTop, borderRight, borderBottom, options.colors.hud);	// right
 
 
 		for (int t = 0; t < this->gameGrid.size(); t++) {
@@ -570,7 +570,7 @@ void SnakeGame::play() {
 		}
 
 
-		asciiGraphics->fillColor(options.colors.fruit, gridOX + currentFruit.x, gridOY + currentFruit.y);
+		asciiGraphics->fillColor(gridOX + currentFruit.x, gridOY + currentFruit.y, options.colors.fruit);
 
 
 		for (Snake& snake : this->snakes) {
@@ -579,28 +579,28 @@ void SnakeGame::play() {
 
 				if (!snake.justGotNewFruit) {
 					for (Soil::Coords2D& segment : snake.body) {
-						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
+						asciiGraphics->fillColor(gridOX + segment.x, gridOY + segment.y, snake.color);
 					}
 					if (snake.snekSwallowTimer <= snake.body.size()) {
-						asciiGraphics->fillColor(options.colors.fruit_swallowed, gridOX + snake.body[snake.snekSwallowTimer - 1].x, gridOY + snake.body[snake.snekSwallowTimer - 1].y);
+						asciiGraphics->fillColor(gridOX + snake.body[snake.snekSwallowTimer - 1].x, gridOY + snake.body[snake.snekSwallowTimer - 1].y, options.colors.fruit_swallowed);
 						snake.snekSwallowTimer++;
 					}
 				}
 				else {
 					snake.justGotNewFruit = false;
 					for (Soil::Coords2D& segment : snake.body) {
-						asciiGraphics->fillColor(snake.color, gridOX + segment.x, gridOY + segment.y);
+						asciiGraphics->fillColor(gridOX + segment.x, gridOY + segment.y, snake.color);
 					}
 					if (snake.snekSwallowTimer == 0) {
-						asciiGraphics->fillColor(options.colors.fruit_swallowed, gridOX + snake.head.x, gridOY + snake.head.y);
+						asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, options.colors.fruit_swallowed);
 						snake.snekSwallowTimer++;
 					}
 				}
 			}
 			else {
-				asciiGraphics->fillColor(options.colors.white, gridOX + snake.head.x, gridOY + snake.head.y);
+				asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, options.colors.white);
 				for (Soil::Coords2D& segment : snake.body) {
-					asciiGraphics->fillColor(options.colors.white, gridOX + segment.x, gridOY + segment.y);
+					asciiGraphics->fillColor(gridOX + segment.x, gridOY + segment.y, options.colors.white);
 				}
 			}
 		}
@@ -1135,19 +1135,8 @@ void SnakeGame::gameOverScreen()
 
 		//..display the keyboard..
 		asciiGraphics->fillText(43, 13, 79, 16, ' ');
-		for (int y = 0; y < 32; y++) {
-			if (y < 8) {
-				asciiGraphics->drawText(40, 13 + (y * 2), keyboard[y]);
-			}
-			else if (y < 16) {
-				asciiGraphics->drawText(24, 15 + (y * 2), keyboard[y]);
-			}
-			else if (y < 24) {
-				asciiGraphics->drawText(8, 17 + (y * 2), keyboard[y]);
-			}
-			else {
-				asciiGraphics->drawText(-8, 19 + (y * 2), keyboard[y]);
-			}
+		for (int i = 0; i < 32; i++) {
+			asciiGraphics->drawText(40 + (i % 8) * 2, 13 + (i / 8) * 2, keyboard[i]);
 		}
 		asciiGraphics->drawText(40, 21, "BACK");
 		asciiGraphics->drawText(52, 21, "END");
@@ -1273,26 +1262,17 @@ void SnakeGame::gameOverScreen()
 			}
 
 			//color the whole right side of the screen green
-			asciiGraphics->fillColor(options.colors.hud, 26, 0, asciiGraphics->width - 1, asciiGraphics->height - 1);
+			asciiGraphics->fillColor(26, 0, asciiGraphics->width - 1, asciiGraphics->height - 1, options.colors.hud);
 
 			//invert the color of the currently selected keyboard character
-			if (currentSelChar < 8) {
-				asciiGraphics->fillColor(40, 13 + (currentSelChar * 2), options.colors.keyboard_selected);
-			}
-			else if (currentSelChar < 16) {
-				asciiGraphics->fillColor(24, 15 + (currentSelChar * 2), options.colors.keyboard_selected);
-			}
-			else if (currentSelChar < 24) {
-				asciiGraphics->fillColor(8, 17 + (currentSelChar * 2), options.colors.keyboard_selected);
-			}
-			else if (currentSelChar < 32) {
-				asciiGraphics->fillColor(-8, 19 + (currentSelChar * 2), options.colors.keyboard_selected);
+			if (currentSelChar < 32) {
+				asciiGraphics->fillColor(40 + (currentSelChar % 8) * 2, 13 + (currentSelChar / 8) * 2, options.colors.keyboard_selected);
 			}
 			else if (currentSelChar == 32) {
-				asciiGraphics->fillColor(options.colors.keyboard_selected, 40, 21, 43, 21);
+				asciiGraphics->fillColor(40, 21, 43, 21, options.colors.keyboard_selected);
 			}
 			else {
-				asciiGraphics->fillColor(options.colors.keyboard_selected, 52, 21, 54, 21);
+				asciiGraphics->fillColor(52, 21, 54, 21, options.colors.keyboard_selected);
 			}
 
 			//DISPLAY THE SCREEN//
@@ -1321,7 +1301,7 @@ void SnakeGame::gameOverScreen()
 
 
 	// color the whole right side of the screen green
-	asciiGraphics->fillColor(options.colors.hud, 26, 0, asciiGraphics->width, asciiGraphics->height);
+	asciiGraphics->fillColor(26, 0, asciiGraphics->width, asciiGraphics->height, options.colors.hud);
 
 	std::this_thread::sleep_for(100ms);
 

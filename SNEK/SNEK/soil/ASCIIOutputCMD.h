@@ -11,7 +11,7 @@ namespace Soil {
     private:
         HANDLE originalConsoleHandle = 0;
         HANDLE gameConsoleHandle = 0;
-        COORD currentWindowSize;
+        COORD currentWindowSize = {0,0};
     public:
         ASCIIOutputCMD();
         ~ASCIIOutputCMD();
