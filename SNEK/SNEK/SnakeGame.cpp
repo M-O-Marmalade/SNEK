@@ -2,6 +2,8 @@
 
 using namespace std::chrono_literals;
 
+constexpr auto colorDepth = Soil::ASCIIColor::ANSI_24BIT_TRUECOLOR;
+
 ///////////////////////
 // PROGRAM STRUCTURE //
 ///////////////////////
@@ -56,7 +58,7 @@ SnakeGame::SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphic
 	this->inputManager->addKeys("\x25\x26\x27\x28WASDZPV");
 	this->readScoreFile();
 	this->clearGameGrid();
-	this->asciiGraphics->clearAll();
+	this->asciiGraphics->clearScreen();
 
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<Snake>();
@@ -494,6 +496,9 @@ void SnakeGame::play() {
 		// blank the game grid
 		//asciiGraphics->fillText(marginX, marginY, gameGrid.size() + marginX, marginY, ' ');
 
+		// rainbow hud!!
+		this->options.colors.hud.ansi8BitColorFG = (this->options.colors.hud.ansi8BitColorFG + 1) % 256;
+
 		// draw the border
 		asciiGraphics->fillText(borderLeft+1, borderTop, borderRight-1, borderTop, U'─');	// top
 		asciiGraphics->fillText(borderLeft+1, borderBottom, borderRight-1, borderBottom, U'─');	// bottom
@@ -575,7 +580,7 @@ void SnakeGame::play() {
 
 		for (Snake& snake : this->snakes) {
 			if (!snake.justDied) {
-				asciiGraphics->attributeBuffer[gridOX + snake.head.x + (gridOY + snake.head.y) * 80] = snake.color;
+				asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, snake.color);
 
 				if (!snake.justGotNewFruit) {
 					for (Soil::Coords2D& segment : snake.body) {
@@ -654,7 +659,7 @@ void SnakeGame::play() {
 
 
 		// PUSH GRAPHICS TO OUTPUT //
-		asciiOutput->pushOutput(*asciiGraphics);
+		asciiOutput->pushOutput(*asciiGraphics, colorDepth);
 
 		// delay for first frame if in 2 player mode //
 		if (options.playerCount == 2 && firstFrameOfTheGame) {
@@ -1276,7 +1281,7 @@ void SnakeGame::gameOverScreen()
 			}
 
 			//DISPLAY THE SCREEN//
-			asciiOutput->pushOutput(*asciiGraphics);
+			asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 
 			snekAudioSystem->fmodUpdate(); //update FMOD system	
 		}
@@ -1322,7 +1327,7 @@ void SnakeGame::gameOverScreen()
 	asciiGraphics->drawText(40, 20, ">Press [Z] to play again");
 	asciiGraphics->drawText(40, 21, ">Press [X] to quit");
 
-	asciiOutput->pushOutput(*asciiGraphics);
+	asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 
 	bool gameOverMessage = true;
 
@@ -1380,7 +1385,7 @@ void SnakeGame::gameOverScreen()
 			std::this_thread::sleep_for(2671ms);
 		}
 
-		asciiOutput->pushOutput(*asciiGraphics);
+		asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 		snekAudioSystem->fmodUpdate();
 		std::this_thread::sleep_for(10ms);
 	}

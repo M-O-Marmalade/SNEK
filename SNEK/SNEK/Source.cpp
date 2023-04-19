@@ -27,8 +27,44 @@
 
 using namespace std::chrono_literals;
 
+void testFunc() {
+	Soil::ASCIIGraphics asciiGraphics(80, 25);
+	Soil::ASCIIOutputCMD asciiOutputCMD;
+
+	std::vector<std::chrono::microseconds> frameTimes(120, 0us);
+	int i = 0;
+	std::chrono::steady_clock::time_point lastFrameTime = std::chrono::steady_clock::now();
+	while (1) {
+		frameTimes[i] = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - lastFrameTime);
+		lastFrameTime = std::chrono::steady_clock::now();
+		i = (i + 1) % 120;
+		std::chrono::microseconds uspf = 0us;
+		for (auto& t : frameTimes) {
+			uspf += t;
+		}
+		uspf /= 120.0f;
+		float fps = 1000000.0f / uspf.count();
+
+		asciiGraphics.clearScreen();
+		asciiGraphics.drawTextSprite(1, 1, 
+		                             Soil::ASCIISprite("FPS: " + std::to_string(fps), 
+		                                               Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 
+		                                                                226, 
+		                                                                14, 
+		                                                                Soil::ANSITrueColor(255, 0, 0), 
+		                                                                Soil::ANSITrueColor(0, 0, 255), 
+		                                                                Soil::ASCIIColor::ANSI_24BIT_TRUECOLOR
+		                                                               )
+		                                              )
+		);
+
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+	}
+}
 
 int main() {
+
+	//testFunc();
 
 	// seed the RNG using system time
 	srand(time(0));
@@ -71,7 +107,7 @@ int main() {
 	 // DISPLAY SETUP //
 	//			  	 //
 
-	Soil::ColorPalette colorPalette;
+	ColorPalette colorPalette;
 	Soil::ASCIIGraphics asciiGraphics(80, 25);
 	Soil::ASCIIOutputCMD asciiOutputCMD;
 
@@ -97,7 +133,7 @@ int main() {
 	int startingXCoord = asciiGraphics.width / 2 - (logoString.size() / 2);
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, logoString[i]);
-		asciiOutputCMD.pushOutput(asciiGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -106,7 +142,7 @@ int main() {
 	//Erase Splash Screen
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, U' ');
-		asciiOutputCMD.pushOutput(asciiGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -190,7 +226,7 @@ int main() {
 			startScreenFrameCount = 0;
 		}
 
-		asciiOutputCMD.pushOutput(asciiGraphics);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 
 		startScreenFrameCount++;
 
@@ -245,7 +281,7 @@ int main() {
 
 			for (auto& animFrame : pressedStartAnimFrames) {
 				asciiGraphics.drawText(31, 18, animFrame.first);
-				asciiOutputCMD.pushOutput(asciiGraphics);
+				asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
 				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}

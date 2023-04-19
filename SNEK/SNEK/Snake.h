@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include "ASCIIColor.h"
 #include "SnakeControlScheme.h"
 #include "Coords2D.h"
 
@@ -12,7 +13,7 @@ class Snake {
 public:
 	SnakeControlScheme controls;
 
-	WORD color = FOREGROUND_GREEN;
+	Soil::ASCIIColor color;
 
 	Soil::Coords2D head;					//the snek's head position on the play grid
 	std::vector<Soil::Coords2D> body;		//the snek's body segments on the play grid
@@ -32,6 +33,6 @@ public:
 	int potentialFruitSpot3;
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 
-	Snake(WORD color, Soil::Coords2D startPosition, Soil::Coords2D startDirection, SnakeControlScheme controlScheme);
+	Snake(Soil::ASCIIColor color, Soil::Coords2D startPosition, Soil::Coords2D startDirection, SnakeControlScheme controlScheme);
 };
 

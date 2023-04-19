@@ -1,7 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <Windows.h>
+
+#include "ASCIIColor.h"
 
 namespace Soil {
 	class ASCIISprite {
@@ -9,8 +12,8 @@ namespace Soil {
 
 	public:
 		std::u32string text;
-		WORD color;
-		ASCIISprite(std::string text, WORD color);
-		ASCIISprite(std::u32string text, WORD color);
+		Soil::ASCIIColor color;
+		ASCIISprite(std::string text, Soil::ASCIIColor color);
+		ASCIISprite(std::u32string text, Soil::ASCIIColor color);
 	};
 }

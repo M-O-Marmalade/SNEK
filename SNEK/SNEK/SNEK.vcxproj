@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="soil\ASCIIColor.cpp" />
     <ClCompile Include="SnakeGameOptions.cpp" />
     <ClCompile Include="soil\AudioSystem.cpp" />
     <ClCompile Include="Snake.cpp" />
@@ -165,6 +166,7 @@
     <ClCompile Include="soil\ASCIISprite.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="soil\ASCIIColor.h" />
     <ClInclude Include="SnakeControlScheme.h" />
     <ClInclude Include="SnakeGameOptions.h" />
     <ClInclude Include="soil\InputManager.h" />
@@ -174,10 +176,11 @@
     <ClInclude Include="soil\ASCIIOutput.h" />
     <ClInclude Include="soil\ASCIIOutputCMD.h" />
     <ClInclude Include="soil\ASCIISprite.h" />
-    <ClInclude Include="soil\ColorPalette.h" />
+    <ClInclude Include="ColorPalette.h" />
     <ClInclude Include="soil\Coords2D.h" />
     <ClInclude Include="Snake.h" />
     <ClInclude Include="SnakeGame.h" />
+    <ClInclude Include="soil\ANSITrueColor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -8,7 +8,7 @@ class SnakeGameOptions {
 public:
 	int playerCount = 1;
 	Soil::Coords2D gridSize = { 10,10 };
-	Soil::ColorPalette colors;
+	ColorPalette colors;
 
-	SnakeGameOptions(int playerCount, Soil::Coords2D gridSize, Soil::ColorPalette colors) : playerCount{playerCount}, gridSize{gridSize}, colors{colors} {}
+	SnakeGameOptions(int playerCount, Soil::Coords2D gridSize, ColorPalette colors) : playerCount{playerCount}, gridSize{gridSize}, colors{colors} {}
 };

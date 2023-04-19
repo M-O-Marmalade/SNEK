@@ -42,6 +42,9 @@
     <ClCompile Include="SnakeGameOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="soil\ASCIIColor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soil\AudioSystem.h">
@@ -62,7 +65,7 @@
     <ClInclude Include="Snake.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="soil\ColorPalette.h">
+    <ClInclude Include="ColorPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SnakeGame.h">
@@ -81,6 +84,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SnakeGameOptions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil\ASCIIColor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soil\ANSITrueColor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
