@@ -6,24 +6,25 @@
 #include <fstream>
 
 #include "ASCIIOutputCMD.h"
-#include "AudioSystem.h"
-#include "ColorPalette.h"
 #include "InputManager.h"
 
-#include "Snake.h"
-#include "SnakeGameOptions.h"
+#include "SNEKGameOptions.h"
+#include "SNEKAudioSystem.h"
+#include "SNEKColorPalette.h"
+#include "SNEKPlayer.h"
 
 
-class SnakeGame {
+
+class SNEKGameSession {
 private:
 	Soil::ASCIIGraphics* asciiGraphics;
 	Soil::ASCIIOutputCMD* asciiOutput;
-	Soil::AudioSystem* snekAudioSystem;
+	SNEKAudioSystem* snekAudioSystem;
 	Soil::InputManager* inputManager;
-	SnakeGameOptions options;
+	SNEKGameOptions options;
 
 
-	std::vector<Snake> snakes;
+	std::vector<SNEKPlayer> snakes;
 	std::vector<std::vector<char>> gameGrid; //char display[x][y]{ ' ' };		//the Play Grid [x][y] {' ' empty space, '^v<>' snek head, '8' snek body, '+' fruit, 'X' trap, 'O' portal}		
 	
 	Soil::Coords2D currentFruit;			//location of the current fruit on the game grid [x,y]
@@ -97,7 +98,7 @@ public:
 	bool playAgain = true;
 	int playerCount = 1;
 
-	SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager);
+	SNEKGameSession(SNEKGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, SNEKAudioSystem* audioSystem, Soil::InputManager* inputManager);
 	void play();
 };
 

@@ -14,6 +14,6 @@ namespace Soil {
     public:
         ASCIIOutputCMD();
         ~ASCIIOutputCMD();
-        void pushOutput(ASCIIGraphics& asciiGraphics, Soil::ASCIIColor::ANSIColorDepth maxAllowedColorDepth);
+        void pushOutput(ASCIIGraphics& asciiGraphics, Soil::ANSIColorDepth maxAllowedColorDepth);
     };
 }

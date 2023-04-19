@@ -1,31 +1,9 @@
-﻿#include "SnakeGame.h"
+﻿#include "SNEKGameSession.h"
 
 using namespace std::chrono_literals;
 
-constexpr auto colorDepth = Soil::ASCIIColor::ANSI_24BIT_TRUECOLOR;
 
-///////////////////////
-// PROGRAM STRUCTURE //
-///////////////////////
-/*
-
-| Audio/Graphics Init | Splash Screen | Start Screen | Pre-New Game Setup | Read Input | Game Logic | Audio Processing | Graphics Display | Name Entry | Try Again Screen |
-|=================================STARTUP=================================|===========================GAME LOOP===========================|===========GAME OVER===========|
-
-*/
-
-//The game is time-synced to a specific BPM (beats-per-minute) at all times, as the game is very music focused
-
-//time/tick/framerate calculations are done in nanoseconds (0.000000001 second, or 1e-9 second).
-//BPM to ns (beats-per-minute to nanoseconds) conversions are done as 60,000,000,000ns/xBPM.
-
-//audio timeline (FMOD Studio) calculations are done in milliseconds (0.001 second, or 1e-3 second).
-//BPM to ms (beats-per-minute to milliseconds) conversions are done as 60,000ms/xBPM.
-
-
-
-
-void SnakeGame::readScoreFile() {
+void SNEKGameSession::readScoreFile() {
 	std::ifstream scoreFileRead;
 	scoreFileRead.open("ScoreFile");
 	if (scoreFileRead.is_open()) {
@@ -52,7 +30,7 @@ void SnakeGame::readScoreFile() {
 	oldHighScore = highScore;
 }
 
-SnakeGame::SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, Soil::AudioSystem* audioSystem, Soil::InputManager* inputManager) : options{options}, asciiGraphics{asciiGraphics}, asciiOutput{asciiOutput}, snekAudioSystem{audioSystem}, inputManager{inputManager} {
+SNEKGameSession::SNEKGameSession(SNEKGameOptions options, Soil::ASCIIGraphics* asciiGraphics, Soil::ASCIIOutputCMD* asciiOutput, SNEKAudioSystem* audioSystem, Soil::InputManager* inputManager) : options{options}, asciiGraphics{asciiGraphics}, asciiOutput{asciiOutput}, snekAudioSystem{audioSystem}, inputManager{inputManager} {
 
 	this->gameGrid = std::vector<std::vector<char>>(options.gridSize.x,std::vector<char>(options.gridSize.y, ' '));
 	this->inputManager->addKeys("\x25\x26\x27\x28WASDZPV");
@@ -61,13 +39,13 @@ SnakeGame::SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphic
 	this->asciiGraphics->clearScreen();
 
 	// initialize `snakes` depending on amount of players
-	this->snakes = std::vector<Snake>();
+	this->snakes = std::vector<SNEKPlayer>();
 	if (options.playerCount == 1) {
-		this->snakes.push_back(Snake(options.colors.player_1, { (int)gameGrid.size() / 2, (int)gameGrid[0].size() / 2}, {0,1}, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
+		this->snakes.push_back(SNEKPlayer(options.colors.player_1, { (int)gameGrid.size() / 2, (int)gameGrid[0].size() / 2}, {0,1}, SNEKControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'Z')));
 	}
 	if (options.playerCount == 2) {
-		this->snakes.push_back(Snake(options.colors.player_1, { 2 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
-		this->snakes.push_back(Snake(options.colors.player_2, { 1 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SnakeControlScheme('W', 'S', 'A', 'D', 'V')));
+		this->snakes.push_back(SNEKPlayer(options.colors.player_1, { 2 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SNEKControlScheme(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 'P')));
+		this->snakes.push_back(SNEKPlayer(options.colors.player_2, { 1 * ((int)gameGrid.size() / 3), (int)gameGrid[0].size() / 2 }, { 0,1 }, SNEKControlScheme('W', 'S', 'A', 'D', 'V')));
 	}
 
 	this->placeNewFruit();
@@ -89,7 +67,7 @@ SnakeGame::SnakeGame(SnakeGameOptions options, Soil::ASCIIGraphics* asciiGraphic
 	//result = system->setVolume(1.0f);
 }
 
-void SnakeGame::play() {
+void SNEKGameSession::play() {
 
 	// record start time of first frame of the game loop
 	frameTime = std::chrono::steady_clock::now();
@@ -121,7 +99,7 @@ void SnakeGame::play() {
 		  //                                          //
 		 // CHECK + SET DIRECTION [FRAME RESOLUTION] //
 		//                                          //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			if (inputManager->isKeyPressed(snake.controls.left) && snake.direction_frame.x == 0) {
 				snake.direction_frame = Soil::Coords2D{ -1,0 };
 			}
@@ -154,7 +132,7 @@ void SnakeGame::play() {
 		//	 // CHECK + SET DIRECTION [TICK RESOLUTION] //
 		//	//                                         //
 
-		//	for (Snake& snake : this->snakes) {
+		//	for (SNEKPlayer& snake : this->snakes) {
 		//		if (inputManager->isKeyPressed(snake.controls.left) && !snake.holdW && snake.direction_frame.x != 1) {
 		//			snake.direction_tick = Soil::Coords2D{-1,0};
 		//		}
@@ -186,7 +164,7 @@ void SnakeGame::play() {
 		  //                    //
 		 // MOVE BODY SEGMENTS //
 		//                    //
-		for (Snake& snake : snakes) {
+		for (SNEKPlayer& snake : snakes) {
 			for (int i = snake.body.size() - 1; i >= 0; i--) {
 				if (i > 0) {
 					//move all segments except the segment right before the head
@@ -202,7 +180,7 @@ void SnakeGame::play() {
 		//								      //
 		// PLACE SNEK BODY INTO DISPLAY ARRAY //
 		//									//
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			for (int r = snake.body.size() - 1; r >= 0; r--) {
 				gameGrid[snake.body[r].x][snake.body[r].y] = '8';
 			}
@@ -211,7 +189,7 @@ void SnakeGame::play() {
 		//								  //
 		// STORE EACH SNEK'S SURROUNDINGS //
 		//								//
-		//for (Snake& snake : this->snakes) {
+		//for (SNEKPlayer& snake : this->snakes) {
 
 		//	//North
 		//	if (snake.head.y > 0 && gameGrid[snake.head.x][snake.head.y - 1] == ' ' || gameGrid[snake.head.x][snake.head.y - 1] == '+') {
@@ -281,7 +259,7 @@ void SnakeGame::play() {
 		////				    //
 		//// ADD STYLE POINTS //
 		////				  //
-		//for (Snake& snake : this->snakes) {
+		//for (SNEKPlayer& snake : this->snakes) {
 
 		//	//EAST//
 		//	if (snake.direction_frame == 'e') {
@@ -358,7 +336,7 @@ void SnakeGame::play() {
 		  //             //
 		 // MOVE PLAYER //
 		//             //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			snake.head += snake.direction_frame;
 			if (highestCurrentLength >= 11 && this->inputManager->isKeyPressed(snake.controls.action)) {
 				snake.head += snake.direction_frame;
@@ -368,7 +346,7 @@ void SnakeGame::play() {
 		//								     //
 		// DETECT IF PLAYER HAS HIT MAP EDGE //
 		//								   //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			if (snake.head.x < 0 || snake.head.x >= gameGrid.size() || snake.head.y < 0 || snake.head.y >= gameGrid[0].size()) {
 				snake.justDied = true;
 				gameLose = true;
@@ -382,7 +360,7 @@ void SnakeGame::play() {
 		  //                                     //
 		 // DETECT IF PLAYER HAS HIT THEMSELVES //
 		//                                     //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			if (gameGrid[snake.head.x][snake.head.y] == '8' || gameGrid[snake.head.x][snake.head.y] == 'X' || gameGrid[snake.head.x][snake.head.y] == 'h') {
 				snake.justDied = true;
 				gameLose = true;
@@ -395,7 +373,7 @@ void SnakeGame::play() {
 
 		// calculate each player's individual proximity
 		std::vector<float> fruitProximities;
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			float thisSnakesProximityToFruit = 1.0f - ((std::abs(snake.head.x - currentFruit.x) + std::abs(snake.head.y - currentFruit.y)) / 48.0f);	//1/48 max distance
 			fruitProximities.push_back(thisSnakesProximityToFruit);
 		}
@@ -450,7 +428,7 @@ void SnakeGame::play() {
 		  //                             //
 		 // PASS PLAYER THROUGH PORTALS //
 		//                             //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			for (int hh = 0; hh < portalCount * 2; hh++) {
 				if (snake.head.x == portalCoordinates[hh][0] && snake.head.y == portalCoordinates[hh][1]) {
 					snake.head.x = portalCoordinates[((hh + 1) % 2)][0];
@@ -463,7 +441,7 @@ void SnakeGame::play() {
 		  //                                 //
 		 // PLACE PLAYER INTO DISPLAY ARRAY //
 		//                                 //
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			gameGrid[snake.head.x][snake.head.y] = 'h';
 		}
 
@@ -497,7 +475,7 @@ void SnakeGame::play() {
 		//asciiGraphics->fillText(marginX, marginY, gameGrid.size() + marginX, marginY, ' ');
 
 		// rainbow hud!!
-		this->options.colors.hud.ansi8BitColorFG = (this->options.colors.hud.ansi8BitColorFG + 1) % 256;
+		//this->options.colors.hud.ansi8BitColorFG = (this->options.colors.hud.ansi8BitColorFG + 1) % 256;
 
 		// draw the border
 		asciiGraphics->fillText(borderLeft+1, borderTop, borderRight-1, borderTop, U'─');	// top
@@ -524,7 +502,7 @@ void SnakeGame::play() {
 			}
 		}
 
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 
 			if (snake.justDied) {
 				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", options.colors.white));
@@ -578,7 +556,7 @@ void SnakeGame::play() {
 		asciiGraphics->fillColor(gridOX + currentFruit.x, gridOY + currentFruit.y, options.colors.fruit);
 
 
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			if (!snake.justDied) {
 				asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, snake.color);
 
@@ -654,12 +632,8 @@ void SnakeGame::play() {
 			asciiGraphics->drawText((11 - highScoreName.length()) / 2 + 65, 7, highScoreName);
 		}
 
-		// DRAW DEBUG MENU //
-		//drawDebugMenu();
-
-
 		// PUSH GRAPHICS TO OUTPUT //
-		asciiOutput->pushOutput(*asciiGraphics, colorDepth);
+		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_24BIT_COLOR);
 
 		// delay for first frame if in 2 player mode //
 		if (options.playerCount == 2 && firstFrameOfTheGame) {
@@ -677,10 +651,10 @@ void SnakeGame::play() {
 
 }
 
-void SnakeGame::processFruitPickups()
+void SNEKGameSession::processFruitPickups()
 {
 	gotNewFruit = false;
-	for (Snake& snake : this->snakes) {
+	for (SNEKPlayer& snake : this->snakes) {
 		if (snake.head.x == currentFruit.x && snake.head.y == currentFruit.y) {
 
 			snake.body.push_back({ snake.head });
@@ -716,7 +690,7 @@ void SnakeGame::processFruitPickups()
 	}
 }
 
-void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit)
+void SNEKGameSession::processAudioFrame(bool& firstFrameOfTheGame, float closestProximityToFruit)
 {
 
 	// play the death sound if the game is lost
@@ -730,7 +704,7 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 	}
 
 	if (gotNewFruit) {				//if someone gets a new fruit..
-		for (Snake& snake : this->snakes) {		//..check each player..
+		for (SNEKPlayer& snake : this->snakes) {		//..check each player..
 			if (snake.justGotNewFruit) {			//..to see if they were the one who got the new fruit..					
 				if (gotNewHighScoreSoundPlay) {
 					snekAudioSystem->startEventInstance("Instruments+FX/newHighScore");
@@ -1110,7 +1084,7 @@ void SnakeGame::processAudioFrame(bool& firstFrameOfTheGame, float closestProxim
 	snekAudioSystem->fmodUpdate(); //update FMOD system	
 }
 
-void SnakeGame::gameOverScreen()
+void SNEKGameSession::gameOverScreen()
 {
 
 	snekAudioSystem->stopEventInstance(bpmNames[currentChordBPM]);
@@ -1281,7 +1255,7 @@ void SnakeGame::gameOverScreen()
 			}
 
 			//DISPLAY THE SCREEN//
-			asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+			asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
 
 			snekAudioSystem->fmodUpdate(); //update FMOD system	
 		}
@@ -1327,7 +1301,7 @@ void SnakeGame::gameOverScreen()
 	asciiGraphics->drawText(40, 20, ">Press [Z] to play again");
 	asciiGraphics->drawText(40, 21, ">Press [X] to quit");
 
-	asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+	asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
 
 	bool gameOverMessage = true;
 
@@ -1385,30 +1359,15 @@ void SnakeGame::gameOverScreen()
 			std::this_thread::sleep_for(2671ms);
 		}
 
-		asciiOutput->pushOutput(*asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
 		snekAudioSystem->fmodUpdate();
 		std::this_thread::sleep_for(10ms);
 	}
 }
 
-void SnakeGame::drawDebugMenu()
+bool SNEKGameSession::anyActionKeysHeld()
 {
-	asciiGraphics->drawText(0, 24,
-			"frame{" + std::to_string(snakes[0].direction_frame.x) + "," + std::to_string(snakes[0].direction_frame.y) + "}");
-
-	asciiGraphics->drawText(20, 24,
-		"tick{" + std::to_string(snakes[0].direction_tick.x) + "," + std::to_string(snakes[0].direction_tick.y) + "}");
-
-	asciiGraphics->drawText(0, 23,
-		"holdN:" + std::to_string(snakes[0].holdN) +
-		" holdE" + std::to_string(snakes[0].holdE) +
-		" holdS" + std::to_string(snakes[0].holdS) +
-		" holdW" + std::to_string(snakes[0].holdW));
-}
-
-bool SnakeGame::anyActionKeysHeld()
-{
-	for (Snake& snake : this->snakes) {
+	for (SNEKPlayer& snake : this->snakes) {
 		if (this->inputManager->isKeyPressed(snake.controls.action)) {
 			return true;
 		}
@@ -1416,10 +1375,10 @@ bool SnakeGame::anyActionKeysHeld()
 	return false;
 }
 
-void SnakeGame::placeNewFruit()
+void SNEKGameSession::placeNewFruit()
 {
-	Snake* snakeThatGotTheFruit = &snakes[0];
-	for (Snake& snake : snakes) {
+	SNEKPlayer* snakeThatGotTheFruit = &snakes[0];
+	for (SNEKPlayer& snake : snakes) {
 		if (snake.justGotNewFruit) {
 			snakeThatGotTheFruit = &snake;
 		}
@@ -1434,7 +1393,7 @@ void SnakeGame::placeNewFruit()
 
 		// check if that spot is currently filled
 		bool spotIsEmpty = true;
-		for (Snake& snake : this->snakes) {
+		for (SNEKPlayer& snake : this->snakes) {
 			if (currentFruit.x == snake.head.x && currentFruit.y == snake.head.y) {
 				spotIsEmpty = false;
 				break;
@@ -1495,7 +1454,7 @@ void SnakeGame::placeNewFruit()
 	}
 }
 
-void SnakeGame::clearGameGrid()
+void SNEKGameSession::clearGameGrid()
 {
 	for (auto& column : this->gameGrid) {
 		for (auto& character : column) {

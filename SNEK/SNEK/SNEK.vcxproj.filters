@@ -18,7 +18,7 @@
     <ClCompile Include="Source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="soil\AudioSystem.cpp">
+    <ClCompile Include="SNEKAudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="soil\ASCIIGraphics.cpp">
@@ -30,16 +30,13 @@
     <ClCompile Include="soil\ASCIISprite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Snake.cpp">
+    <ClCompile Include="SNEKPlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SnakeGame.cpp">
+    <ClCompile Include="SNEKGameSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="soil\InputManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SnakeGameOptions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="soil\ASCIIColor.cpp">
@@ -47,7 +44,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="soil\AudioSystem.h">
+    <ClInclude Include="SNEKAudioSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soil\ASCIIGraphics.h">
@@ -62,13 +59,13 @@
     <ClInclude Include="soil\ASCIISprite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Snake.h">
+    <ClInclude Include="SNEKPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ColorPalette.h">
+    <ClInclude Include="SNEKColorPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SnakeGame.h">
+    <ClInclude Include="SNEKGameSession.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soil\Coords2D.h">
@@ -80,10 +77,10 @@
     <ClInclude Include="soil\InputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SnakeControlScheme.h">
+    <ClInclude Include="SNEKControlScheme.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SnakeGameOptions.h">
+    <ClInclude Include="SNEKGameOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soil\ASCIIColor.h">

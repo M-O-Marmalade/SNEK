@@ -3,7 +3,7 @@
 #include "ASCIIColor.h"
 
 
-class ColorPalette {
+class SNEKColorPalette {
 public:
 	Soil::ASCIIColor standard = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN);
 	Soil::ASCIIColor logo = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
@@ -16,7 +16,7 @@ public:
 	Soil::ASCIIColor portal = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_BLUE);
 	Soil::ASCIIColor keyboard = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN);
 	Soil::ASCIIColor keyboard_selected = Soil::ASCIIColor(Soil::ANSI_4BIT_BG_GREEN);
-	Soil::ASCIIColor hud = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 213, 0, { 255,255,255 }, {0,0,0}, Soil::ASCIIColor::ANSI_8BIT_COLOR);
+	Soil::ASCIIColor hud = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 213, 0, { 255,255,255 }, {0,0,0}, Soil::ANSI_8BIT_COLOR);
 
 
 	Soil::ASCIIColor bright_cyan = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);

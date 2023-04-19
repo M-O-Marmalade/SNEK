@@ -150,10 +150,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="soil\ASCIIColor.cpp" />
-    <ClCompile Include="SnakeGameOptions.cpp" />
-    <ClCompile Include="soil\AudioSystem.cpp" />
-    <ClCompile Include="Snake.cpp" />
-    <ClCompile Include="SnakeGame.cpp" />
+    <ClCompile Include="SNEKAudioSystem.cpp" />
+    <ClCompile Include="SNEKPlayer.cpp" />
+    <ClCompile Include="SNEKGameSession.cpp" />
     <ClCompile Include="soil\InputManager.cpp" />
     <ClCompile Include="Source.cpp">
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</UseUnicodeForAssemblerListing>
@@ -167,19 +166,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soil\ASCIIColor.h" />
-    <ClInclude Include="SnakeControlScheme.h" />
-    <ClInclude Include="SnakeGameOptions.h" />
+    <ClInclude Include="SNEKControlScheme.h" />
+    <ClInclude Include="SNEKGameOptions.h" />
     <ClInclude Include="soil\InputManager.h" />
     <ClInclude Include="soil\Soil.h" />
-    <ClInclude Include="soil\AudioSystem.h" />
+    <ClInclude Include="SNEKAudioSystem.h" />
     <ClInclude Include="soil\ASCIIGraphics.h" />
     <ClInclude Include="soil\ASCIIOutput.h" />
     <ClInclude Include="soil\ASCIIOutputCMD.h" />
     <ClInclude Include="soil\ASCIISprite.h" />
-    <ClInclude Include="ColorPalette.h" />
+    <ClInclude Include="SNEKColorPalette.h" />
     <ClInclude Include="soil\Coords2D.h" />
-    <ClInclude Include="Snake.h" />
-    <ClInclude Include="SnakeGame.h" />
+    <ClInclude Include="SNEKPlayer.h" />
+    <ClInclude Include="SNEKGameSession.h" />
     <ClInclude Include="soil\ANSITrueColor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

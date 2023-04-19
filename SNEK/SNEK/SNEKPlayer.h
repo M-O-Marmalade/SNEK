@@ -5,13 +5,13 @@
 #include <vector>
 
 #include "ASCIIColor.h"
-#include "SnakeControlScheme.h"
+#include "SNEKControlScheme.h"
 #include "Coords2D.h"
 
 
-class Snake {
+class SNEKPlayer {
 public:
-	SnakeControlScheme controls;
+	SNEKControlScheme controls;
 
 	Soil::ASCIIColor color;
 
@@ -33,6 +33,6 @@ public:
 	int potentialFruitSpot3;
 	bool surroundingObstacles[8];	//stores surrounding space info (true if obstacles exists) 0 is top middle, 1-7 goes clockwise from there
 
-	Snake(Soil::ASCIIColor color, Soil::Coords2D startPosition, Soil::Coords2D startDirection, SnakeControlScheme controlScheme);
+	SNEKPlayer(Soil::ASCIIColor color, Soil::Coords2D startPosition, Soil::Coords2D startDirection, SNEKControlScheme controlScheme);
 };
 

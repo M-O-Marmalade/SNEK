@@ -23,7 +23,8 @@
 
 #include "Soil.h"
 
-#include "SnakeGame.h"
+#include "SNEKGameSession.h"
+#include "SNEKAudioSystem.h"
 
 using namespace std::chrono_literals;
 
@@ -34,7 +35,7 @@ void testFunc() {
 	std::vector<std::chrono::microseconds> frameTimes(120, 0us);
 	int i = 0;
 	std::chrono::steady_clock::time_point lastFrameTime = std::chrono::steady_clock::now();
-	while (1) {
+	while ((0x8000 & GetAsyncKeyState((unsigned char)('Z'))) == 0) {
 		frameTimes[i] = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - lastFrameTime);
 		lastFrameTime = std::chrono::steady_clock::now();
 		i = (i + 1) % 120;
@@ -45,26 +46,85 @@ void testFunc() {
 		uspf /= 120.0f;
 		float fps = 1000000.0f / uspf.count();
 
-		asciiGraphics.clearScreen();
-		asciiGraphics.drawTextSprite(1, 1, 
+		//asciiGraphics.clearScreen();
+		asciiGraphics.drawTextSprite(0, 0, 
 		                             Soil::ASCIISprite("FPS: " + std::to_string(fps), 
 		                                               Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 
 		                                                                226, 
 		                                                                14, 
 		                                                                Soil::ANSITrueColor(255, 0, 0), 
 		                                                                Soil::ANSITrueColor(0, 0, 255), 
-		                                                                Soil::ASCIIColor::ANSI_24BIT_TRUECOLOR
+		                                                                Soil::ANSI_4BIT_COLOR
 		                                                               )
 		                                              )
 		);
+		asciiGraphics.drawTextSprite(1, 1,
+			Soil::ASCIISprite(U"4-bit Heizölrückstoßabdämpfung",
+				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+					226,
+					14,
+					Soil::ANSITrueColor(255, 0, 0),
+					Soil::ANSITrueColor(0, 0, 255),
+					Soil::ANSI_4BIT_COLOR
+				)
+			)
+		);
 
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+		asciiGraphics.drawTextSprite(2, 2,
+			Soil::ASCIISprite(U"8-bit Ξεσκεπάζω τὴν ψυχοφθόρα βδελυγμία",
+				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+					226,
+					14,
+					Soil::ANSITrueColor(255, 0, 0),
+					Soil::ANSITrueColor(0, 0, 255),
+					Soil::ANSI_8BIT_COLOR
+				)
+			)
+		);
+
+		asciiGraphics.drawTextSprite(3, 3,
+			Soil::ASCIISprite(U"24-bit ｶいろはにほへとちりぬるを\nイロハニホヘト\nจงฝ่าฟันพัฒนาวิชาการ",
+				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+					226,
+					14,
+					Soil::ANSITrueColor(255, 0, 0),
+					Soil::ANSITrueColor(0, 0, 255),
+					Soil::ANSI_24BIT_COLOR
+				)
+			)
+		);
+
+		asciiGraphics.drawTextSprite(0, 10,
+			Soil::ASCIISprite(U"ｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶ",
+				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+					226,
+					14,
+					Soil::ANSITrueColor(255, 0, 0),
+					Soil::ANSITrueColor(0, 0, 255),
+					Soil::ANSI_24BIT_COLOR
+				)
+			)
+		);
+
+		asciiGraphics.drawTextSprite(0, 12,
+			Soil::ASCIISprite(U"カカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカ",
+				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+					226,
+					14,
+					Soil::ANSITrueColor(255, 0, 0),
+					Soil::ANSITrueColor(0, 0, 255),
+					Soil::ANSI_24BIT_COLOR
+				)
+			)
+		);
+
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
 	}
 }
 
 int main() {
 
-	//testFunc();
+	testFunc();
 
 	// seed the RNG using system time
 	srand(time(0));
@@ -93,7 +153,7 @@ int main() {
 		"Instruments+FX/newHighScore"
 	};
 
-	Soil::AudioSystem snekAudioSystem(false);
+	SNEKAudioSystem snekAudioSystem(false);
 	snekAudioSystem.loadMasterBank("media/Master.bank");
 	snekAudioSystem.loadStringsBank("media/Master.strings.bank");
 	snekAudioSystem.loadBank("media/MusicandFX.bank");
@@ -107,7 +167,7 @@ int main() {
 	 // DISPLAY SETUP //
 	//			  	 //
 
-	ColorPalette colorPalette;
+	SNEKColorPalette colorPalette;
 	Soil::ASCIIGraphics asciiGraphics(80, 25);
 	Soil::ASCIIOutputCMD asciiOutputCMD;
 
@@ -133,7 +193,7 @@ int main() {
 	int startingXCoord = asciiGraphics.width / 2 - (logoString.size() / 2);
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, logoString[i]);
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -142,7 +202,7 @@ int main() {
 	//Erase Splash Screen
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, U' ');
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -226,7 +286,7 @@ int main() {
 			startScreenFrameCount = 0;
 		}
 
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
 
 		startScreenFrameCount++;
 
@@ -281,7 +341,7 @@ int main() {
 
 			for (auto& animFrame : pressedStartAnimFrames) {
 				asciiGraphics.drawText(31, 18, animFrame.first);
-				asciiOutputCMD.pushOutput(asciiGraphics, Soil::ASCIIColor::ANSI_4BIT_COLOR);
+				asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
 				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}
@@ -289,12 +349,12 @@ int main() {
 		snekAudioSystem.fmodUpdate();
 	}
 	
-	SnakeGameOptions options(playerCount, { 23,23 }, colorPalette);
+	SNEKGameOptions options(playerCount, { 23,23 }, colorPalette);
 
-	SnakeGame currentGame(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+	SNEKGameSession currentGame(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 	currentGame.play();
 	while (currentGame.playAgain) {
-		currentGame = SnakeGame(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
+		currentGame = SNEKGameSession(options, &asciiGraphics, &asciiOutputCMD, &snekAudioSystem, &inputManager);
 		currentGame.play();
 	}
 

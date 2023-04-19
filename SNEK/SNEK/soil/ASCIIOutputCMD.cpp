@@ -32,7 +32,7 @@ Soil::ASCIIOutputCMD::~ASCIIOutputCMD() {
 	wprintf(CSI L"?25h");	// show the cursor
 }
 
-void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics, Soil::ASCIIColor::ANSIColorDepth maxAllowedColorDepth) {
+void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics, Soil::ANSIColorDepth maxAllowedColorDepth) {
 
 	// check what size our window is
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
@@ -85,10 +85,10 @@ void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics, Soil::ASCIIC
 			}
 
 			// the color depth we'll be drawing at determines whether we'll use Win32 API or VTS
-			Soil::ASCIIColor::ANSIColorDepth currentColorDepth = std::min(asciiGraphics.colorBuffer[y][x].preferredColorDepth, maxAllowedColorDepth);
+			Soil::ANSIColorDepth currentColorDepth = std::min(asciiGraphics.colorBuffer[y][x].preferredColorDepth, maxAllowedColorDepth);
 
 			// draw 4-bit color using Win32 API, it's more performant than using VTS
-			if (currentColorDepth == Soil::ASCIIColor::ANSI_4BIT_COLOR) {
+			if (currentColorDepth == Soil::ANSI_4BIT_COLOR) {
 				
 				// batch consecutive cells of the same color (more performant than drawing each cell)
 				//short x2 = x;
@@ -151,7 +151,7 @@ void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics, Soil::ASCIIC
 			}
 
 			// draw 8-bit color using VTS
-			else if (currentColorDepth == Soil::ASCIIColor::ANSI_8BIT_COLOR) {
+			else if (currentColorDepth == Soil::ANSI_8BIT_COLOR) {
 
 				// batch consecutive cells of the same color (more performant than drawing each cell)
 				short x2 = x;
@@ -179,7 +179,7 @@ void Soil::ASCIIOutputCMD::pushOutput(ASCIIGraphics& asciiGraphics, Soil::ASCIIC
 			
 
 			// draw 24-bit/Truecolor color using VTS 
-			else if (currentColorDepth == Soil::ASCIIColor::ANSI_24BIT_TRUECOLOR) {
+			else if (currentColorDepth == Soil::ANSI_24BIT_COLOR) {
 
 				// batch consecutive cells of the same color (more performant than drawing each cell)
 				short x2 = x;
