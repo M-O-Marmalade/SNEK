@@ -28,7 +28,7 @@
 
 using namespace std::chrono_literals;
 
-void testFunc() {
+void testScreen01() {
 	Soil::ASCIIGraphics asciiGraphics(80, 25);
 	Soil::ASCIIOutputCMD asciiOutputCMD;
 
@@ -49,82 +49,88 @@ void testFunc() {
 		//asciiGraphics.clearScreen();
 		asciiGraphics.drawTextSprite(0, 0, 
 		                             Soil::ASCIISprite("FPS: " + std::to_string(fps), 
-		                                               Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 
+		                                               Soil::ASCIIColor(Soil::ANSI_4BIT_GREEN,
+		                                                                Soil::ANSI_4BIT_DEFAULT,
 		                                                                226, 
 		                                                                14, 
 		                                                                Soil::ANSITrueColor(255, 0, 0), 
 		                                                                Soil::ANSITrueColor(0, 0, 255), 
-		                                                                Soil::ANSI_4BIT_COLOR
+		                                                                Soil::ANSI_4BIT_COLOR_DEPTH
 		                                                               )
 		                                              )
 		);
 		asciiGraphics.drawTextSprite(1, 1,
 			Soil::ASCIISprite(U"4-bit Heizölrückstoßabdämpfung",
-				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+				Soil::ASCIIColor(Soil::ANSI_4BIT_CYAN,
+					Soil::ANSI_4BIT_DEFAULT,
 					226,
 					14,
 					Soil::ANSITrueColor(255, 0, 0),
 					Soil::ANSITrueColor(0, 0, 255),
-					Soil::ANSI_4BIT_COLOR
+					Soil::ANSI_4BIT_COLOR_DEPTH
 				)
 			)
 		);
 
 		asciiGraphics.drawTextSprite(2, 2,
 			Soil::ASCIISprite(U"8-bit Ξεσκεπάζω τὴν ψυχοφθόρα βδελυγμία",
-				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+				Soil::ASCIIColor(Soil::ANSI_4BIT_CYAN,
+					Soil::ANSI_4BIT_DEFAULT,
 					226,
 					14,
 					Soil::ANSITrueColor(255, 0, 0),
 					Soil::ANSITrueColor(0, 0, 255),
-					Soil::ANSI_8BIT_COLOR
+					Soil::ANSI_8BIT_COLOR_DEPTH
 				)
 			)
 		);
 
 		asciiGraphics.drawTextSprite(3, 3,
 			Soil::ASCIISprite(U"24-bit ｶいろはにほへとちりぬるを\nイロハニホヘト\nจงฝ่าฟันพัฒนาวิชาการ",
-				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+				Soil::ASCIIColor(Soil::ANSI_4BIT_CYAN,
+					Soil::ANSI_4BIT_DEFAULT,
 					226,
 					14,
 					Soil::ANSITrueColor(255, 0, 0),
 					Soil::ANSITrueColor(0, 0, 255),
-					Soil::ANSI_24BIT_COLOR
+					Soil::ANSI_24BIT_COLOR_DEPTH
 				)
 			)
 		);
 
 		asciiGraphics.drawTextSprite(0, 10,
 			Soil::ASCIISprite(U"ｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶｶ",
-				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+				Soil::ASCIIColor(Soil::ANSI_4BIT_CYAN,
+					Soil::ANSI_4BIT_DEFAULT,
 					226,
 					14,
 					Soil::ANSITrueColor(255, 0, 0),
 					Soil::ANSITrueColor(0, 0, 255),
-					Soil::ANSI_24BIT_COLOR
+					Soil::ANSI_24BIT_COLOR_DEPTH
 				)
 			)
 		);
 
 		asciiGraphics.drawTextSprite(0, 12,
 			Soil::ASCIISprite(U"カカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカカ",
-				Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE,
+				Soil::ASCIIColor(Soil::ANSI_4BIT_CYAN,
+					Soil::ANSI_4BIT_DEFAULT,
 					226,
 					14,
 					Soil::ANSITrueColor(255, 0, 0),
 					Soil::ANSITrueColor(0, 0, 255),
-					Soil::ANSI_24BIT_COLOR
+					Soil::ANSI_24BIT_COLOR_DEPTH
 				)
 			)
 		);
 
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 	}
 }
 
 int main() {
 
-	testFunc();
+	//testScreen01();
 
 	// seed the RNG using system time
 	srand(time(0));
@@ -185,15 +191,15 @@ int main() {
 	snekAudioSystem.fmodUpdate();
 
 	// reset the color of the whole screen
-	asciiGraphics.fillColor(0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1, colorPalette.standard);
+	asciiGraphics.fillColor(0, 0, asciiGraphics.width - 1, asciiGraphics.height - 1, colorPalette.blank);
 
 	// Draw Splash Screen
-	asciiGraphics.fillColor(30, 10, 50, 20, colorPalette.bright_cyan);
 	std::u32string logoString = U"Citrus 64";
 	int startingXCoord = asciiGraphics.width / 2 - (logoString.size() / 2);
+	asciiGraphics.fillColor(startingXCoord, asciiGraphics.height / 2, startingXCoord + logoString.size(), asciiGraphics.height / 2, colorPalette.logo);
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, logoString[i]);
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_24BIT_COLOR_DEPTH);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -202,7 +208,7 @@ int main() {
 	//Erase Splash Screen
 	for (int i = 0; i < logoString.size(); i++) {
 		asciiGraphics.drawText(startingXCoord + i, asciiGraphics.height / 2, U' ');
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_24BIT_COLOR_DEPTH);
 		std::this_thread::sleep_for(77ms);
 	}
 
@@ -240,8 +246,8 @@ int main() {
 			colorPalette.hud));
 
 		// draw player count
-		asciiGraphics.fillColor(34, 20, 42, 20, colorPalette.grey);
-		asciiGraphics.fillColor(43, 20, 45, 20, colorPalette.white);
+		asciiGraphics.fillColor(34, 20, 42, 20, colorPalette.select_player_amount);
+		asciiGraphics.fillColor(43, 20, 45, 20, colorPalette.player_amount);
 		asciiGraphics.drawText(34, 20, "Players: <" + std::to_string(playerCount) + ">");
 
 		if (playerCount == 2) {
@@ -286,7 +292,7 @@ int main() {
 			startScreenFrameCount = 0;
 		}
 
-		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
+		asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 
 		startScreenFrameCount++;
 
@@ -341,7 +347,7 @@ int main() {
 
 			for (auto& animFrame : pressedStartAnimFrames) {
 				asciiGraphics.drawText(31, 18, animFrame.first);
-				asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR);
+				asciiOutputCMD.pushOutput(asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 				std::this_thread::sleep_for(std::chrono::milliseconds(animFrame.second));
 			}
 		}

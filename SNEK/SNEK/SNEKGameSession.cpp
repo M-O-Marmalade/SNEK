@@ -36,7 +36,7 @@ SNEKGameSession::SNEKGameSession(SNEKGameOptions options, Soil::ASCIIGraphics* a
 	this->inputManager->addKeys("\x25\x26\x27\x28WASDZPV");
 	this->readScoreFile();
 	this->clearGameGrid();
-	this->asciiGraphics->clearScreen();
+	this->asciiGraphics->clearBuffers();
 
 	// initialize `snakes` depending on amount of players
 	this->snakes = std::vector<SNEKPlayer>();
@@ -505,7 +505,7 @@ void SNEKGameSession::play() {
 		for (SNEKPlayer& snake : this->snakes) {
 
 			if (snake.justDied) {
-				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", options.colors.white));
+				asciiGraphics->drawTextSprite(gridOX + snake.head.x, gridOY + snake.head.y, Soil::ASCIISprite("X", options.colors.player_dead));
 			}
 			else {
 				std::string snakeHeadText;
@@ -581,9 +581,9 @@ void SNEKGameSession::play() {
 				}
 			}
 			else {
-				asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, options.colors.white);
+				asciiGraphics->fillColor(gridOX + snake.head.x, gridOY + snake.head.y, options.colors.player_dead);
 				for (Soil::Coords2D& segment : snake.body) {
-					asciiGraphics->fillColor(gridOX + segment.x, gridOY + segment.y, options.colors.white);
+					asciiGraphics->fillColor(gridOX + segment.x, gridOY + segment.y, options.colors.player_dead);
 				}
 			}
 		}
@@ -633,7 +633,7 @@ void SNEKGameSession::play() {
 		}
 
 		// PUSH GRAPHICS TO OUTPUT //
-		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_24BIT_COLOR);
+		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_24BIT_COLOR_DEPTH);
 
 		// delay for first frame if in 2 player mode //
 		if (options.playerCount == 2 && firstFrameOfTheGame) {
@@ -1255,7 +1255,7 @@ void SNEKGameSession::gameOverScreen()
 			}
 
 			//DISPLAY THE SCREEN//
-			asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
+			asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 
 			snekAudioSystem->fmodUpdate(); //update FMOD system	
 		}
@@ -1301,7 +1301,7 @@ void SNEKGameSession::gameOverScreen()
 	asciiGraphics->drawText(40, 20, ">Press [Z] to play again");
 	asciiGraphics->drawText(40, 21, ">Press [X] to quit");
 
-	asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
+	asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 
 	bool gameOverMessage = true;
 
@@ -1359,7 +1359,7 @@ void SNEKGameSession::gameOverScreen()
 			std::this_thread::sleep_for(2671ms);
 		}
 
-		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR);
+		asciiOutput->pushOutput(*asciiGraphics, Soil::ANSI_4BIT_COLOR_DEPTH);
 		snekAudioSystem->fmodUpdate();
 		std::this_thread::sleep_for(10ms);
 	}

@@ -2,31 +2,31 @@
 
 #include "ASCIIColor.h"
 
+using namespace Soil; // ASCIIColor, ANSI_#BIT_...
 
 class SNEKColorPalette {
 public:
-	Soil::ASCIIColor standard = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN);
-	Soil::ASCIIColor logo = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor press_start = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor player_amount = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor player_1 = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor player_2 = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor fruit = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor fruit_swallowed = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BLUE);
-	Soil::ASCIIColor portal = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_BLUE);
-	Soil::ASCIIColor keyboard = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN);
-	Soil::ASCIIColor keyboard_selected = Soil::ASCIIColor(Soil::ANSI_4BIT_BG_GREEN);
-	Soil::ASCIIColor hud = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN, 213, 0, { 255,255,255 }, {0,0,0}, Soil::ANSI_8BIT_COLOR);
 
+	ASCIIColor blank = ASCIIColor(ANSI_4BIT_DEFAULT);
 
-	Soil::ASCIIColor bright_cyan = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor green = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN);
-	Soil::ASCIIColor bright_green = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor red = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED);
-	Soil::ASCIIColor bright_red = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor pink = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BLUE);
-	Soil::ASCIIColor bright_pink = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor white = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE | Soil::ANSI_4BIT_FG_BRIGHT);
-	Soil::ASCIIColor grey = Soil::ASCIIColor(Soil::ANSI_4BIT_FG_RED | Soil::ANSI_4BIT_FG_GREEN | Soil::ANSI_4BIT_FG_BLUE);
-	Soil::ASCIIColor black = Soil::ASCIIColor(0, 0, 0);
+	// start menu
+	ASCIIColor logo = ASCIIColor(ANSI_4BIT_BRIGHT_CYAN, ANSI_4BIT_DEFAULT, 214, 0, { 0xff, 0x87, 0x00 }, {0x00, 0x00, 0xd7}, ANSI_8BIT_COLOR_DEPTH);
+	ASCIIColor hud = ASCIIColor(ANSI_4BIT_GREEN, ANSI_4BIT_DEFAULT, 27, 0, { 255,255,255 }, {0,0,0}, ANSI_8BIT_COLOR_DEPTH);
+	ASCIIColor select_player_amount = ASCIIColor(ANSI_4BIT_WHITE);
+	ASCIIColor player_amount = ASCIIColor(ANSI_4BIT_BRIGHT_WHITE);
+	ASCIIColor press_start = ASCIIColor(ANSI_4BIT_BRIGHT_MAGENTA);
+
+	// gameplay
+	ASCIIColor player_1 = ASCIIColor(ANSI_4BIT_BRIGHT_GREEN);
+	ASCIIColor player_2 = ASCIIColor(ANSI_4BIT_BRIGHT_RED);
+	ASCIIColor player_dead = ASCIIColor(ANSI_4BIT_WHITE);
+	ASCIIColor fruit = ASCIIColor(ANSI_4BIT_BRIGHT_MAGENTA);
+	ASCIIColor fruit_swallowed = ASCIIColor(ANSI_4BIT_MAGENTA);
+	ASCIIColor portal = ASCIIColor(ANSI_4BIT_BLUE);
+
+	// high score entry
+	ASCIIColor keyboard = ASCIIColor(ANSI_4BIT_GREEN, ANSI_4BIT_DEFAULT, 27, 0, { 255,255,255 }, { 0,0,0 }, ANSI_8BIT_COLOR_DEPTH);
+	ASCIIColor keyboard_selected = ASCIIColor(ANSI_4BIT_DEFAULT, ANSI_4BIT_GREEN, 27, 0, { 255,255,255 }, { 0,0,0 }, ANSI_8BIT_COLOR_DEPTH);
+
+	SNEKColorPalette() {};
 };
